@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Francisco Quivera", email = "fquivera@gmail.com" }]
 dependencies = [
-    "django>=5.2,<6.0",
+    "django>=5.2,<7.0",
     "django-environ>=0.11",
     "imapclient>=3.0",
     "psycopg[binary]>=3.2",
