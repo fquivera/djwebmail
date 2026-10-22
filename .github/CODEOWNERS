@@ -1,0 +1,9 @@
+# Default owner for everything in the repository.
+* @fquivera
+
+# Workflows and repository tooling
+/.github/ @fquivera
+/.githooks/ @fquivera
+
+# Agent skills encode project conventions
+/.agents/skills/ @fquivera

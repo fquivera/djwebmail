@@ -1,0 +1,205 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DJANGO_SETTINGS_MODULE: config.settings.test
+  DATABASE_URL: postgres://djwebmail:djwebmail@localhost:5432/djwebmail
+  SECRET_KEY: ci-insecure-secret-key
+  DEBUG: "False"
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-groups
+      - name: Lockfile check
+        run: |
+          if [ -f uv.lock ]; then
+            uv lock --check
+          else
+            echo "::notice::No uv.lock yet; skipping lockfile check"
+          fi
+      - name: Ruff lint
+        run: |
+          if git ls-files '*.py' | grep -q .; then
+            uv run ruff check .
+          else
+            echo "::notice::No Python files yet; skipping ruff check"
+          fi
+      - name: Ruff format
+        run: |
+          if git ls-files '*.py' | grep -q .; then
+            uv run ruff format --check .
+          else
+            echo "::notice::No Python files yet; skipping ruff format"
+          fi
+      - name: Pyright
+        run: |
+          if git ls-files '*.py' | grep -q .; then
+            uv run pyright
+          else
+            echo "::notice::No Python files yet; skipping pyright"
+          fi
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: djwebmail
+          POSTGRES_PASSWORD: djwebmail
+          POSTGRES_DB: djwebmail
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U djwebmail"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv sync --all-groups
+      - name: Tests
+        run: |
+          if git ls-files '*test_*.py' | grep -q .; then
+            uv run pytest --cov=apps --cov-report=term-missing
+          else
+            echo "::notice::No tests yet; skipping pytest"
+          fi
+
+  django:
+    name: django
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-groups
+      - name: Django system check
+        run: |
+          if [ -f manage.py ]; then
+            uv run python manage.py check
+          else
+            echo "::notice::manage.py not found; skipping Django check"
+          fi
+      - name: Missing migrations
+        run: |
+          if [ -f manage.py ]; then
+            uv run python manage.py makemigrations --check --dry-run
+          else
+            echo "::notice::manage.py not found; skipping migration check"
+          fi
+
+  branch-policy:
+    name: branch-policy
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate GitFlow branch names
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -eu
+          head="$HEAD_REF"
+          base="$BASE_REF"
+          echo "PR: ${head} -> ${base}"
+
+          fail() {
+            echo "::error::Invalid branch flow: ${head} -> ${base}. See .agents/skills/gitflow."
+            exit 1
+          }
+
+          case "$head" in
+            feature/*|fix/*|chore/*|docs/*|refactor/*|test/*|perf/*|build/*|ci/*)
+              [ "$base" = "develop" ] || fail
+              ;;
+            release/*|hotfix/*)
+              [ "$base" = "main" ] || fail
+              ;;
+            dependabot/*)
+              [ "$base" = "develop" ] || [ "$base" = "main" ] || fail
+              ;;
+            develop)
+              [ "$base" = "main" ] || fail
+              ;;
+            *)
+              fail
+              ;;
+          esac
+
+          echo "Branch flow valid."
+
+  commit-messages:
+    name: commit-messages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-groups
+      - name: Validate PR title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          printf '%s\n' "$PR_TITLE" > "$RUNNER_TEMP/commit-msg.txt"
+          uv run cz check --commit-msg-file "$RUNNER_TEMP/commit-msg.txt"
+      - name: Validate pushed commits
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          set -eu
+          if ! git rev-parse --quiet --verify "$BEFORE" >/dev/null; then
+            echo "::notice::No usable base commit (${BEFORE}); skipping range check"
+            exit 0
+          fi
+          for sha in $(git log --no-merges --format=%H "${BEFORE}..${AFTER}"); do
+            git log -1 --format=%B "$sha" > "$RUNNER_TEMP/commit-msg.txt"
+            if ! uv run cz check --commit-msg-file "$RUNNER_TEMP/commit-msg.txt"; then
+              echo "::error::Commit ${sha} does not follow Conventional Commits"
+              exit 1
+            fi
+          done
+          echo "All pushed commits valid."
