@@ -12,6 +12,10 @@ updates:
       python-dependencies:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      # Project targets Django LTS; 6.x majors are out of policy until 6.2 LTS.
+      - dependency-name: "django"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
