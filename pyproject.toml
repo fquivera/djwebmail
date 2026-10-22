@@ -1,0 +1,54 @@
+[project]
+name = "djwebmail"
+version = "0.1.0"
+description = "A modern, HTMX-driven webmail client built with Django."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Francisco Quivera", email = "fquivera@gmail.com" }]
+dependencies = [
+    "django>=5.2,<6.0",
+    "django-environ>=0.11",
+    "imapclient>=3.0",
+    "psycopg[binary]>=3.2",
+]
+
+[dependency-groups]
+dev = [
+    "django-debug-toolbar>=4.4",
+    "django-extensions>=3.2",
+    "factory-boy>=3.3",
+    "pyright>=1.1",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-django>=4.8",
+    "ruff>=0.6",
+]
+production = [
+    "gunicorn>=23.0",
+    "whitenoise>=6.7",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "common", "config"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = ["--reuse-db", "-ra"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+exclude = ["**/migrations", ".venv", "node_modules"]
