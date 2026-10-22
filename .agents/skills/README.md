@@ -37,6 +37,9 @@ Agent skills for DjWebmail. Each directory contains one `SKILL.md`; optional
 | Management-command introspection | `django-extensions` |
 | Lint/type/test audit | `code-quality` |
 | Root-cause debugging method | `systematic-debugging` |
+| Branching, releases, hotfixes | `gitflow` |
+| Commit message format | `conventional-commits` |
+| CI/CD workflows and repository config | `github-actions` |
 
 Load order for a new feature:
 
@@ -45,3 +48,5 @@ Load order for a new feature:
 3. `django-templates` + `htmx-patterns` + `htmx-alpine` (UI)
 4. `pytest-django-patterns` (tests)
 5. `django-infrastructure` (only when touching settings or deploy)
+6. `gitflow` + `conventional-commits` before opening the PR
+7. `github-actions` when a CI check fails or a workflow changes
