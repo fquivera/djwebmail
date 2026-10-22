@@ -1,0 +1,35 @@
+# Version control and CI
+.git
+.gitignore
+.github
+.githooks
+
+# Agent skills and docs are not needed at runtime
+.agents
+*.md
+!README.md
+
+# Local environment
+.env
+.env.*
+.venv
+venv
+__pycache__
+*.py[cod]
+
+# Tooling caches
+.pytest_cache
+.ruff_cache
+.pyright
+.coverage
+.coverage.*
+htmlcov
+
+# Node / Tailwind build inputs (compiled CSS is copied normally)
+node_modules
+npm-debug.log*
+
+# Local data
+db.sqlite3
+/staticfiles
+/media
