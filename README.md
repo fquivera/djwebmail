@@ -1,5 +1,9 @@
 # DjWebmail
 
+[![CI](https://github.com/fquivera/djwebmail/actions/workflows/ci.yml/badge.svg)](https://github.com/fquivera/djwebmail/actions/workflows/ci.yml)
+[![Release](https://github.com/fquivera/djwebmail/actions/workflows/release.yml/badge.svg)](https://github.com/fquivera/djwebmail/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **A modern, HTMX-driven webmail client built with Django.**
 
 DjWebmail is a lightweight, self-hosted webmail frontend that talks to your
@@ -111,6 +115,31 @@ direction.
 - Add tests for new behavior where practical.
 - Be kind. See CODE_OF_CONDUCT.md (adopting the Contributor Covenant).
 
+### Branching and commits
+
+This repository uses GitFlow: `main` (production, tagged releases) and
+`develop` (integration). Work happens in `feature/*`, `fix/*`, `chore/*`, and
+similar branches that target `develop`; `release/*` and `hotfix/*` target
+`main`. Direct pushes to `main` and `develop` are blocked.
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
+and are validated locally and in CI:
+
+```bash
+git config core.hooksPath .githooks   # once per clone
+uv run cz commit                      # guided commit message
+```
+
+PR titles must also be conventional, because `develop` uses squash merges.
+Full rules: `.agents/skills/gitflow` and `.agents/skills/conventional-commits`.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs Ruff, Pyright, pytest (Python 3.12 and 3.13,
+PostgreSQL 16), Django checks, branch policy, and commit validation on every PR.
+Pushing a `v*.*.*` tag runs `.github/workflows/release.yml`, which verifies the
+tag, publishes a container image to GHCR, and creates a GitHub Release.
+
 ### License
 MIT — see the LICENSE file for details.
 
@@ -122,7 +151,7 @@ MIT — see the LICENSE file for details.
 □ Per-user UI preferences (theme, density, signature)  
 □ Search across folders  
 □ Accessibility pass and keyboard shortcuts  
-□ Docker image and deployment guide  
+□ Docker image publishing and deployment guide  
 
 ## Acknowledgements
 Built with Django, HTMX,
