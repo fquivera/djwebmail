@@ -38,7 +38,8 @@ Non-negotiables:
 - `timeout-minutes` on every job so a hung job cannot burn minutes.
 - `fail-fast: false` in the test matrix to see all versions fail.
 - Cache via `astral-sh/setup-uv` (`enable-cache: true`).
-- Pin actions to a major tag (`@v4`) and secrets are never echoed.
+- Pin actions to a major tag (`actions/checkout@v7`, `astral-sh/setup-uv@v10`,
+  `docker/*@v4`+) and never echo secrets.
 
 ### Bootstrap-safe guards
 
