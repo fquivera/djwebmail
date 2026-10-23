@@ -1,0 +1,11 @@
+{% load i18n %}
+{% include "mail/_message_list.html" %}
+
+<nav
+  id="folder-tree"
+  class="folder-tree"
+  aria-label="{% translate 'Folders' %}"
+  hx-swap-oob="outerHTML"
+>
+  {% include "mail/_folder_tree.html" %}
+</nav>

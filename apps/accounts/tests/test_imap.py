@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -26,6 +27,7 @@ class FakeClient:
         self.select_result: dict[bytes, Any] = {}
         self.search_result: list[int] = []
         self.fetch_result: dict[int, dict[bytes, Any]] = {}
+        self.fetch_calls: list[tuple[list[int], list[str]]] = []
         self.added_flags: tuple[list[int], list[str]] | None = None
         self.removed_flags: tuple[list[int], list[str]] | None = None
         self.moved: tuple[list[int], str] | None = None
@@ -53,6 +55,7 @@ class FakeClient:
         return self.search_result
 
     def fetch(self, messages: list[int], data: list[str]) -> dict[int, dict[bytes, Any]]:
+        self.fetch_calls.append((messages, data))
         return self.fetch_result
 
     def add_flags(self, messages: list[int], flags: list[str]) -> None:
@@ -245,3 +248,50 @@ def test_flag_move_copy_delete_and_append(account: MailAccount) -> None:
     assert client.expunged is True
     assert client.appended is not None
     assert client.appended[0] == "Sent"
+
+
+def test_fetch_summaries_without_body(account: MailAccount) -> None:
+    internaldate = datetime(2026, 10, 22, 10, 0, tzinfo=UTC)
+    client = FakeClient()
+    client.fetch_result = {
+        7: {
+            b"BODY[HEADER.FIELDS (FROM TO SUBJECT DATE)]": (
+                b"From: Alice <alice@example.com>\r\nSubject: Hello\r\n\r\n"
+            ),
+            b"FLAGS": (b"\\Seen",),
+            b"RFC822.SIZE": 123,
+            b"INTERNALDATE": internaldate,
+        }
+    }
+    service = ImapService(account, "user@example.com", "secret", client_factory=factory_for(client))
+
+    summaries = service.fetch_summaries([7])
+
+    assert len(summaries) == 1
+    assert summaries[0].uid == 7
+    assert b"Subject: Hello" in summaries[0].headers
+    assert summaries[0].flags == ("\\Seen",)
+    assert summaries[0].size == 123
+    assert summaries[0].internaldate == internaldate
+    assert client.fetch_calls[0][0] == [7]
+    assert client.fetch_calls[0][1][0].startswith("BODY.PEEK[HEADER.FIELDS")
+
+
+def test_fetch_summaries_batches_uids(account: MailAccount) -> None:
+    client = FakeClient()
+    client.fetch_result = {
+        1: {b"FLAGS": (), b"RFC822.SIZE": 1},
+        2: {b"FLAGS": (), b"RFC822.SIZE": 2},
+    }
+    service = ImapService(account, "user@example.com", "secret", client_factory=factory_for(client))
+
+    summaries = service.fetch_summaries([1, 2], batch_size=1)
+
+    assert [summary.uid for summary in summaries] == [1, 2]
+    assert [call[0] for call in client.fetch_calls] == [[1], [2]]
+
+
+def test_fetch_summaries_empty_does_not_connect(account: MailAccount) -> None:
+    service = ImapService(account, "user@example.com", "secret")
+
+    assert service.fetch_summaries([]) == []

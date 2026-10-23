@@ -1,0 +1,18 @@
+{% load i18n %}
+<li class="message-row{% if not message.is_seen %} is-unread{% endif %}" data-uid="{{ message.uid }}">
+  <div class="message-sender">
+    {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+  </div>
+  <div class="message-subject">
+    {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+  </div>
+  <div class="message-meta">
+    {% if message.is_flagged %}
+      <span class="message-flag" role="img" aria-label="{% translate 'Flagged' %}">★</span>
+    {% endif %}
+    <span class="message-size">{{ message.size|filesizeformat }}</span>
+    {% if message.date %}
+      <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
+    {% endif %}
+  </div>
+</li>

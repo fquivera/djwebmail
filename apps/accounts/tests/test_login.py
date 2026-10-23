@@ -80,7 +80,7 @@ def test_login_success_creates_session_and_encrypted_credential(client, monkeypa
     )
 
     assert response.status_code == 302
-    assert response["Location"] == reverse("home")
+    assert response["Location"] == reverse("mail:index")
     session = client.session
     assert session["mail_email"] == "user@example.com"
     assert session["mail_account_key"] == account.account_key
@@ -168,7 +168,7 @@ def test_login_accepts_safe_next(client, monkeypatch, account):
     )
 
     assert response.status_code == 302
-    assert response["Location"] == "/mail/"
+    assert response["Location"] == reverse("mail:index")
 
 
 def test_login_rejects_external_next(client, monkeypatch, account):
@@ -184,7 +184,7 @@ def test_login_rejects_external_next(client, monkeypatch, account):
     )
 
     assert response.status_code == 302
-    assert response["Location"] == reverse("home")
+    assert response["Location"] == reverse("mail:index")
 
 
 def test_logout_deletes_credential_and_flushes_session(client, monkeypatch, account):

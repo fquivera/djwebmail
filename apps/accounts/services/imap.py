@@ -25,9 +25,11 @@ from imapclient.exceptions import (
 )
 
 from apps.accounts.constants import (
+    IMAP_FETCH_BATCH_SIZE,
     IMAP_SECURITY_NONE,
     IMAP_SECURITY_SSL,
     IMAP_SECURITY_STARTTLS,
+    IMAP_SUMMARY_HEADER_FIELDS,
 )
 from apps.accounts.exceptions import (
     ImapAuthError,
@@ -69,6 +71,17 @@ class FetchedMessage:
     uid: int
     raw: bytes
     flags: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class FetchedSummary:
+    """Message metadata fetched without loading the body."""
+
+    uid: int
+    headers: bytes
+    flags: tuple[str, ...]
+    size: int
+    internaldate: datetime | None
 
 
 class ImapService:
@@ -188,6 +201,58 @@ class ImapService:
         """Search the selected folder and return UIDs."""
         return self._run(lambda: self._require_client().search(criteria, charset=charset))
 
+    def fetch_summaries(
+        self,
+        uids: Sequence[int],
+        *,
+        header_fields: Sequence[str] = IMAP_SUMMARY_HEADER_FIELDS,
+        batch_size: int = IMAP_FETCH_BATCH_SIZE,
+    ) -> list[FetchedSummary]:
+        """Fetch headers, flags, size, and internal date for a set of UIDs."""
+        if not uids:
+            return []
+
+        fields = " ".join(field.upper() for field in header_fields)
+        selector = f"BODY.PEEK[HEADER.FIELDS ({fields})]"
+        summaries: list[FetchedSummary] = []
+        size = max(1, batch_size)
+
+        for start in range(0, len(uids), size):
+            batch = list(uids[start : start + size])
+            response = self._run(
+                lambda batch=batch: self._require_client().fetch(
+                    batch,
+                    [selector, "FLAGS", "INTERNALDATE", "RFC822.SIZE"],
+                )
+            )
+            for uid in batch:
+                record = response.get(uid)
+                if not isinstance(record, dict):
+                    continue
+                headers_key = next(
+                    (
+                        key
+                        for key in record
+                        if isinstance(key, bytes) and key.upper().startswith(b"BODY[HEADER.FIELDS")
+                    ),
+                    None,
+                )
+                headers = record.get(headers_key, b"") if headers_key else b""
+                if not isinstance(headers, bytes):
+                    headers = b""
+                raw_size = record.get(b"RFC822.SIZE")
+                summaries.append(
+                    FetchedSummary(
+                        uid=uid,
+                        headers=headers,
+                        flags=_as_flags(record.get(b"FLAGS", ())),
+                        size=_as_int(raw_size) if raw_size is not None else 0,
+                        internaldate=_as_datetime(record.get(b"INTERNALDATE")),
+                    )
+                )
+
+        return summaries
+
     def fetch_message(self, uid: int, *, peek: bool = True) -> FetchedMessage:
         """Fetch one raw message; PEEK avoids setting the ``\\Seen`` flag."""
         selector = "BODY.PEEK[]" if peek else "BODY[]"
@@ -306,3 +371,9 @@ def _as_optional_int(value: object | None) -> int | None:
     if value is None:
         return None
     return _as_int(value)
+
+
+def _as_datetime(value: object | None) -> datetime | None:
+    if isinstance(value, datetime):
+        return value
+    return None
