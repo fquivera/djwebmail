@@ -389,11 +389,15 @@ Done:
   standalone CLI; committed CSS, build/drift check and gzip budget in CI, and
   daisyUI styling for the shell, login, folder tree, message list, and errors.
   See `docs/tailwind-pipeline.md`.
+- `apps/mail` message viewer: `/mail/message/<folder>/<uid>/` fetches with
+  `BODY.PEEK[]`, sanitizes HTML server-side with `nh3`, blocks remote content,
+  hardens links, and falls back to plain text. Full page plus HTMX fragment.
+  See `docs/message-viewer.md`.
 
 Next:
 
-1. Message viewer with safe HTML rendering and remote-content blocking.
-2. Strict CSP without `unsafe-eval`/`unsafe-inline` and HTMX `allowEval=false`.
+1. Strict CSP without `unsafe-eval`/`unsafe-inline` and HTMX `allowEval=false`.
+2. Remote-image proxy and the "load images" action for the viewer.
 3. First `v0.1.0` release when the folder tree, message list, and viewer work
    end to end.
 

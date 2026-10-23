@@ -12,6 +12,7 @@ from django.urls import reverse
 from apps.accounts.exceptions import ImapConnectionError
 from apps.accounts.services.account import MailAccount
 from apps.mail.services.mailbox import FolderNode, MessagePage, MessageSummary
+from apps.mail.services.message import MessageDetail
 
 
 class FakeImapContext:
@@ -112,6 +113,7 @@ def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: None) ->
     assert "mail/index.html" in template_names
     assert b"Hello from the test" in response.content
     assert b"hx-get" in response.content
+    assert b"/mail/message/INBOX/7/" in response.content
     assert b"hx-swap-oob" not in response.content
 
 
@@ -158,4 +160,113 @@ def test_mail_imap_error_stays_visible_after_htmx_swap(
 
     assert response.status_code == 200
     assert b'role="alert"' in response.content
+    assert b"Unable to load mail" in response.content
+
+
+@pytest.fixture
+def message_view_data(monkeypatch: pytest.MonkeyPatch) -> MessageDetail:
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Hello from the viewer",
+        sender="Alice <alice@example.com>",
+        recipients="Bob <bob@example.com>",
+        cc="",
+        date=datetime(2026, 10, 22, 10, 0, tzinfo=UTC),
+        flags=(),
+        is_seen=False,
+        is_flagged=False,
+        body_kind="html",
+        body_html="<p>Sanitized body</p>",
+        remote_content_blocked=False,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    return detail
+
+
+def test_message_view_requires_login(client: Client) -> None:
+    response: Any = client.get(reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7}))
+
+    assert response.status_code == 302
+    assert response["Location"] == (
+        f"{reverse('accounts:login')}?next=%2Fmail%2Fmessage%2FINBOX%2F7%2F"
+    )
+
+
+def test_message_view_renders_full_page(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/message.html" in template_names
+    assert b"Hello from the viewer" in response.content
+    assert b"Sanitized body" in response.content
+
+
+def test_message_view_returns_fragment_for_htmx(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7}),
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_message_view.html" in template_names
+    assert "mail/message.html" not in template_names
+    assert b"Sanitized body" in response.content
+    assert "HX-Request" in response.headers["Vary"]
+
+
+def test_message_view_shows_remote_content_warning(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+    message_view_data: MessageDetail,
+) -> None:
+    blocked = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Images",
+        sender="Alice <alice@example.com>",
+        recipients="",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=False,
+        is_flagged=False,
+        body_kind="html",
+        body_html="<p>Body</p>",
+        remote_content_blocked=True,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: blocked)
+
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b"Remote content was blocked" in response.content
+
+
+def test_message_view_imap_error_renders_alert(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(imap: Any, folder: str, uid: int) -> None:
+        raise ImapConnectionError("down")
+
+    monkeypatch.setattr("apps.mail.views.get_message", fail)
+
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 503
     assert b"Unable to load mail" in response.content

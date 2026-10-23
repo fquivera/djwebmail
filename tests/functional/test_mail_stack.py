@@ -152,6 +152,58 @@ def test_mail_view_lists_real_inbox_message(client, account, password):
     assert b"hx-swap-oob" in fragment.content
 
 
+def test_message_viewer_sanitizes_html_and_blocks_remote_content(client, account, password):
+    subject = f"djwebmail-viewer-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Plain fallback.")
+    message.add_alternative(
+        "<p>Hello <b>bold</b></p>"
+        '<img src="https://example.com/tracked.png">'
+        "<script>alert(1)</script>",
+        subtype="html",
+    )
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.get(reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": uid}))
+
+    assert response.status_code == 200
+    assert subject.encode() in response.content
+    assert b"<b>bold</b>" in response.content
+    assert b"<script" not in response.content
+    assert b"<img" not in response.content
+    assert b"Remote content was blocked" in response.content
+
+
 def test_logout_clears_real_mail_session(client, account, password):
     login = client.post(
         reverse("accounts:login"),

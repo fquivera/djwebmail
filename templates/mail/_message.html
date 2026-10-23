@@ -1,0 +1,50 @@
+{% load i18n %}
+<article class="space-y-4">
+  <header class="space-y-2 border-b border-base-300 pb-3">
+    <h1 id="message-subject" tabindex="-1" class="break-words text-lg font-semibold">
+      {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+    </h1>
+    <dl class="space-y-1 text-sm text-base-content/80">
+      <div class="flex gap-2">
+        <dt class="w-14 shrink-0 text-base-content/60">{% translate "From" %}</dt>
+        <dd class="min-w-0 break-words">
+          {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+        </dd>
+      </div>
+      {% if message.recipients %}
+        <div class="flex gap-2">
+          <dt class="w-14 shrink-0 text-base-content/60">{% translate "To" %}</dt>
+          <dd class="min-w-0 break-words">{{ message.recipients }}</dd>
+        </div>
+      {% endif %}
+      {% if message.cc %}
+        <div class="flex gap-2">
+          <dt class="w-14 shrink-0 text-base-content/60">{% translate "Cc" %}</dt>
+          <dd class="min-w-0 break-words">{{ message.cc }}</dd>
+        </div>
+      {% endif %}
+      {% if message.date %}
+        <div class="flex gap-2">
+          <dt class="w-14 shrink-0 text-base-content/60">{% translate "Date" %}</dt>
+          <dd>
+            <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
+          </dd>
+        </div>
+      {% endif %}
+    </dl>
+  </header>
+
+  {% if message.remote_content_blocked %}
+    <div class="alert alert-warning text-sm" role="status">
+      {% translate "Remote content was blocked to protect your privacy." %}
+    </div>
+  {% endif %}
+
+  <div id="message-body" class="message-body break-words text-sm leading-relaxed">
+    {% if message.body_kind == "empty" %}
+      <p class="text-base-content/60">{% translate "This message has no content." %}</p>
+    {% else %}
+      {{ message.body_html|safe }}
+    {% endif %}
+  </div>
+</article>

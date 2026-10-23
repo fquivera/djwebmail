@@ -14,6 +14,7 @@ from apps.accounts.exceptions import ImapAuthError, MailError, MailSessionError
 from apps.accounts.services.session import end_mail_session, get_mail_imap_service
 from apps.mail.constants import IMAP_INBOX
 from apps.mail.services.mailbox import list_folders, list_messages
+from apps.mail.services.message import get_message
 
 
 @never_cache
@@ -49,6 +50,32 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_mailbox_response.html", context)
     return render(request, "mail/index.html", context)
+
+
+@never_cache
+@vary_on_headers("HX-Request")
+@mail_login_required
+def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Render one sanitized message as a viewer fragment or a full page."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            message = get_message(imap, folder, uid)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    context = {
+        "folder_name": folder,
+        "message": message,
+    }
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return render(request, "mail/_message_view.html", context)
+    return render(request, "mail/message.html", context)
 
 
 def _parse_page(value: str | None) -> int:
