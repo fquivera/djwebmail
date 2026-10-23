@@ -8,7 +8,12 @@ from email.utils import format_datetime
 from typing import cast
 
 from apps.accounts.services.imap import ImapService
-from apps.mail.services.message import get_message, has_remote_content, sanitize_html
+from apps.mail.services.message import (
+    get_message,
+    has_remote_content,
+    proxy_remote_images,
+    sanitize_html,
+)
 
 
 class FakeImap:
@@ -67,6 +72,33 @@ def test_sanitize_html_hardens_external_links() -> None:
 
     assert 'rel="noopener noreferrer nofollow"' in cleaned
     assert 'target="_blank"' in cleaned
+
+
+def test_sanitize_html_allows_only_http_images_when_enabled() -> None:
+    html = (
+        '<img src="https://example.com/a.png" alt="a">'
+        '<img src="cid:inline-logo">'
+        '<img src="data:image/png;base64,AAA">'
+        '<img src="https://example.com/b.png" onerror="bad()">'
+    )
+
+    cleaned = sanitize_html(html, allow_images=True)
+
+    assert '<img src="https://example.com/a.png" alt="a">' in cleaned
+    assert '<img src="https://example.com/b.png">' in cleaned
+    assert "cid:" not in cleaned
+    assert "data:image" not in cleaned
+    assert "onerror" not in cleaned
+
+
+def test_proxy_remote_images_rewrites_sources_and_drops_invalid() -> None:
+    html = '<img src="https://example.com/a.png"><img src="http://example.com/b.png"><img>'
+
+    proxied = proxy_remote_images(html, "/mail/image-proxy/")
+
+    assert "/mail/image-proxy/?u=https%3A%2F%2Fexample.com%2Fa.png" in proxied
+    assert "/mail/image-proxy/?u=http%3A%2F%2Fexample.com%2Fb.png" in proxied
+    assert "<img>" not in proxied
 
 
 def test_has_remote_content_detects_resources() -> None:

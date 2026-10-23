@@ -12,11 +12,16 @@ from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
 from html import escape
 from typing import cast
+from urllib.parse import quote
 
 import nh3
 
 from apps.accounts.services.imap import ImapService
-from apps.mail.constants import MESSAGE_FLAG_FLAGGED, MESSAGE_FLAG_SEEN
+from apps.mail.constants import (
+    IMAGE_PROXY_ALLOWED_SCHEMES,
+    MESSAGE_FLAG_FLAGGED,
+    MESSAGE_FLAG_SEEN,
+)
 
 # The viewer only renders a deliberately small subset of HTML. Everything else
 # (script, style, forms, media, images) is stripped before the value reaches a
@@ -71,11 +76,21 @@ ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
 ALLOWED_URL_SCHEMES = frozenset({"http", "https", "mailto"})
 LINK_REL = "noopener noreferrer nofollow"
 
+# The "load images" action re-adds <img>, but only for plain HTTP(S) sources
+# that the proxy will fetch. data:/cid: are dropped; the proxy never forwards
+# them and there is no inline-part endpoint yet.
+ALLOWED_TAGS_WITH_IMAGES = ALLOWED_TAGS | {"img"}
+ALLOWED_ATTRIBUTES_WITH_IMAGES = {**ALLOWED_ATTRIBUTES, "img": {"src", "alt"}}
+
+_IMAGE_SCHEME_PREFIXES = tuple(f"{scheme}://" for scheme in sorted(IMAGE_PROXY_ALLOWED_SCHEMES))
+
 _REMOTE_RESOURCE_RE = re.compile(
     r"<(?:img|iframe|video|audio|source|link)\b|background\s*=|url\(",
     re.IGNORECASE,
 )
 _ANCHOR_OPEN_RE = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
+_IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
+_IMG_SRC_RE = re.compile(r'src="([^"]+)"', re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -97,7 +112,13 @@ class MessageDetail:
     remote_content_blocked: bool
 
 
-def get_message(imap: ImapService, folder: str, uid: int) -> MessageDetail:
+def get_message(
+    imap: ImapService,
+    folder: str,
+    uid: int,
+    *,
+    allow_images: bool = False,
+) -> MessageDetail:
     """Fetch one message with ``BODY.PEEK[]`` so opening never sets ``\\Seen``."""
     imap.select(folder, readonly=True)
     fetched = imap.fetch_message(uid, peek=True)
@@ -110,7 +131,7 @@ def get_message(imap: ImapService, folder: str, uid: int) -> MessageDetail:
     except Exception:
         message = None
 
-    body_kind, body_html, remote_content_blocked = _extract_body(message)
+    body_kind, body_html, remote_content_blocked = _extract_body(message, allow_images=allow_images)
 
     return MessageDetail(
         uid=uid,
@@ -129,14 +150,17 @@ def get_message(imap: ImapService, folder: str, uid: int) -> MessageDetail:
     )
 
 
-def sanitize_html(html: str) -> str:
+def sanitize_html(html: str, *, allow_images: bool = False) -> str:
     """Strip unsafe markup and harden links; the result is safe to render."""
+    tags = ALLOWED_TAGS_WITH_IMAGES if allow_images else ALLOWED_TAGS
+    attributes = ALLOWED_ATTRIBUTES_WITH_IMAGES if allow_images else ALLOWED_ATTRIBUTES
     cleaned = nh3.clean(
         html,
-        tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRIBUTES,
+        tags=tags,
+        attributes=attributes,
         url_schemes=ALLOWED_URL_SCHEMES,
         link_rel=LINK_REL,
+        attribute_filter=_image_src_filter,
     )
     return _ANCHOR_OPEN_RE.sub(
         lambda match: f'<a{match.group(1)} target="_blank">',
@@ -144,19 +168,50 @@ def sanitize_html(html: str) -> str:
     )
 
 
+def proxy_remote_images(html: str, proxy_base: str) -> str:
+    """Rewrite ``<img src>`` to the proxy and drop images without an HTTP(S) src."""
+
+    def replace(match: re.Match[str]) -> str:
+        tag = match.group(0)
+        src_match = _IMG_SRC_RE.search(tag)
+        if src_match is None:
+            return ""
+        src = src_match.group(1)
+        if not src.startswith(_IMAGE_SCHEME_PREFIXES):
+            return ""
+        proxy = f"{proxy_base}?u={quote(src, safe='')}"
+        return _IMG_SRC_RE.sub(lambda m: f'src="{proxy}"', tag, count=1)
+
+    return _IMG_TAG_RE.sub(replace, html)
+
+
+def _image_src_filter(element: str, attribute: str, value: str) -> str | None:
+    if element == "img" and attribute == "src":
+        return value if value.startswith(_IMAGE_SCHEME_PREFIXES) else None
+    return value
+
+
 def has_remote_content(html: str) -> bool:
     """Return True when the raw HTML references remote or embedded resources."""
     return bool(_REMOTE_RESOURCE_RE.search(html))
 
 
-def _extract_body(message: EmailMessage | None) -> tuple[str, str, bool]:
+def _extract_body(
+    message: EmailMessage | None,
+    *,
+    allow_images: bool = False,
+) -> tuple[str, str, bool]:
     if message is None:
         return "empty", "", False
 
     html_part = _find_part(message, "text/html")
     if html_part is not None:
         raw_html = _decode_part(html_part)
-        return "html", sanitize_html(raw_html), has_remote_content(raw_html)
+        return (
+            "html",
+            sanitize_html(raw_html, allow_images=allow_images),
+            has_remote_content(raw_html),
+        )
 
     plain_part = _find_part(message, "text/plain")
     if plain_part is not None:
