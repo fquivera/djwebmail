@@ -285,6 +285,26 @@ theme/
 - Activate `CompressedManifestStaticFilesStorage` in production so collected
   assets carry content hashes.
 
+## 13. Security Headers and CSP
+
+Enforce a strict Content-Security-Policy for the application with `django-csp`;
+never relax it to make a feature work.
+
+- Place `csp.middleware.CSPMiddleware` immediately after `SecurityMiddleware`
+  so error responses are covered too.
+- Configure `CONTENT_SECURITY_POLICY["DIRECTIVES"]` with `default-src 'self'`,
+  `script-src 'self'`, `style-src 'self'`, `object-src 'none'`, and
+  `frame-ancestors 'none'`. Add `'unsafe-eval'`/`'unsafe-inline'` only as a
+  documented, per-view exception.
+- Exclude paths that legitimately inject inline markup (Django admin, debug
+  toolbar) with `EXCLUDE_URL_PREFIXES`; do not weaken the main policy.
+- Pair `frame-ancestors 'none'` with `X-Frame-Options: DENY` and
+  `X-Content-Type-Options: nosniff`.
+- Disable HTMX evaluation and inline indicators (`allowEval=false`,
+  `allowScriptTags=false`, `includeIndicatorStyles=false`) and keep indicator
+  styles in the compiled stylesheet.
+- Add a test that asserts the header and that `unsafe-*` is absent.
+
 ## Verification Checklist
 
 | Area | Check |
@@ -299,6 +319,7 @@ theme/
 | Dependencies | Split by environment; production has no dev packages |
 | Docker | Multi-stage build, non-root user, Gunicorn in `CMD` |
 | CSS | `tailwind build` deterministic, output committed, gzip budget enforced |
+| CSP | Strict `django-csp` policy; test asserts no `unsafe-*` and no framing |
 | Local stack | `compose.yml` / `compose.staging.yml` validate and dependencies are healthy |
 | Secrets | Only in `.env` (git-ignored); `.env.example` committed |
 

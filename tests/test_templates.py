@@ -25,6 +25,7 @@ def test_templates_avoid_inline_styles_and_htmx_eval() -> None:
         assert not re.search(r'hx-[a-z-]+="[^"]*\[[^"]*\]', source), (
             f"HTMX filter expression found in {path}"
         )
+        assert not re.search(r"<script(?![^>]*\bsrc=)", source), f"inline script found in {path}"
 
 
 def test_base_template_loads_compiled_tailwind_css(client: Client) -> None:

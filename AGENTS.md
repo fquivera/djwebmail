@@ -393,12 +393,15 @@ Done:
   `BODY.PEEK[]`, sanitizes HTML server-side with `nh3`, blocks remote content,
   hardens links, and falls back to plain text. Full page plus HTMX fragment.
   See `docs/message-viewer.md`.
+- Strict CSP via `django-csp`: no `unsafe-eval`/`unsafe-inline`, no third-party
+  origins, no framing; HTMX runs with `allowEval=false`,
+  `allowScriptTags=false`, and `includeIndicatorStyles=false`. Admin and the
+  debug toolbar are excluded. See `docs/security-csp.md`.
 
 Next:
 
-1. Strict CSP without `unsafe-eval`/`unsafe-inline` and HTMX `allowEval=false`.
-2. Remote-image proxy and the "load images" action for the viewer.
-3. First `v0.1.0` release when the folder tree, message list, and viewer work
+1. Remote-image proxy and the "load images" action for the viewer.
+2. First `v0.1.0` release when the folder tree, message list, and viewer work
    end to end.
 
 Do not start a new phase without closing the previous one with tests and a

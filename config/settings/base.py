@@ -38,6 +38,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -154,6 +155,32 @@ if MAIL_LOGIN_WINDOW_SECONDS <= 0:
     raise ImproperlyConfigured("DJANGO_MAIL_LOGIN_WINDOW_SECONDS must be positive")
 
 X_FRAME_OPTIONS = "DENY"
+
+# Strict CSP for the webmail: no `unsafe-eval`/`unsafe-inline`, no third-party
+# origins, and no framing. HTMX runs with `allowEval=false` and
+# `allowScriptTags=false`; daisyUI theme styles and HTMX indicator styles live
+# in the compiled stylesheet instead of inline `<style>` blocks.
+#
+# Django admin injects inline scripts/styles, so it is excluded from the
+# webmail policy (it keeps X-Frame-Options: DENY). The debug toolbar is excluded
+# for the same reason in development.
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ["'self'"],
+        "base-uri": ["'self'"],
+        "object-src": ["'none'"],
+        "frame-ancestors": ["'none'"],
+        "form-action": ["'self'"],
+        "script-src": ["'self'"],
+        "style-src": ["'self'"],
+        "img-src": ["'self'", "data:", "blob:"],
+        "font-src": ["'self'"],
+        "connect-src": ["'self'"],
+        "media-src": ["'self'"],
+    },
+    "EXCLUDE_URL_PREFIXES": ("/admin/", "/__debug__/"),
+}
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 # ``no-referrer`` makes Chromium 156+ send ``Origin: null`` on same-origin form
 # POSTs, which breaks CSRF origin validation. ``same-origin`` keeps the
