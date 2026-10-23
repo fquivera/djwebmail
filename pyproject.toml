@@ -50,6 +50,9 @@ known-first-party = ["apps", "common", "config"]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 addopts = ["--reuse-db", "-ra"]
+markers = [
+    "functional: exercises a real IMAP/SMTP server",
+]
 
 [tool.pyright]
 pythonVersion = "3.12"

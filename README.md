@@ -77,7 +77,11 @@ djwebmail/
 ├── common/           # Shared views, services, templatetags
 ├── templates/        # Base layout and partials
 ├── static/           # Compiled CSS and static assets
-└── tests/            # Project-level smoke and integration tests
+├── tests/            # Project-level smoke and integration tests
+├── Dockerfile        # Production image
+├── Dockerfile.dev    # Development image
+├── compose.yml       # Development stack (PostgreSQL, Redis, GreenMail)
+└── compose.staging.yml # Local staging stack
 ```
 
 The `ImapService` class encapsulates connection and operations, so views and
@@ -113,12 +117,38 @@ To use PostgreSQL (same engine as CI and production), set in `.env`:
 DATABASE_URL=postgres://djwebmail:djwebmail@localhost:5432/djwebmail
 ```
 
+### Local mail stack (Docker Compose)
+
+A disposable IMAP/SMTP server is available for login and functional tests:
+
+```bash
+cp .env.example .env
+# Set DJANGO_SECRET_KEY and FERNET_KEY in .env.
+docker compose up --build
+```
+
+The stack runs Django, PostgreSQL, Redis, and
+[GreenMail](https://greenmail-mail-test.github.io/greenmail/) with the test
+account `demo@example.test` / `demo`. Open <http://localhost:8000/> and run the
+functional suite inside the web container:
+
+```bash
+docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings.test web pytest -m functional
+```
+
+GreenMail was chosen over `docker-mailserver` because functional tests need a
+lightweight, deterministic IMAP/SMTP server without TLS or DNS setup. The
+application still uses ordinary environment-driven IMAP/SMTP endpoints, so the
+server can be replaced later. Details and the staging stack are in
+[`docs/development-stack.md`](docs/development-stack.md).
+
 ### Settings modules
 
 | Module | Used by |
 |---|---|
 | `config.settings.development` | `manage.py` and local work (debug toolbar) |
 | `config.settings.test` | pytest and CI |
+| `config.settings.staging` | local staging Compose stack (HTTP-only) |
 | `config.settings.production` | `wsgi.py` / `asgi.py`, Gunicorn, containers |
 
 `DJANGO_SETTINGS_MODULE` selects the module; environment variables are read
@@ -188,7 +218,8 @@ Full rules: `.agents/skills/gitflow` and `.agents/skills/conventional-commits`.
 ### Continuous integration
 
 `.github/workflows/ci.yml` runs Ruff, Pyright, pytest (Python 3.12 and 3.13,
-PostgreSQL 16), Django checks, branch policy, and commit validation on every PR.
+PostgreSQL 16), functional IMAP/SMTP tests against GreenMail, Django checks,
+branch policy, and commit validation on every PR.
 Pushing a `v*.*.*` tag runs `.github/workflows/release.yml`, which verifies the
 tag, publishes a container image to GHCR, and creates a GitHub Release.
 
@@ -197,6 +228,7 @@ MIT — see the LICENSE file for details.
 
 ## Roadmap (high level)
 ☑ IMAP login and session management  
+☑ Local development/staging mail stack and functional tests<br>
 □ Folder tree and message list with HTMX pagination  
 □ Message viewer with safe HTML rendering and remote-content blocking  
 □ Compose, reply, forward, send via SMTP  
