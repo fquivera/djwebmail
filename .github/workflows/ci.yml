@@ -32,33 +32,13 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --all-groups
       - name: Lockfile check
-        run: |
-          if [ -f uv.lock ]; then
-            uv lock --check
-          else
-            echo "::notice::No uv.lock yet; skipping lockfile check"
-          fi
+        run: uv lock --check
       - name: Ruff lint
-        run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run ruff check .
-          else
-            echo "::notice::No Python files yet; skipping ruff check"
-          fi
+        run: uv run ruff check .
       - name: Ruff format
-        run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run ruff format --check .
-          else
-            echo "::notice::No Python files yet; skipping ruff format"
-          fi
+        run: uv run ruff format --check .
       - name: Pyright
-        run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run pyright
-          else
-            echo "::notice::No Python files yet; skipping pyright"
-          fi
+        run: uv run pyright
 
   test:
     name: test
@@ -90,12 +70,7 @@ jobs:
       - run: uv python install ${{ matrix.python-version }}
       - run: uv sync --all-groups
       - name: Tests
-        run: |
-          if git ls-files '*test_*.py' | grep -q .; then
-            uv run pytest --cov=apps --cov-report=term-missing
-          else
-            echo "::notice::No tests yet; skipping pytest"
-          fi
+        run: uv run pytest --cov=apps --cov=common --cov=config --cov-report=term-missing
 
   django:
     name: django
@@ -109,19 +84,15 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --all-groups
       - name: Django system check
-        run: |
-          if [ -f manage.py ]; then
-            uv run python manage.py check
-          else
-            echo "::notice::manage.py not found; skipping Django check"
-          fi
+        run: uv run python manage.py check
       - name: Missing migrations
-        run: |
-          if [ -f manage.py ]; then
-            uv run python manage.py makemigrations --check --dry-run
-          else
-            echo "::notice::manage.py not found; skipping migration check"
-          fi
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Deployment checks
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          ALLOWED_HOSTS: example.com
+          SECRET_KEY: ci-insecure-secret-key
+        run: uv run python manage.py check --deploy
 
   branch-policy:
     name: branch-policy

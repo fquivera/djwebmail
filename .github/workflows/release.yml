@@ -46,28 +46,21 @@ jobs:
       - run: uv sync --all-groups
       - name: Lint
         run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run ruff check .
-            uv run ruff format --check .
-            uv run pyright
-          else
-            echo "::notice::No Python files yet; skipping lint"
-          fi
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run pyright
       - name: Tests
-        run: |
-          if git ls-files '*test_*.py' | grep -q .; then
-            uv run pytest
-          else
-            echo "::notice::No tests yet; skipping pytest"
-          fi
+        run: uv run pytest
       - name: Django checks
         run: |
-          if [ -f manage.py ]; then
-            uv run python manage.py check
-            uv run python manage.py makemigrations --check --dry-run
-          else
-            echo "::notice::manage.py not found; skipping Django checks"
-          fi
+          uv run python manage.py check
+          uv run python manage.py makemigrations --check --dry-run
+      - name: Deployment checks
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          ALLOWED_HOSTS: example.com
+          SECRET_KEY: ci-insecure-secret-key
+        run: uv run python manage.py check --deploy
 
   image:
     name: image

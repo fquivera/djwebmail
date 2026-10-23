@@ -42,32 +42,22 @@ Non-negotiables:
   at an exact version (`@v10.3.2`) because it does not publish a moving major tag.
 - Never echo secrets.
 
-### Bootstrap-safe guards
+### Deployment checks
 
-The repository has no Django code yet. Steps that need code check for it first
-and emit a notice instead of failing:
+The `django` job runs the regular system check, verifies there are no missing
+migrations, and validates production settings with `check --deploy`:
 
 ```yaml
-- name: Lint
-  run: |
-    if git ls-files '*.py' | grep -q .; then
-      uv run ruff check .
-      uv run ruff format --check .
-    else
-      echo "::notice::No Python files yet; skipping ruff"
-    fi
-
-- name: Tests
-  run: |
-    if git ls-files '*test_*.py' | grep -q .; then
-      uv run pytest --cov=apps --cov-report=term-missing
-    else
-      echo "::notice::No tests yet; skipping pytest"
-    fi
+- name: Deployment checks
+  env:
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    ALLOWED_HOSTS: example.com
+    SECRET_KEY: ci-insecure-secret-key
+  run: uv run python manage.py check --deploy
 ```
 
-Remove each guard once the corresponding code exists — a skipped check that
-never fails is worse than no check.
+`--deploy` catches missing HSTS, insecure cookies, `DEBUG=True`, and similar
+production-only regressions before they reach a release.
 
 ### PostgreSQL service
 
@@ -190,7 +180,7 @@ have a local runner by default; prefer reproducing the exact command.
 - Fat matrix (every OS × every Python version) with no coverage gain
 - Caching `~/.cache/pip` when `uv` is used
 - Release workflow that skips tests
-- Guards left in place after real code and tests exist
+- Conditional guards that silently skip a check after real code exists
 - Third-party actions on moving tags (`@main`) or unpinned commits
 
 ## Integration with Other Skills
