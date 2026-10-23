@@ -46,8 +46,11 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_MAIL_TIMEOUT_SECONDS` | no | `30` | IMAP/SMTP socket timeout |
 | `DJANGO_MAIL_DEFAULT_PAGE_SIZE` | no | `50` | default messages per page |
 | `DJANGO_MAIL_MAX_PAGE_SIZE` | no | `200` | maximum accepted page size |
-| `REDIS_URL` | production | — | sessions and cache (when enabled) |
-| `FERNET_KEY` | production | — | encryption of transient secrets (when enabled) |
+| `DJANGO_MAIL_LOGIN_MAX_ATTEMPTS` | no | `5` | failed logins before throttling |
+| `DJANGO_MAIL_LOGIN_WINDOW_SECONDS` | no | `300` | login throttle window |
+| `DJANGO_SESSION_COOKIE_AGE` | no | `28800` | absolute server-side session age |
+| `REDIS_URL` | production | — | cache and encrypted credential storage |
+| `FERNET_KEY` | production | — | encryption of transient IMAP credentials |
 
 Rules:
 

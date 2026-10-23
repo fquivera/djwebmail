@@ -1,5 +1,5 @@
-{% load static %}<!doctype html>
-<html lang="en">
+{% load i18n static %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +8,20 @@
     {% block head %}{% endblock %}
   </head>
   <body>
+    <header>
+      <nav aria-label="{% translate 'Main navigation' %}">
+        <a href="{% url 'home' %}">DjWebmail</a>
+        {% if request.session.mail_email %}
+          <span>{{ request.session.mail_email }}</span>
+          <form action="{% url 'accounts:logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">{% translate "Sign out" %}</button>
+          </form>
+        {% else %}
+          <a href="{% url 'accounts:login' %}">{% translate "Sign in" %}</a>
+        {% endif %}
+      </nav>
+    </header>
     <main>
       {% block content %}{% endblock %}
     </main>

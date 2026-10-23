@@ -31,3 +31,7 @@ class ImapConnectionError(ImapError):
 
 class ImapProtocolError(ImapError):
     """The IMAP server returned an unexpected or failed response."""
+
+
+class MailSessionError(MailError):
+    """The server-side mail session is missing or no longer usable."""

@@ -95,11 +95,17 @@ git clone https://github.com/fquivera/djwebmail.git
 cd djwebmail
 uv sync
 cp .env.example .env   # set your IMAP/SMTP credentials when you need them
+# Generate the key that encrypts the transient IMAP password:
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# Paste the value into FERNET_KEY in .env, then:
 uv run python manage.py migrate
 uv run python manage.py runserver
 ```
 
 Open <http://127.0.0.1:8000/>. The container health probe lives at `/health/`.
+Development uses an in-process cache. Production requires `REDIS_URL` and a
+stable `FERNET_KEY`; startup fails with an actionable error when either is
+missing.
 
 To use PostgreSQL (same engine as CI and production), set in `.env`:
 
@@ -190,7 +196,7 @@ tag, publishes a container image to GHCR, and creates a GitHub Release.
 MIT — see the LICENSE file for details.
 
 ## Roadmap (high level)
-□ IMAP login and session management  
+☑ IMAP login and session management  
 □ Folder tree and message list with HTMX pagination  
 □ Message viewer with safe HTML rendering and remote-content blocking  
 □ Compose, reply, forward, send via SMTP  
