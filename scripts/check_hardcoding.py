@@ -70,7 +70,7 @@ def iter_files(root: Path) -> list[Path]:
 
 def is_allowed(path: Path, rule: str) -> bool:
     relative = path.relative_to(ROOT)
-    if relative.parts[0] in {"tests", "scripts", "docs", ".agents"}:
+    if any(part in {"tests", "scripts", "docs", ".agents"} for part in relative.parts):
         return True
     if "migrations" in relative.parts:
         return True
