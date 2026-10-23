@@ -48,6 +48,8 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_MAIL_MAX_PAGE_SIZE` | no | `200` | maximum accepted page size |
 | `DJANGO_MAIL_LOGIN_MAX_ATTEMPTS` | no | `5` | failed logins before throttling |
 | `DJANGO_MAIL_LOGIN_WINDOW_SECONDS` | no | `300` | login throttle window |
+| `DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES` | no | `5000000` | max remote image size the proxy forwards |
+| `DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS` | no | `10` | remote image fetch timeout |
 | `DJANGO_SESSION_COOKIE_AGE` | no | `28800` | absolute server-side session age |
 | `REDIS_URL` | production | — | cache and encrypted credential storage |
 | `FERNET_KEY` | production | — | encryption of transient IMAP credentials |

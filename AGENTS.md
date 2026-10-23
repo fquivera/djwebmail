@@ -150,7 +150,8 @@ DJANGO_MAIL_IMAP_SECURITY  DJANGO_MAIL_SMTP_HOST  DJANGO_MAIL_SMTP_PORT
 DJANGO_MAIL_SMTP_SECURITY  DJANGO_MAIL_VERIFY_TLS
 DJANGO_MAIL_TIMEOUT_SECONDS  DJANGO_MAIL_DEFAULT_PAGE_SIZE
 DJANGO_MAIL_MAX_PAGE_SIZE  DJANGO_MAIL_LOGIN_MAX_ATTEMPTS
-DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_SESSION_COOKIE_AGE
+DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES
+DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS  DJANGO_SESSION_COOKIE_AGE
 REDIS_URL  FERNET_KEY
 FUNCTIONAL_TESTS_ENABLED  FUNCTIONAL_MAIL_USER  FUNCTIONAL_MAIL_PASSWORD
 ```
@@ -397,11 +398,14 @@ Done:
   origins, no framing; HTMX runs with `allowEval=false`,
   `allowScriptTags=false`, and `includeIndicatorStyles=false`. Admin and the
   debug toolbar are excluded. See `docs/security-csp.md`.
+- Remote-image proxy (`/mail/image-proxy/`) with anti-SSRF validation (scheme
+  allowlist, public-IP DNS check, redirect refusal, raster content-type
+  allowlist, byte and timeout limits) and a "load images" action that re-renders
+  the message body through it. See `docs/message-viewer.md`.
 
 Next:
 
-1. Remote-image proxy and the "load images" action for the viewer.
-2. First `v0.1.0` release when the folder tree, message list, and viewer work
+1. First `v0.1.0` release when the folder tree, message list, and viewer work
    end to end.
 
 Do not start a new phase without closing the previous one with tests and a

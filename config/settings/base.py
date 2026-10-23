@@ -146,6 +146,8 @@ MAIL_SMTP_PORT = env.int("DJANGO_MAIL_SMTP_PORT", default=587)
 MAIL_SMTP_SECURITY = env.str("DJANGO_MAIL_SMTP_SECURITY", default="starttls")
 MAIL_LOGIN_MAX_ATTEMPTS = env.int("DJANGO_MAIL_LOGIN_MAX_ATTEMPTS", default=5)
 MAIL_LOGIN_WINDOW_SECONDS = env.int("DJANGO_MAIL_LOGIN_WINDOW_SECONDS", default=300)
+MAIL_IMAGE_PROXY_MAX_BYTES = env.int("DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES", default=5_000_000)
+MAIL_IMAGE_PROXY_TIMEOUT_SECONDS = env.int("DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS", default=10)
 
 if SESSION_COOKIE_AGE <= 0:
     raise ImproperlyConfigured("DJANGO_SESSION_COOKIE_AGE must be positive")
@@ -153,6 +155,10 @@ if MAIL_LOGIN_MAX_ATTEMPTS <= 0:
     raise ImproperlyConfigured("DJANGO_MAIL_LOGIN_MAX_ATTEMPTS must be positive")
 if MAIL_LOGIN_WINDOW_SECONDS <= 0:
     raise ImproperlyConfigured("DJANGO_MAIL_LOGIN_WINDOW_SECONDS must be positive")
+if MAIL_IMAGE_PROXY_MAX_BYTES <= 0:
+    raise ImproperlyConfigured("DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES must be positive")
+if MAIL_IMAGE_PROXY_TIMEOUT_SECONDS <= 0:
+    raise ImproperlyConfigured("DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS must be positive")
 
 X_FRAME_OPTIONS = "DENY"
 

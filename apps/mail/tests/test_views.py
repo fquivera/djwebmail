@@ -253,6 +253,43 @@ def test_message_view_shows_remote_content_warning(
 
     assert response.status_code == 200
     assert b"Remote content was blocked" in response.content
+    assert b"Load images" in response.content
+    assert b'hx-post="/mail/message/INBOX/7/remote-images/"' in response.content
+
+
+def test_message_remote_images_returns_proxied_body(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Images",
+        sender="Alice <alice@example.com>",
+        recipients="",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=False,
+        is_flagged=False,
+        body_kind="html",
+        body_html='<img src="https://example.com/x.png">',
+        remote_content_blocked=True,
+    )
+    monkeypatch.setattr(
+        "apps.mail.views.get_message",
+        lambda imap, folder, uid, **kwargs: detail,
+    )
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_remote_images", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_message_body.html" in template_names
+    assert b"/mail/image-proxy/?u=https%3A%2F%2Fexample.com%2Fx.png" in response.content
+    assert b"Remote content was blocked" not in response.content
 
 
 def test_message_view_imap_error_renders_alert(
@@ -270,3 +307,25 @@ def test_message_view_imap_error_renders_alert(
 
     assert response.status_code == 503
     assert b"Unable to load mail" in response.content
+
+
+def test_image_proxy_requires_login(client: Client) -> None:
+    response: Any = client.get(reverse("mail:image_proxy"))
+
+    assert response.status_code == 302
+    assert response["Location"].startswith(reverse("accounts:login"))
+
+
+def test_image_proxy_rejects_missing_url(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.get(reverse("mail:image_proxy"))
+
+    assert response.status_code == 400
+
+
+def test_image_proxy_rejects_private_url(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:image_proxy"),
+        {"u": "http://127.0.0.1/x.png"},
+    )
+
+    assert response.status_code == 404

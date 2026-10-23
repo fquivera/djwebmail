@@ -38,7 +38,8 @@ Consequences of the policy:
   indicator `<style>` is disabled (`includeIndicatorStyles=false`); the
   indicator styles live in `theme/static_src/src/styles.css`.
 - No remote images: `img-src` does not allow `https:`. The viewer blocks remote
-  content and will use an image proxy later.
+  content by default and loads it, on request, through the same-origin
+  `/mail/image-proxy/` (see `docs/message-viewer.md`).
 - No framing: `frame-ancestors 'none'` plus `X-Frame-Options: DENY`.
 
 ## HTMX hardening
