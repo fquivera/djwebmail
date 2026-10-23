@@ -147,7 +147,10 @@ if MAIL_LOGIN_WINDOW_SECONDS <= 0:
 
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_REFERRER_POLICY = "no-referrer"
+# ``no-referrer`` makes Chromium 156+ send ``Origin: null`` on same-origin form
+# POSTs, which breaks CSRF origin validation. ``same-origin`` keeps the
+# referrer out of cross-origin requests without breaking same-origin forms.
+SECURE_REFERRER_POLICY = "same-origin"
 SESSION_COOKIE_HTTPONLY = True
 
 LOGGING = {
