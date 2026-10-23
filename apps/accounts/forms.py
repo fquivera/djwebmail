@@ -15,12 +15,23 @@ class LoginForm(forms.Form):
     email = forms.EmailField(
         label=_("Email address"),
         max_length=254,
-        widget=forms.EmailInput(attrs={"autocomplete": "username", "autofocus": True}),
+        widget=forms.EmailInput(
+            attrs={
+                "autocomplete": "username",
+                "autofocus": True,
+                "class": "input w-full",
+            }
+        ),
     )
     password = forms.CharField(
         label=_("Password"),
         strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
+                "class": "input w-full",
+            }
+        ),
     )
 
     def clean_email(self) -> str:

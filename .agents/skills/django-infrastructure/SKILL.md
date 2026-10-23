@@ -263,6 +263,28 @@ compose.staging.yml # production image + staging settings + same mail server
 - Use a separate `Dockerfile.dev`; production images must not contain pytest,
   Ruff, Pyright, or debug tooling.
 
+## 12. Static Assets and CSS Build
+
+Compile CSS with `django-tailwind` in standalone mode; Node and npm are not
+runtime or deployment requirements.
+
+```text
+theme/
+├── static_src/src/styles.css    # Tailwind source, daisyUI plugins
+└── static/css/dist/styles.css   # generated, committed
+```
+
+- Commit the compiled stylesheet and the daisyUI `.mjs` files so a fresh clone,
+  CI, and production build from the same inputs.
+- Run `manage.py tailwind build` before `collectstatic` in the production image.
+  Download the standalone binary to a temporary path and delete it afterward.
+- In CI, rebuild and run `git diff --exit-code` against the committed CSS; fail
+  when templates and compiled output drift. Add a gzip budget for the stylesheet.
+- Use explicit `@source` globs for project templates and Python; do not scan
+  virtualenvs or generated output.
+- Activate `CompressedManifestStaticFilesStorage` in production so collected
+  assets carry content hashes.
+
 ## Verification Checklist
 
 | Area | Check |
@@ -276,6 +298,7 @@ compose.staging.yml # production image + staging settings + same mail server
 | User | `AUTH_USER_MODEL` set before the first migration |
 | Dependencies | Split by environment; production has no dev packages |
 | Docker | Multi-stage build, non-root user, Gunicorn in `CMD` |
+| CSS | `tailwind build` deterministic, output committed, gzip budget enforced |
 | Local stack | `compose.yml` / `compose.staging.yml` validate and dependencies are healthy |
 | Secrets | Only in `.env` (git-ignored); `.env.example` committed |
 

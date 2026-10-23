@@ -39,6 +39,12 @@ jobs:
         run: uv run ruff format --check .
       - name: Pyright
         run: uv run pyright
+      - name: Build Tailwind CSS
+        run: uv run python manage.py tailwind build
+      - name: Verify committed Tailwind CSS
+        run: git diff --exit-code -- theme/static/css/dist/styles.css
+      - name: Check Tailwind CSS budget
+        run: test "$(gzip -c theme/static/css/dist/styles.css | wc -c)" -lt 61440
       - name: Validate Compose configuration
         run: |
           cp .env.example .env

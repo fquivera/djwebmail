@@ -25,7 +25,7 @@ Jobs:
 
 | Job | Name for branch protection | What it does |
 |---|---|---|
-| `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright`, Compose config validation |
+| `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright`, Tailwind build/drift, Compose config validation |
 | `test` | `test (3.12)`, `test (3.13)` | `pytest` on Python 3.12 + 3.13 with PostgreSQL |
 | `functional` | `functional` | `pytest -m functional` against PostgreSQL + GreenMail |
 | `django` | `django` | `manage.py check`, `makemigrations --check --dry-run` |
@@ -206,6 +206,8 @@ Reproduce locally before pushing:
 
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run pyright
+uv run python manage.py tailwind build
+git diff --exit-code -- theme/static/css/dist/styles.css
 uv run pytest -x
 uv run python manage.py check
 ```

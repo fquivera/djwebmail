@@ -512,6 +512,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-tailwind"
+version = "4.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "pytailwindcss" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ff/43/4fbef32ce3430b9e87bfe2bc31941b4c536c645b91fb78fdd393ab4d57cd/django_tailwind-4.6.0.tar.gz", hash = "sha256:a8ff8ddf576d840c1af9e3c59a62297b17e897b2665bfc14c4f69e85d1e18527", size = 15687, upload-time = "2026-10-13T11:58:34.784Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/3c/b2a07d31d0374f08d2ac706a89a2a9d0ae18e9c476a20cfc2c5d36b66faa/django_tailwind-4.6.0-py3-none-any.whl", hash = "sha256:b865bac746158dd103ffc3b7855f54f8d75a3147eb59867d8ed0c145fd5f7a34", size = 25397, upload-time = "2026-10-13T11:58:33.332Z" },
+]
+
+[[package]]
 name = "djwebmail"
 version = "0.1.0"
 source = { virtual = "." }
@@ -519,6 +532,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "django" },
     { name = "django-environ" },
+    { name = "django-tailwind" },
     { name = "imapclient" },
     { name = "psycopg", extra = ["binary"] },
     { name = "redis" },
@@ -546,6 +560,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=43" },
     { name = "django", specifier = ">=5.2,<6.0" },
     { name = "django-environ", specifier = ">=0.11" },
+    { name = "django-tailwind", specifier = ">=4.6,<5" },
     { name = "imapclient", specifier = ">=3.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "redis", specifier = ">=5" },
@@ -881,6 +896,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e1/1b/244c7b710031ada80f27e579ec20d28a2285dfc318fed0339866b1047f12/pyright-1.1.414.tar.gz", hash = "sha256:523c0a97c60da6333234955c277730c9cf4f5bd6d5399e7b7d2b0fc5d3599524", size = 4154638, upload-time = "2026-09-10T12:26:53.181Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/ba/18b6e682ead424ad24bcc134339ae5d1b931cd9ae260540592a058a91279/pyright-1.1.414-py3-none-any.whl", hash = "sha256:2a6b4b3298c9eec174c5ed83bd338de6eee82df2992f3e1930e6199d381be36f", size = 6225049, upload-time = "2026-09-10T12:26:51.427Z" },
+]
+
+[[package]]
+name = "pytailwindcss"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/2c/044d8fffba8c4cd236766879a8fab6e782b8ecad285399b5b7b6c29e3836/pytailwindcss-0.4.2.tar.gz", hash = "sha256:f069bfe693aba32ffa7097ed642fc53e83db3b229449d6074a67dc900fa9c89f", size = 68086, upload-time = "2026-10-13T15:31:07.633Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/a8/73b554fe3fab569b6827d7fba2e0cc9a0fa6ec866263153c0daa77a8417f/pytailwindcss-0.4.2-py3-none-any.whl", hash = "sha256:55cd55394ceb747c90b92e3e2822207cb60b143996e4ccf7753d8127e7fb5246", size = 10771, upload-time = "2026-10-13T15:31:06.453Z" },
 ]
 
 [[package]]

@@ -4,7 +4,9 @@
 {% block title %}{% translate "Mail unavailable" %}{% endblock %}
 
 {% block content %}
-  <h1>{% translate "Mail unavailable" %}</h1>
-  <p class="error-message" role="alert">{{ error }}</p>
-  <p><a href="{% url 'mail:index' %}">{% translate "Try again" %}</a></p>
+  <div class="mx-auto max-w-xl space-y-4">
+    <h1 class="text-2xl font-semibold">{% translate "Mail unavailable" %}</h1>
+    <div class="alert alert-error" role="alert">{{ error }}</div>
+    <a class="btn btn-primary btn-sm" href="{% url 'mail:index' %}">{% translate "Try again" %}</a>
+  </div>
 {% endblock %}

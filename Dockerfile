@@ -30,13 +30,18 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
-# Static files are immutable per image; collect them at build time.
-RUN DJANGO_SETTINGS_MODULE=config.settings.production \
+# Compile Tailwind/daisyUI before collecting static files. The standalone
+# binary is downloaded to /tmp and removed again so it does not ship in the
+# runtime image; Node is not required.
+RUN export DJANGO_SETTINGS_MODULE=config.settings.production \
     DJANGO_SECRET_KEY=build-only-not-a-runtime-secret \
     DJANGO_ALLOWED_HOSTS=localhost \
     REDIS_URL=redis://localhost:6379/0 \
     FERNET_KEY=EkckE8kLGF-uhUZ1tXJyNzTUv7keM9-xFIxVpjrTY4c= \
-    python manage.py collectstatic --noinput
+    TAILWINDCSS_BIN_DIR=/tmp/tailwindcss && \
+    python manage.py tailwind build && \
+    python manage.py collectstatic --noinput && \
+    rm -rf /tmp/tailwindcss
 
 RUN chown -R django:django /app
 
