@@ -117,7 +117,12 @@ uv run pytest -m functional
 ## Troubleshooting
 
 - **Login returns “Mail sign-in is not configured.”** `FERNET_KEY` is missing or
-  invalid in `.env`.
+  invalid in `.env`. Recreate the `web` container after changing `.env` so the
+  process reads the new value.
+- **Login returns 403 with “Origin checking failed - null …”.** Chromium sends
+  `Origin: null` on same-origin form POSTs when the response uses
+  `Referrer-Policy: no-referrer`. Keep `SECURE_REFERRER_POLICY = "same-origin"`
+  and do not add `null` to `CSRF_TRUSTED_ORIGINS`.
 - **Login returns “The mail server is unavailable.”** Check
   `docker compose ps`; the `mailserver` healthcheck must be healthy.
 - **Functional tests skip.** They are disabled by default outside Compose. Set
