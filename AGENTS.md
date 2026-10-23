@@ -37,7 +37,7 @@ implementation decisions in `docs/`, never by editing the history in
 
 ```text
 config/
-├── settings/{base,development,test,production}.py
+├── settings/{base,development,test,staging,production}.py
 ├── urls.py
 ├── asgi.py
 └── wsgi.py
@@ -49,10 +49,15 @@ apps/
 common/            # shared views and utilities
 templates/         # base templates and partials
 static/            # compiled CSS and assets
-tests/             # project-level tests
+tests/             # project-level tests (including tests/functional)
 scripts/           # check_hardcoding.py and utilities
 docs/upstream/     # source documents (read-only)
+docs/              # implementation notes
 .agents/skills/    # project skills
+Dockerfile         # production image
+Dockerfile.dev     # development image
+compose.yml        # development stack (PostgreSQL, Redis, GreenMail)
+compose.staging.yml # local staging stack
 ```
 
 Future per-app structure: `models.py`, `services.py`, `selectors.py`,
@@ -146,6 +151,7 @@ DJANGO_MAIL_TIMEOUT_SECONDS  DJANGO_MAIL_DEFAULT_PAGE_SIZE
 DJANGO_MAIL_MAX_PAGE_SIZE  DJANGO_MAIL_LOGIN_MAX_ATTEMPTS
 DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_SESSION_COOKIE_AGE
 REDIS_URL  FERNET_KEY
+FUNCTIONAL_TESTS_ENABLED  FUNCTIONAL_MAIL_USER  FUNCTIONAL_MAIL_PASSWORD
 ```
 
 Rules:
@@ -155,6 +161,8 @@ Rules:
   in the same PR.
 - `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `REDIS_URL`, and `FERNET_KEY`
   have no default in production; startup fails with an actionable message.
+- `FUNCTIONAL_*` variables belong to the disposable test stack; they are never
+  read by production code or exposed to the browser.
 - `os.environ`/`os.getenv` exist only in `config/settings/`. In `manage.py`,
   `asgi.py`, and `wsgi.py`, only `setdefault` of `DJANGO_SETTINGS_MODULE` is
   allowed.
@@ -291,6 +299,7 @@ applied, and cites evidence if it changes behavior derived from SnappyMail.
 lint              ruff check, ruff format --check, pyright
 test (3.12)       pytest + PostgreSQL 16
 test (3.13)       pytest + PostgreSQL 16
+functional        pytest -m functional + PostgreSQL 16 + GreenMail
 django            manage.py check, makemigrations --check, check --deploy
 branch-policy     feature/* -> develop, release|hotfix/* -> main
 commit-messages   PR title in Conventional Commits
@@ -315,6 +324,11 @@ uv run pyright
 uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
 python3 scripts/check_hardcoding.py
+
+# Disposable mail stack and functional tests
+docker compose up --build
+docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings.test web pytest -m functional
+docker compose -f compose.staging.yml config
 ```
 
 Local production check (without real HTTPS):
@@ -364,6 +378,8 @@ Done:
   absolute session expiry, login throttling, and per-account language
   initialization.
 - `apps/preferences`: `MailPreference` model, validation, admin, and migration.
+- Development and staging Compose stacks with PostgreSQL, Redis, GreenMail,
+  functional IMAP/SMTP tests, and a dedicated `functional` CI job.
 
 Next:
 

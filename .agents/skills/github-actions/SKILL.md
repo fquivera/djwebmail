@@ -25,8 +25,9 @@ Jobs:
 
 | Job | Name for branch protection | What it does |
 |---|---|---|
-| `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright` |
+| `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright`, Compose config validation |
 | `test` | `test (3.12)`, `test (3.13)` | `pytest` on Python 3.12 + 3.13 with PostgreSQL |
+| `functional` | `functional` | `pytest -m functional` against PostgreSQL + GreenMail |
 | `django` | `django` | `manage.py check`, `makemigrations --check --dry-run` |
 | `branch-policy` | `branch-policy` | validates head/base branch per GitFlow |
 | `commit-messages` | `commit-messages` | validates the PR title with Commitizen |
@@ -78,6 +79,41 @@ services:
 
 Set `DATABASE_URL` in the job `env`. `--reuse-db` from `pyproject.toml` is fine
 in CI because the database is ephemeral per job.
+
+### Functional mail service
+
+The `functional` job starts GreenMail with a disposable account and enables the
+real-IMAP tests:
+
+```yaml
+services:
+  greenmail:
+    image: greenmail/standalone:2.1.14
+    env:
+      GREENMAIL_OPTS: >-
+        -Dgreenmail.setup.test.smtp
+        -Dgreenmail.setup.test.imap
+        -Dgreenmail.hostname=0.0.0.0
+        -Dgreenmail.users=demo:demo@example.test
+        -Dgreenmail.users.login=email
+        -Dgreenmail.startup.timeout=10000
+    ports: ["3025:3025", "3143:3143"]
+    options: >-
+      --health-cmd "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3143'"
+      --health-interval 5s --health-timeout 5s --health-retries 20
+```
+
+The job sets `DJANGO_MAIL_IMAP_HOST=localhost`, `DJANGO_MAIL_IMAP_PORT=3143`,
+`DJANGO_MAIL_IMAP_SECURITY=none`, the matching SMTP values,
+`DJANGO_MAIL_DOMAIN=example.test`, `DJANGO_MAIL_VERIFY_TLS=False`, and
+`FUNCTIONAL_TESTS_ENABLED=True`. Run only the marker:
+
+```bash
+uv run pytest -m functional
+```
+
+The regular `test` jobs leave the marker disabled; the tests skip instead of
+contacting a mailbox.
 
 ### Branch policy job
 
@@ -150,8 +186,8 @@ repository. Keep `platforms: linux/amd64` unless ARM images are actually needed
   `config/`, and `templates/`; suppress a justified line with
   `# hardcode-ok: <reason>`. The `hardcode-scan` job is required.
 - **Required status checks** on `main` and `develop`: `lint`, `django`,
-  `branch-policy`, `commit-messages`, `hardcode-scan`, `test (3.12)`,
-  `test (3.13)`.
+  `branch-policy`, `commit-messages`, `hardcode-scan`, `functional`,
+  `test (3.12)`, `test (3.13)`.
   A matrix job produces one check per matrix entry — requiring `test` alone
   silently matches nothing.
 - **Merge strategy**: allow squash (feature → develop) and merge commits

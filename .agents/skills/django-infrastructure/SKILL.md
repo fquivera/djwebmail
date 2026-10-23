@@ -24,6 +24,7 @@ myproject/
 │   │   ├── base.py
 │   │   ├── development.py
 │   │   ├── production.py
+│   │   ├── staging.py
 │   │   └── test.py
 │   ├── urls.py
 │   ├── asgi.py
@@ -237,6 +238,31 @@ CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 
 **Rule:** never `runserver` in production. Use Gunicorn or Uvicorn.
 
+## 11. Local Compose Stacks and Disposable Dependencies
+
+Keep development, staging, and production reproducible without adding local
+state to the application:
+
+```text
+Dockerfile          # production: multi-stage, non-root, Gunicorn
+Dockerfile.dev      # development: dev dependencies, bind-mounted source
+compose.yml         # Django + PostgreSQL + Redis + disposable mail server
+compose.staging.yml # production image + staging settings + same mail server
+```
+
+- Development uses `config.settings.development`; staging uses
+  `config.settings.staging`, which imports production and relaxes HTTPS-only
+  behavior for loopback HTTP.
+- Do not put test mail accounts or functional-test switches in application
+  code. Compose supplies them through environment variables, and the test
+  suite skips when they are absent.
+- Pin disposable service images (for example `greenmail/standalone:2.1.14`)
+  and add healthchecks so application startup does not race the dependency.
+- A local mail server is not production infrastructure. Document its limits
+  and never expose staging ports publicly.
+- Use a separate `Dockerfile.dev`; production images must not contain pytest,
+  Ruff, Pyright, or debug tooling.
+
 ## Verification Checklist
 
 | Area | Check |
@@ -250,6 +276,7 @@ CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 | User | `AUTH_USER_MODEL` set before the first migration |
 | Dependencies | Split by environment; production has no dev packages |
 | Docker | Multi-stage build, non-root user, Gunicorn in `CMD` |
+| Local stack | `compose.yml` / `compose.staging.yml` validate and dependencies are healthy |
 | Secrets | Only in `.env` (git-ignored); `.env.example` committed |
 
 ## Anti-Patterns to Avoid
@@ -262,6 +289,8 @@ CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 - `DEBUG=True` in production because an env var was missing
 - Migrations edited by hand after being applied
 - `runserver` in production
+- Shipping dev/test dependencies in the production image
+- Publishing a staging stack or using it with real mail
 
 ## Integration with Other Skills
 

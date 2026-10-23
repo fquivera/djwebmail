@@ -51,6 +51,9 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_SESSION_COOKIE_AGE` | no | `28800` | absolute server-side session age |
 | `REDIS_URL` | production | — | cache and encrypted credential storage |
 | `FERNET_KEY` | production | — | encryption of transient IMAP credentials |
+| `FUNCTIONAL_TESTS_ENABLED` | no | `False` | enable tests that use a real IMAP/SMTP server |
+| `FUNCTIONAL_MAIL_USER` | no | `demo@example.test` | disposable functional-test mailbox |
+| `FUNCTIONAL_MAIL_PASSWORD` | no | `demo` | disposable functional-test password |
 
 Rules:
 
@@ -73,6 +76,7 @@ config/settings/
 ├── base.py          # shared defaults, reads env
 ├── development.py   # DEBUG=True, debug toolbar, permissive hosts
 ├── test.py          # fast hashers, test hosts, no external services
+├── staging.py       # local HTTP staging; reuses production, relaxes HTTPS
 └── production.py    # fail-fast validation, HTTPS, WhiteNoise, HSTS
 ```
 
@@ -85,6 +89,20 @@ config/settings/
   policy).
 - Do not mutate `django.conf.settings` at runtime. Tests use
   `override_settings`.
+
+### Local development and staging
+
+- `compose.yml` runs `config.settings.development` with PostgreSQL, Redis, and
+  GreenMail; it enables `FUNCTIONAL_TESTS_ENABLED`.
+- `compose.staging.yml` runs the production image with
+  `config.settings.staging`. That module imports production validation but
+  disables HTTPS redirects, secure cookies, and HSTS for loopback HTTP.
+- `staging.py` is for local verification only. It must never be used for an
+  internet-facing deployment; production keeps its secure defaults.
+- Mail endpoints and credentials for both stacks come from environment
+  variables. The GreenMail test account is a documented fixture, not a secret.
+- The functional suite is skipped unless `FUNCTIONAL_TESTS_ENABLED` is true, so
+  a normal local `pytest` run does not contact a mailbox.
 
 ## Fail fast
 
@@ -221,6 +239,7 @@ reason or with a value that should be configurable.
 - Changing `settings` at runtime
 - Feature flags that never get removed
 - Suppressing the scanner without a documented reason
+- Using `config.settings.staging` on a public network or with real mail
 
 ## Integration with Other Skills
 
