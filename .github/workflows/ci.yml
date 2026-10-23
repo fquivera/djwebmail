@@ -101,6 +101,8 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings.production
           DJANGO_ALLOWED_HOSTS: example.com
           DJANGO_SECRET_KEY: ci-insecure-secret-key
+          REDIS_URL: redis://localhost:6379/0
+          FERNET_KEY: EkckE8kLGF-uhUZ1tXJyNzTUv7keM9-xFIxVpjrTY4c=
         run: uv run python manage.py check --deploy
 
   branch-policy:

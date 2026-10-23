@@ -34,6 +34,8 @@ COPY . .
 RUN DJANGO_SETTINGS_MODULE=config.settings.production \
     DJANGO_SECRET_KEY=build-only-not-a-runtime-secret \
     DJANGO_ALLOWED_HOSTS=localhost \
+    REDIS_URL=redis://localhost:6379/0 \
+    FERNET_KEY=EkckE8kLGF-uhUZ1tXJyNzTUv7keM9-xFIxVpjrTY4c= \
     python manage.py collectstatic --noinput
 
 RUN chown -R django:django /app

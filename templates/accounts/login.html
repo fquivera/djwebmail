@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sign in" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Sign in" %}</h1>
+  <p>{% translate "Use your email address and password to connect to the mail server." %}</p>
+
+  <form method="post" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+    {{ form.non_field_errors }}
+
+    <p>
+      <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+      {{ form.email }}
+      {{ form.email.errors }}
+    </p>
+
+    <p>
+      <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+      {{ form.password }}
+      {{ form.password.errors }}
+    </p>
+
+    <button type="submit">{% translate "Sign in" %}</button>
+  </form>
+
+  <p><a href="{% url 'home' %}">{% translate "Back to home" %}</a></p>
+{% endblock %}

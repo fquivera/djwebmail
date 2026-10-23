@@ -113,11 +113,12 @@ The preference belongs to the user, not to the deployment:
 
 1. Add `language` to the preferences model with choices from `settings.LANGUAGES`
    and a default from `settings.LANGUAGE_CODE`.
-2. On login and on change, call Django's `set_language` view (or set the session
-   key `_language`) so `LocaleMiddleware` picks it up for the next request.
-3. `LocaleMiddleware` runs before authentication, so a small middleware after
-   `AuthenticationMiddleware` may `translation.activate(user.language)` for
-   authenticated requests. Keep it read-only and fall back to the session value.
+2. On login, persist the preference and store the language code in the mail
+   session under `mail_language`. Django 5's `set_language` only writes a cookie,
+   so it cannot replace the per-account preference.
+3. `LocaleMiddleware` runs before the mail session is hydrated, so
+   `MailSessionMiddleware` (after `AuthenticationMiddleware`) calls
+   `translation.activate(mail_language)` and updates `request.LANGUAGE_CODE`.
 4. Persist the choice, but never store translated labels in the database — store
    the language code.
 
@@ -198,6 +199,9 @@ uv run python manage.py makemessages -l es
 uv run python manage.py compilemessages
 ```
 
+- A language switcher must update `MailPreference.language` and the
+  `mail_language` session key; a cookie-only switch is overwritten by the
+  account preference.
 - Requires GNU gettext (`xgettext`, `msgfmt`).
 - Commit `locale/es/LC_MESSAGES/django.po`; generate `.mo` at build/deploy time
   and keep it out of git.

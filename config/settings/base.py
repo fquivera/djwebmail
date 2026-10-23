@@ -7,6 +7,7 @@ this module and override only what differs.
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -40,6 +41,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.middleware.MailSessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -57,6 +59,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.i18n",
             ],
         },
     },
@@ -67,6 +70,29 @@ ASGI_APPLICATION = "config.asgi.application"
 
 DATABASE_URL = env.str("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 DATABASES = {"default": env.db_url_config(DATABASE_URL)}
+
+REDIS_URL = env.str("REDIS_URL", default="")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "djwebmail",
+        }
+    }
+
+FERNET_KEY = env.str("FERNET_KEY", default="")
+SESSION_COOKIE_AGE = env.int("DJANGO_SESSION_COOKIE_AGE", default=28800)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "accounts:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -109,9 +135,19 @@ MAIL_DOMAIN = env.str("DJANGO_MAIL_DOMAIN", default="")
 MAIL_SMTP_HOST = env.str("DJANGO_MAIL_SMTP_HOST", default="")
 MAIL_SMTP_PORT = env.int("DJANGO_MAIL_SMTP_PORT", default=587)
 MAIL_SMTP_SECURITY = env.str("DJANGO_MAIL_SMTP_SECURITY", default="starttls")
+MAIL_LOGIN_MAX_ATTEMPTS = env.int("DJANGO_MAIL_LOGIN_MAX_ATTEMPTS", default=5)
+MAIL_LOGIN_WINDOW_SECONDS = env.int("DJANGO_MAIL_LOGIN_WINDOW_SECONDS", default=300)
+
+if SESSION_COOKIE_AGE <= 0:
+    raise ImproperlyConfigured("DJANGO_SESSION_COOKIE_AGE must be positive")
+if MAIL_LOGIN_MAX_ATTEMPTS <= 0:
+    raise ImproperlyConfigured("DJANGO_MAIL_LOGIN_MAX_ATTEMPTS must be positive")
+if MAIL_LOGIN_WINDOW_SECONDS <= 0:
+    raise ImproperlyConfigured("DJANGO_MAIL_LOGIN_WINDOW_SECONDS must be positive")
 
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "no-referrer"
 SESSION_COOKIE_HTTPONLY = True
 
 LOGGING = {
