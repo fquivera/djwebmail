@@ -1,0 +1,9 @@
+{% load i18n %}
+<nav
+  id="folder-tree"
+  class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm"
+  aria-label="{% translate 'Folders' %}"
+  {% if oob %}hx-swap-oob="outerHTML"{% endif %}
+>
+  {% include "mail/_folder_tree.html" %}
+</nav>

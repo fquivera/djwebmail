@@ -40,13 +40,16 @@ Agent skills for DjWebmail. Each directory contains one `SKILL.md`; optional
 | Branching, releases, hotfixes | `gitflow` |
 | Commit message format | `conventional-commits` |
 | CI/CD workflows and repository config | `github-actions` |
+| User-facing text, translations, locales | `i18n` |
+| Settings, environment variables, preferences, anti-hardcoding | `configuration` |
 
 Load order for a new feature:
 
 1. `django-patterns` (where the code goes)
 2. `django-models` + `django-forms` (domain + input)
 3. `django-templates` + `htmx-patterns` + `htmx-alpine` (UI)
-4. `pytest-django-patterns` (tests)
-5. `django-infrastructure` (only when touching settings or deploy)
-6. `gitflow` + `conventional-commits` before opening the PR
-7. `github-actions` when a CI check fails or a workflow changes
+4. `i18n` (any user-facing text) + `configuration` (any new setting or literal)
+5. `pytest-django-patterns` (tests)
+6. `django-infrastructure` (only when touching deploy plumbing)
+7. `gitflow` + `conventional-commits` before opening the PR
+8. `github-actions` when a CI check fails or a workflow changes

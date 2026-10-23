@@ -1,0 +1,16 @@
+{% load i18n %}
+{% if page.messages %}
+  <p class="py-2 text-sm text-base-content/60">
+    {% blocktranslate count counter=page.total %}{{ counter }} message{% plural %}{{ counter }} messages{% endblocktranslate %}
+  </p>
+
+  <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
+    {% for message in page.messages %}
+      {% include "mail/_message_row.html" with message=message folder_name=folder_name %}
+    {% endfor %}
+  </ul>
+
+  {% include "mail/_pagination.html" with page=page folder_name=folder_name %}
+{% else %}
+  <p class="py-8 text-center text-sm text-base-content/60">{% translate "This folder is empty." %}</p>
+{% endif %}

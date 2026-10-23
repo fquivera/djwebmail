@@ -30,6 +30,19 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
+# Compile Tailwind/daisyUI before collecting static files. The standalone
+# binary is downloaded to /tmp and removed again so it does not ship in the
+# runtime image; Node is not required.
+RUN export DJANGO_SETTINGS_MODULE=config.settings.production \
+    DJANGO_SECRET_KEY=build-only-not-a-runtime-secret \
+    DJANGO_ALLOWED_HOSTS=localhost \
+    REDIS_URL=redis://localhost:6379/0 \
+    FERNET_KEY=EkckE8kLGF-uhUZ1tXJyNzTUv7keM9-xFIxVpjrTY4c= \
+    TAILWINDCSS_BIN_DIR=/tmp/tailwindcss && \
+    python manage.py tailwind build && \
+    python manage.py collectstatic --noinput && \
+    rm -rf /tmp/tailwindcss
+
 RUN chown -R django:django /app
 
 USER django
@@ -37,8 +50,8 @@ USER django
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)" || exit 1
 
-# Gunicorn is in the production dependency group. collectstatic must run at
-# deploy time once static assets exist.
+# Gunicorn is in the production dependency group; static files were collected
+# during the build above.
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

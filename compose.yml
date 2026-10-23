@@ -1,0 +1,85 @@
+name: djwebmail
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: djwebmail
+      POSTGRES_USER: djwebmail
+      POSTGRES_PASSWORD: djwebmail
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U djwebmail -d djwebmail"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailserver:
+    image: greenmail/standalone:2.1.14
+    environment:
+      GREENMAIL_OPTS: >-
+        -Dgreenmail.setup.test.smtp
+        -Dgreenmail.setup.test.imap
+        -Dgreenmail.hostname=0.0.0.0
+        -Dgreenmail.users=demo:demo@example.test
+        -Dgreenmail.users.login=email
+        -Dgreenmail.startup.timeout=10000
+    ports:
+      - "${GREENMAIL_IMAP_PORT:-3143}:3143"
+      - "${GREENMAIL_SMTP_PORT:-3025}:3025"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/3143"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command:
+      - sh
+      - -c
+      - python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DATABASE_URL: postgres://djwebmail:djwebmail@db:5432/djwebmail
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_MAIL_DOMAIN: example.test
+      DJANGO_MAIL_IMAP_HOST: mailserver
+      DJANGO_MAIL_IMAP_PORT: "3143"
+      DJANGO_MAIL_IMAP_SECURITY: none
+      DJANGO_MAIL_SMTP_HOST: mailserver
+      DJANGO_MAIL_SMTP_PORT: "3025"
+      DJANGO_MAIL_SMTP_SECURITY: none
+      DJANGO_MAIL_VERIFY_TLS: "False"
+      FUNCTIONAL_TESTS_ENABLED: "True"
+    volumes:
+      - .:/app
+    ports:
+      - "${DJANGO_DEV_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailserver:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

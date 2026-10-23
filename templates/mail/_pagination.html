@@ -1,0 +1,32 @@
+{% load i18n %}
+{% if page.page_count > 1 %}
+  <nav class="flex items-center justify-between gap-3 pt-4" aria-label="{% translate 'Pagination' %}">
+    {% if page.has_previous %}
+      <a
+        class="btn btn-outline btn-sm"
+        href="{% url 'mail:folder' folder_name %}?page={{ page.previous_page }}"
+        hx-get="{% url 'mail:folder' folder_name %}?page={{ page.previous_page }}"
+        hx-target="#message-list"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-indicator="#list-spinner"
+      >{% translate "Previous" %}</a>
+    {% endif %}
+
+    <span class="text-sm text-base-content/60">
+      {% blocktranslate with current=page.page total=page.page_count %}Page {{ current }} of {{ total }}{% endblocktranslate %}
+    </span>
+
+    {% if page.has_next %}
+      <a
+        class="btn btn-outline btn-sm"
+        href="{% url 'mail:folder' folder_name %}?page={{ page.next_page }}"
+        hx-get="{% url 'mail:folder' folder_name %}?page={{ page.next_page }}"
+        hx-target="#message-list"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-indicator="#list-spinner"
+      >{% translate "Next" %}</a>
+    {% endif %}
+  </nav>
+{% endif %}

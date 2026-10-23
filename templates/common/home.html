@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% blocktranslate %}DjWebmail — early development{% endblocktranslate %}{% endblock %}
+
+{% block content %}
+  <section class="hero min-h-[60vh]">
+    <div class="hero-content text-center">
+      <div class="max-w-2xl">
+        <h1 class="text-4xl font-bold tracking-tight">DjWebmail</h1>
+        <p class="py-4 text-lg text-base-content/80">
+          {% translate "A modern, HTMX-driven webmail client built with Django." %}
+        </p>
+        <p class="text-base-content/60">
+          {% translate "The mail interface is under construction. See the project README for the roadmap." %}
+        </p>
+      </div>
+    </div>
+  </section>
+{% endblock %}

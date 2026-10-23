@@ -16,8 +16,8 @@ concurrency:
 env:
   DJANGO_SETTINGS_MODULE: config.settings.test
   DATABASE_URL: postgres://djwebmail:djwebmail@localhost:5432/djwebmail
-  SECRET_KEY: ci-insecure-secret-key
-  DEBUG: "False"
+  DJANGO_SECRET_KEY: ci-insecure-secret-key
+  DJANGO_DEBUG: "False"
 
 jobs:
   lint:
@@ -32,33 +32,34 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --all-groups
       - name: Lockfile check
-        run: |
-          if [ -f uv.lock ]; then
-            uv lock --check
-          else
-            echo "::notice::No uv.lock yet; skipping lockfile check"
-          fi
+        run: uv lock --check
       - name: Ruff lint
-        run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run ruff check .
-          else
-            echo "::notice::No Python files yet; skipping ruff check"
-          fi
+        run: uv run ruff check .
       - name: Ruff format
-        run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run ruff format --check .
-          else
-            echo "::notice::No Python files yet; skipping ruff format"
-          fi
+        run: uv run ruff format --check .
       - name: Pyright
+        run: uv run pyright
+      - name: Build Tailwind CSS
+        run: uv run python manage.py tailwind build
+      - name: Verify committed Tailwind CSS
+        run: git diff --exit-code -- theme/static/css/dist/styles.css
+      - name: Check Tailwind CSS budget
+        run: test "$(gzip -c theme/static/css/dist/styles.css | wc -c)" -lt 61440
+      - name: Validate Compose configuration
         run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run pyright
-          else
-            echo "::notice::No Python files yet; skipping pyright"
-          fi
+          cp .env.example .env
+          cp .env.staging.example .env.staging
+          docker compose config > /dev/null
+          docker compose -f compose.staging.yml config > /dev/null
+
+  hardcode-scan:
+    name: hardcode-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan for hardcoded configuration
+        run: python3 scripts/check_hardcoding.py
 
   test:
     name: test
@@ -90,12 +91,67 @@ jobs:
       - run: uv python install ${{ matrix.python-version }}
       - run: uv sync --all-groups
       - name: Tests
-        run: |
-          if git ls-files '*test_*.py' | grep -q .; then
-            uv run pytest --cov=apps --cov-report=term-missing
-          else
-            echo "::notice::No tests yet; skipping pytest"
-          fi
+        run: uv run pytest --cov=apps --cov=common --cov=config --cov-report=term-missing
+
+  functional:
+    name: functional
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: djwebmail
+          POSTGRES_PASSWORD: djwebmail
+          POSTGRES_DB: djwebmail
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U djwebmail"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      greenmail:
+        image: greenmail/standalone:2.1.14
+        env:
+          GREENMAIL_OPTS: >-
+            -Dgreenmail.setup.test.smtp
+            -Dgreenmail.setup.test.imap
+            -Dgreenmail.hostname=0.0.0.0
+            -Dgreenmail.users=demo:demo@example.test
+            -Dgreenmail.users.login=email
+            -Dgreenmail.startup.timeout=10000
+        ports:
+          - 3025:3025
+          - 3143:3143
+        options: >-
+          --health-cmd "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3143'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgres://djwebmail:djwebmail@localhost:5432/djwebmail
+      DJANGO_SECRET_KEY: ci-insecure-secret-key
+      DJANGO_DEBUG: "False"
+      DJANGO_MAIL_DOMAIN: example.test
+      DJANGO_MAIL_IMAP_HOST: localhost
+      DJANGO_MAIL_IMAP_PORT: "3143"
+      DJANGO_MAIL_IMAP_SECURITY: none
+      DJANGO_MAIL_SMTP_HOST: localhost
+      DJANGO_MAIL_SMTP_PORT: "3025"
+      DJANGO_MAIL_SMTP_SECURITY: none
+      DJANGO_MAIL_VERIFY_TLS: "False"
+      FUNCTIONAL_TESTS_ENABLED: "True"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-groups
+      - name: Functional tests
+        run: uv run pytest -m functional
 
   django:
     name: django
@@ -109,19 +165,17 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --all-groups
       - name: Django system check
-        run: |
-          if [ -f manage.py ]; then
-            uv run python manage.py check
-          else
-            echo "::notice::manage.py not found; skipping Django check"
-          fi
+        run: uv run python manage.py check
       - name: Missing migrations
-        run: |
-          if [ -f manage.py ]; then
-            uv run python manage.py makemigrations --check --dry-run
-          else
-            echo "::notice::manage.py not found; skipping migration check"
-          fi
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Deployment checks
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          DJANGO_ALLOWED_HOSTS: example.com
+          DJANGO_SECRET_KEY: ci-insecure-secret-key
+          REDIS_URL: redis://localhost:6379/0
+          FERNET_KEY: EkckE8kLGF-uhUZ1tXJyNzTUv7keM9-xFIxVpjrTY4c=
+        run: uv run python manage.py check --deploy
 
   branch-policy:
     name: branch-policy

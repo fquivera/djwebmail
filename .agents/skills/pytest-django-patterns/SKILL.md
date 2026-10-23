@@ -138,6 +138,28 @@ Use `mocker.patch()` to avoid actual HTTP calls, emails, file operations
 - Failed operations return error responses
 - User sees appropriate error messages
 
+## Functional Tests Against Real Services
+
+Keep the default suite hermetic. Tests that need a real service (IMAP, SMTP,
+Redis, a browser) get a registered marker and skip unless an explicit setting
+enables them:
+
+```python
+pytestmark = [pytest.mark.functional, pytest.mark.django_db]
+
+
+@pytest.fixture(autouse=True)
+def require_service():
+    if not settings.FUNCTIONAL_TESTS_ENABLED:
+        pytest.skip("functional tests are disabled")
+```
+
+- Put them under `tests/functional/`, not inside an app's unit tests.
+- The environment (Compose or CI) supplies endpoints and credentials; tests do
+  not read `os.environ` directly.
+- A normal `uv run pytest` must not contact a mailbox or other external service.
+- Run only the marker when the stack is available: `uv run pytest -m functional`.
+
 ## Running Tests
 
 ```bash
@@ -148,6 +170,7 @@ uv run pytest -x --lf            # Stop first, last failed only
 uv run pytest -k "test_name"     # Run tests matching pattern
 uv run pytest tests/apps/posts/  # Specific directory
 uv run pytest --cov=apps         # With coverage report
+uv run pytest -m functional      # Real IMAP/SMTP stack only
 ```
 
 ## Common Pitfalls

@@ -15,8 +15,8 @@ concurrency:
 env:
   DJANGO_SETTINGS_MODULE: config.settings.test
   DATABASE_URL: postgres://djwebmail:djwebmail@localhost:5432/djwebmail
-  SECRET_KEY: ci-insecure-secret-key
-  DEBUG: "False"
+  DJANGO_SECRET_KEY: ci-insecure-secret-key
+  DJANGO_DEBUG: "False"
 
 jobs:
   verify:
@@ -46,28 +46,27 @@ jobs:
       - run: uv sync --all-groups
       - name: Lint
         run: |
-          if git ls-files '*.py' | grep -q .; then
-            uv run ruff check .
-            uv run ruff format --check .
-            uv run pyright
-          else
-            echo "::notice::No Python files yet; skipping lint"
-          fi
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run pyright
+      - name: Build Tailwind CSS
+        run: uv run python manage.py tailwind build
+      - name: Verify committed Tailwind CSS
+        run: git diff --exit-code -- theme/static/css/dist/styles.css
       - name: Tests
-        run: |
-          if git ls-files '*test_*.py' | grep -q .; then
-            uv run pytest
-          else
-            echo "::notice::No tests yet; skipping pytest"
-          fi
+        run: uv run pytest
       - name: Django checks
         run: |
-          if [ -f manage.py ]; then
-            uv run python manage.py check
-            uv run python manage.py makemigrations --check --dry-run
-          else
-            echo "::notice::manage.py not found; skipping Django checks"
-          fi
+          uv run python manage.py check
+          uv run python manage.py makemigrations --check --dry-run
+      - name: Deployment checks
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          DJANGO_ALLOWED_HOSTS: example.com
+          DJANGO_SECRET_KEY: ci-insecure-secret-key
+          REDIS_URL: redis://localhost:6379/0
+          FERNET_KEY: EkckE8kLGF-uhUZ1tXJyNzTUv7keM9-xFIxVpjrTY4c=
+        run: uv run python manage.py check --deploy
 
   image:
     name: image
@@ -122,6 +121,10 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -eu
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::Release ${TAG} already exists; skipping"
+            exit 0
+          fi
           if printf '%s' "$TAG" | grep -q '-'; then
             gh release create "$TAG" --generate-notes --prerelease --title "$TAG"
           else

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% blocktranslate with folder=folder_name %}Mail — {{ folder }}{% endblocktranslate %}{% endblock %}
+
+{% block scripts %}
+  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
+  <script defer src="{% static 'js/htmx-config.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="grid gap-6 lg:grid-cols-[minmax(12rem,15rem)_minmax(0,1fr)] lg:items-start xl:grid-cols-[16rem_minmax(0,1.4fr)_minmax(0,2fr)]">
+    {% include "mail/_folder_nav.html" %}
+
+    <section
+      class="min-w-0 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
+      aria-labelledby="folder-heading"
+    >
+      <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
+        <h1 id="folder-heading" class="min-w-0 flex-1 truncate text-xl font-semibold">
+          {{ folder_name }}
+        </h1>
+        <span
+          id="list-spinner"
+          class="loading loading-spinner loading-sm htmx-indicator text-primary"
+          aria-hidden="true"
+        ></span>
+      </div>
+      <div id="message-list" class="px-4 py-2" aria-live="polite">
+        {% include "mail/_message_list.html" %}
+      </div>
+    </section>
+
+    <section
+      class="min-w-0 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm lg:col-span-2 xl:col-span-1"
+      aria-label="{% translate 'Message' %}"
+    >
+      <div id="message-viewer" class="px-4 py-3" aria-live="polite">
+        {% include "mail/_empty_state.html" %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

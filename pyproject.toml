@@ -7,10 +7,15 @@ requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Francisco Quivera", email = "fquivera@gmail.com" }]
 dependencies = [
+    "cryptography>=43",
     "django>=5.2,<6.0",
+    "django-csp>=4,<5",
     "django-environ>=0.11",
+    "django-tailwind>=4.6,<5",
     "imapclient>=3.0",
+    "nh3>=0.2,<1",
     "psycopg[binary]>=3.2",
+    "redis>=5",
 ]
 
 [dependency-groups]
@@ -36,7 +41,7 @@ package = false
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = ["**/migrations/*.py"]
+extend-exclude = ["**/migrations/*.py", ".agents", "docs", "AGENTS.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "DJ"]
@@ -48,6 +53,9 @@ known-first-party = ["apps", "common", "config"]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 addopts = ["--reuse-db", "-ra"]
+markers = [
+    "functional: exercises a real IMAP/SMTP server",
+]
 
 [tool.pyright]
 pythonVersion = "3.12"

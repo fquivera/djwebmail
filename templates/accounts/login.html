@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sign in" %}{% endblock %}
+
+{% block content %}
+  <section class="hero min-h-[70vh]">
+    <div class="hero-content w-full">
+      <div class="card w-full max-w-md bg-base-100 shadow-xl">
+        <div class="card-body gap-4">
+          <h1 class="card-title text-2xl">{% translate "Sign in" %}</h1>
+          <p class="text-sm text-base-content/70">
+            {% translate "Use your email address and password to connect to the mail server." %}
+          </p>
+
+          <form method="post" action="{% url 'accounts:login' %}" class="space-y-4">
+            {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-error text-sm" role="alert">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="flex w-full flex-col gap-1">
+              <label class="text-sm font-medium" for="{{ form.email.id_for_label }}">
+                {{ form.email.label }}
+              </label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <div class="mt-1 text-sm text-error">{{ form.email.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="flex w-full flex-col gap-1">
+              <label class="text-sm font-medium" for="{{ form.password.id_for_label }}">
+                {{ form.password.label }}
+              </label>
+              {{ form.password }}
+              {% if form.password.errors %}
+                <div class="mt-1 text-sm text-error">{{ form.password.errors }}</div>
+              {% endif %}
+            </div>
+
+            <button class="btn btn-primary w-full" type="submit">{% translate "Sign in" %}</button>
+          </form>
+
+          <p class="text-center text-sm">
+            <a class="link link-hover" href="{% url 'home' %}">{% translate "Back to home" %}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

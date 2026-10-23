@@ -25,11 +25,13 @@ Jobs:
 
 | Job | Name for branch protection | What it does |
 |---|---|---|
-| `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright` |
-| `test` | `test` | `pytest` on Python 3.12 + 3.13 with PostgreSQL |
+| `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright`, Tailwind build/drift, Compose config validation |
+| `test` | `test (3.12)`, `test (3.13)` | `pytest` on Python 3.12 + 3.13 with PostgreSQL |
+| `functional` | `functional` | `pytest -m functional` against PostgreSQL + GreenMail |
 | `django` | `django` | `manage.py check`, `makemigrations --check --dry-run` |
 | `branch-policy` | `branch-policy` | validates head/base branch per GitFlow |
 | `commit-messages` | `commit-messages` | validates the PR title with Commitizen |
+| `hardcode-scan` | `hardcode-scan` | rejects hardcoded URLs, hosts, ports, paths, and env access |
 
 Non-negotiables:
 
@@ -42,32 +44,22 @@ Non-negotiables:
   at an exact version (`@v10.3.2`) because it does not publish a moving major tag.
 - Never echo secrets.
 
-### Bootstrap-safe guards
+### Deployment checks
 
-The repository has no Django code yet. Steps that need code check for it first
-and emit a notice instead of failing:
+The `django` job runs the regular system check, verifies there are no missing
+migrations, and validates production settings with `check --deploy`:
 
 ```yaml
-- name: Lint
-  run: |
-    if git ls-files '*.py' | grep -q .; then
-      uv run ruff check .
-      uv run ruff format --check .
-    else
-      echo "::notice::No Python files yet; skipping ruff"
-    fi
-
-- name: Tests
-  run: |
-    if git ls-files '*test_*.py' | grep -q .; then
-      uv run pytest --cov=apps --cov-report=term-missing
-    else
-      echo "::notice::No tests yet; skipping pytest"
-    fi
+- name: Deployment checks
+  env:
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    ALLOWED_HOSTS: example.com
+    SECRET_KEY: ci-insecure-secret-key
+  run: uv run python manage.py check --deploy
 ```
 
-Remove each guard once the corresponding code exists — a skipped check that
-never fails is worse than no check.
+`--deploy` catches missing HSTS, insecure cookies, `DEBUG=True`, and similar
+production-only regressions before they reach a release.
 
 ### PostgreSQL service
 
@@ -87,6 +79,41 @@ services:
 
 Set `DATABASE_URL` in the job `env`. `--reuse-db` from `pyproject.toml` is fine
 in CI because the database is ephemeral per job.
+
+### Functional mail service
+
+The `functional` job starts GreenMail with a disposable account and enables the
+real-IMAP tests:
+
+```yaml
+services:
+  greenmail:
+    image: greenmail/standalone:2.1.14
+    env:
+      GREENMAIL_OPTS: >-
+        -Dgreenmail.setup.test.smtp
+        -Dgreenmail.setup.test.imap
+        -Dgreenmail.hostname=0.0.0.0
+        -Dgreenmail.users=demo:demo@example.test
+        -Dgreenmail.users.login=email
+        -Dgreenmail.startup.timeout=10000
+    ports: ["3025:3025", "3143:3143"]
+    options: >-
+      --health-cmd "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3143'"
+      --health-interval 5s --health-timeout 5s --health-retries 20
+```
+
+The job sets `DJANGO_MAIL_IMAP_HOST=localhost`, `DJANGO_MAIL_IMAP_PORT=3143`,
+`DJANGO_MAIL_IMAP_SECURITY=none`, the matching SMTP values,
+`DJANGO_MAIL_DOMAIN=example.test`, `DJANGO_MAIL_VERIFY_TLS=False`, and
+`FUNCTIONAL_TESTS_ENABLED=True`. Run only the marker:
+
+```bash
+uv run pytest -m functional
+```
+
+The regular `test` jobs leave the marker disabled; the tests skip instead of
+contacting a mailbox.
 
 ### Branch policy job
 
@@ -155,8 +182,14 @@ repository. Keep `platforms: linux/amd64` unless ARM images are actually needed
 - **CODEOWNERS**: `* @fquivera` — every PR requests review.
 - **Dependabot**: ecosystems `uv` and `github-actions`, weekly, grouped so one
   PR carries routine bumps; commits must still pass `commit-messages`.
-- **Required status checks** on `main` and `develop`: `lint`, `test`, `django`,
-  `branch-policy`, `commit-messages`.
+- **Hardcoding guard**: `scripts/check_hardcoding.py` scans `apps/`, `common/`,
+  `config/`, and `templates/`; suppress a justified line with
+  `# hardcode-ok: <reason>`. The `hardcode-scan` job is required.
+- **Required status checks** on `main` and `develop`: `lint`, `django`,
+  `branch-policy`, `commit-messages`, `hardcode-scan`, `functional`,
+  `test (3.12)`, `test (3.13)`.
+  A matrix job produces one check per matrix entry — requiring `test` alone
+  silently matches nothing.
 - **Merge strategy**: allow squash (feature → develop) and merge commits
   (release/hotfix → main). Disable rebase merges to keep history predictable.
 - **Secrets**: repository/environment secrets only; never `.env` in the repo.
@@ -173,6 +206,8 @@ Reproduce locally before pushing:
 
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run pyright
+uv run python manage.py tailwind build
+git diff --exit-code -- theme/static/css/dist/styles.css
 uv run pytest -x
 uv run python manage.py check
 ```
@@ -188,7 +223,7 @@ have a local runner by default; prefer reproducing the exact command.
 - Fat matrix (every OS × every Python version) with no coverage gain
 - Caching `~/.cache/pip` when `uv` is used
 - Release workflow that skips tests
-- Guards left in place after real code and tests exist
+- Conditional guards that silently skip a check after real code exists
 - Third-party actions on moving tags (`@main`) or unpinned commits
 
 ## Integration with Other Skills

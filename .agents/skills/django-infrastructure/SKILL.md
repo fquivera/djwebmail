@@ -24,6 +24,7 @@ myproject/
 │   │   ├── base.py
 │   │   ├── development.py
 │   │   ├── production.py
+│   │   ├── staging.py
 │   │   └── test.py
 │   ├── urls.py
 │   ├── asgi.py
@@ -158,8 +159,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY = env("SECRET_KEY")
-DEBUG = env.bool("DEBUG", default=False)
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+DEBUG = env.bool("DJANGO_DEBUG", default=False)
 DATABASES = {"default": env.db("DATABASE_URL")}
 ```
 
@@ -167,7 +168,7 @@ DATABASES = {"default": env.db("DATABASE_URL")}
 # .env (local) — NEVER commit
 DJANGO_SETTINGS_MODULE=config.settings.development
 DATABASE_URL=postgres://user:pass@localhost:5432/mydb
-SECRET_KEY=change-me
+DJANGO_SECRET_KEY=change-me
 ```
 
 Commit `.env.example` with every required key and no real values.
@@ -237,6 +238,73 @@ CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 
 **Rule:** never `runserver` in production. Use Gunicorn or Uvicorn.
 
+## 11. Local Compose Stacks and Disposable Dependencies
+
+Keep development, staging, and production reproducible without adding local
+state to the application:
+
+```text
+Dockerfile          # production: multi-stage, non-root, Gunicorn
+Dockerfile.dev      # development: dev dependencies, bind-mounted source
+compose.yml         # Django + PostgreSQL + Redis + disposable mail server
+compose.staging.yml # production image + staging settings + same mail server
+```
+
+- Development uses `config.settings.development`; staging uses
+  `config.settings.staging`, which imports production and relaxes HTTPS-only
+  behavior for loopback HTTP.
+- Do not put test mail accounts or functional-test switches in application
+  code. Compose supplies them through environment variables, and the test
+  suite skips when they are absent.
+- Pin disposable service images (for example `greenmail/standalone:2.1.14`)
+  and add healthchecks so application startup does not race the dependency.
+- A local mail server is not production infrastructure. Document its limits
+  and never expose staging ports publicly.
+- Use a separate `Dockerfile.dev`; production images must not contain pytest,
+  Ruff, Pyright, or debug tooling.
+
+## 12. Static Assets and CSS Build
+
+Compile CSS with `django-tailwind` in standalone mode; Node and npm are not
+runtime or deployment requirements.
+
+```text
+theme/
+├── static_src/src/styles.css    # Tailwind source, daisyUI plugins
+└── static/css/dist/styles.css   # generated, committed
+```
+
+- Commit the compiled stylesheet and the daisyUI `.mjs` files so a fresh clone,
+  CI, and production build from the same inputs.
+- Run `manage.py tailwind build` before `collectstatic` in the production image.
+  Download the standalone binary to a temporary path and delete it afterward.
+- In CI, rebuild and run `git diff --exit-code` against the committed CSS; fail
+  when templates and compiled output drift. Add a gzip budget for the stylesheet.
+- Use explicit `@source` globs for project templates and Python; do not scan
+  virtualenvs or generated output.
+- Activate `CompressedManifestStaticFilesStorage` in production so collected
+  assets carry content hashes.
+
+## 13. Security Headers and CSP
+
+Enforce a strict Content-Security-Policy for the application with `django-csp`;
+never relax it to make a feature work.
+
+- Place `csp.middleware.CSPMiddleware` immediately after `SecurityMiddleware`
+  so error responses are covered too.
+- Configure `CONTENT_SECURITY_POLICY["DIRECTIVES"]` with `default-src 'self'`,
+  `script-src 'self'`, `style-src 'self'`, `object-src 'none'`, and
+  `frame-ancestors 'none'`. Add `'unsafe-eval'`/`'unsafe-inline'` only as a
+  documented, per-view exception.
+- Exclude paths that legitimately inject inline markup (Django admin, debug
+  toolbar) with `EXCLUDE_URL_PREFIXES`; do not weaken the main policy.
+- Pair `frame-ancestors 'none'` with `X-Frame-Options: DENY` and
+  `X-Content-Type-Options: nosniff`.
+- Disable HTMX evaluation and inline indicators (`allowEval=false`,
+  `allowScriptTags=false`, `includeIndicatorStyles=false`) and keep indicator
+  styles in the compiled stylesheet.
+- Add a test that asserts the header and that `unsafe-*` is absent.
+
 ## Verification Checklist
 
 | Area | Check |
@@ -250,6 +318,9 @@ CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 | User | `AUTH_USER_MODEL` set before the first migration |
 | Dependencies | Split by environment; production has no dev packages |
 | Docker | Multi-stage build, non-root user, Gunicorn in `CMD` |
+| CSS | `tailwind build` deterministic, output committed, gzip budget enforced |
+| CSP | Strict `django-csp` policy; test asserts no `unsafe-*` and no framing |
+| Local stack | `compose.yml` / `compose.staging.yml` validate and dependencies are healthy |
 | Secrets | Only in `.env` (git-ignored); `.env.example` committed |
 
 ## Anti-Patterns to Avoid
@@ -262,6 +333,8 @@ CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
 - `DEBUG=True` in production because an env var was missing
 - Migrations edited by hand after being applied
 - `runserver` in production
+- Shipping dev/test dependencies in the production image
+- Publishing a staging stack or using it with real mail
 
 ## Integration with Other Skills
 
