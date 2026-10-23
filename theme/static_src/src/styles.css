@@ -1,11 +1,10 @@
 @import "tailwindcss";
 
-/* Scan only project sources; virtualenvs and generated output stay out. */
+/* Scan only sources that actually carry Tailwind classes: templates and the
+   Django forms that declare widget classes. Blanket .py/.js scanning pulls
+   utility-looking words (e.g. "inline") out of comments and causes CSS drift. */
 @source "../../../templates/**/*.html";
-@source "../../../apps/**/*.{py,html}";
-@source "../../../common/**/*.{py,html}";
-@source "../../../config/**/*.py";
-@source "../../../static/js/**/*.js";
+@source "../../../apps/**/forms.py";
 
 @plugin "./daisyui.mjs";
 
