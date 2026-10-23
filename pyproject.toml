@@ -10,6 +10,7 @@ dependencies = [
     "cryptography>=43",
     "django>=5.2,<6.0",
     "django-environ>=0.11",
+    "django-tailwind>=4.6,<5",
     "imapclient>=3.0",
     "psycopg[binary]>=3.2",
     "redis>=5",

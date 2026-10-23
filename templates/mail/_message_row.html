@@ -1,16 +1,21 @@
 {% load i18n %}
-<li class="message-row{% if not message.is_seen %} is-unread{% endif %}" data-uid="{{ message.uid }}">
-  <div class="message-sender">
+<li
+  class="grid gap-1 px-1 py-3 sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
+  data-uid="{{ message.uid }}"
+>
+  <div class="truncate text-sm{% if not message.is_seen %} font-semibold{% endif %}">
     {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
   </div>
-  <div class="message-subject">
-    {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+  <div class="min-w-0">
+    <span class="block truncate text-sm{% if not message.is_seen %} font-semibold{% endif %}">
+      {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+    </span>
   </div>
-  <div class="message-meta">
+  <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/60 sm:justify-end">
     {% if message.is_flagged %}
-      <span class="message-flag" role="img" aria-label="{% translate 'Flagged' %}">★</span>
+      <span class="badge badge-warning badge-sm" role="img" aria-label="{% translate 'Flagged' %}">★</span>
     {% endif %}
-    <span class="message-size">{{ message.size|filesizeformat }}</span>
+    <span>{{ message.size|filesizeformat }}</span>
     {% if message.date %}
       <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
     {% endif %}

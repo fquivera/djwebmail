@@ -14,3 +14,9 @@ def test_project_apps_are_installed(label):
     config = apps.get_app_config(label)
 
     assert config.name == f"apps.{label}"
+
+
+def test_tailwind_uses_the_standalone_pipeline():
+    assert apps.get_app_config("theme").name == "theme"
+    assert settings.TAILWIND_APP_NAME == "theme"
+    assert settings.TAILWIND_USE_STANDALONE_BINARY is True

@@ -76,7 +76,8 @@ djwebmail/
 │   └── preferences/  # Per-user UI preferences
 ├── common/           # Shared views, services, templatetags
 ├── templates/        # Base layout and partials
-├── static/           # Compiled CSS and static assets
+├── theme/            # Tailwind source and committed compiled CSS
+├── static/           # Vendored assets and small overrides
 ├── tests/            # Project-level smoke and integration tests
 ├── Dockerfile        # Production image
 ├── Dockerfile.dev    # Development image
@@ -116,6 +117,27 @@ To use PostgreSQL (same engine as CI and production), set in `.env`:
 ```bash
 DATABASE_URL=postgres://djwebmail:djwebmail@localhost:5432/djwebmail
 ```
+
+### Frontend assets
+
+Tailwind CSS and daisyUI are compiled with the standalone
+`django-tailwind` CLI. The compiled stylesheet
+(`theme/static/css/dist/styles.css`) is committed, so running the app does not
+need Node or npm. After changing template classes, rebuild it:
+
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py tailwind build
+```
+
+For frontend work, keep the watcher running in a second terminal:
+
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.development uv run python manage.py tailwind start
+```
+
+CI rebuilds the stylesheet and rejects a stale committed file. See
+[`docs/tailwind-pipeline.md`](docs/tailwind-pipeline.md) for versions, theme
+tokens, and the production image behavior.
 
 ### Local mail stack (Docker Compose)
 

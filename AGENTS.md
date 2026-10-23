@@ -48,7 +48,8 @@ apps/
 └── preferences/   # per-account preferences
 common/            # shared views and utilities
 templates/         # base templates and partials
-static/            # compiled CSS and assets
+theme/             # Tailwind source and committed compiled CSS
+static/            # vendored assets and small overrides
 tests/             # project-level tests (including tests/functional)
 scripts/           # check_hardcoding.py and utilities
 docs/upstream/     # source documents (read-only)
@@ -296,7 +297,7 @@ applied, and cites evidence if it changes behavior derived from SnappyMail.
 ### Required checks
 
 ```text
-lint              ruff check, ruff format --check, pyright
+lint              ruff check, ruff format --check, pyright, Tailwind build/drift
 test (3.12)       pytest + PostgreSQL 16
 test (3.13)       pytest + PostgreSQL 16
 functional        pytest -m functional + PostgreSQL 16 + GreenMail
@@ -316,6 +317,7 @@ uv sync
 cp .env.example .env
 uv run python manage.py migrate
 uv run python manage.py runserver
+uv run python manage.py tailwind build   # rebuild committed CSS after class changes
 
 uv run pytest
 uv run pytest --cov=apps --cov=common --cov=config
@@ -383,11 +385,15 @@ Done:
 - `apps/mail`: folder tree and paginated message list with HTMX partials,
   newest-first pagination, settings-driven page sizes, and vendored HTMX 2.0.11.
   Successful login now lands on `/mail/`.
+- Tailwind 4.3.3 and daisyUI 5.7.48 compiled with the `django-tailwind`
+  standalone CLI; committed CSS, build/drift check and gzip budget in CI, and
+  daisyUI styling for the shell, login, folder tree, message list, and errors.
+  See `docs/tailwind-pipeline.md`.
 
 Next:
 
-1. Tailwind/daisyUI pipeline per Phase 3.
-2. Message viewer with safe HTML rendering and remote-content blocking.
+1. Message viewer with safe HTML rendering and remote-content blocking.
+2. Strict CSP without `unsafe-eval`/`unsafe-inline` and HTMX `allowEval=false`.
 3. First `v0.1.0` release when the folder tree, message list, and viewer work
    end to end.
 

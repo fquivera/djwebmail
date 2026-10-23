@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "tailwind",
+    "theme",
     "apps.accounts",
     "apps.mail",
     "apps.compose",
@@ -114,6 +116,12 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Tailwind/daisyUI is compiled by `manage.py tailwind build` before collectstatic.
+# The standalone CLI keeps Node and npm out of production and CI.
+TAILWIND_APP_NAME = "theme"
+TAILWIND_USE_STANDALONE_BINARY = True
+TAILWIND_STANDALONE_BINARY_VERSION = "v4.3.3"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"

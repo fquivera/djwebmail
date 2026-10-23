@@ -44,6 +44,16 @@ Open <http://localhost:8000/> and sign in with the test account. The `web`
 container runs migrations before starting the development server. The source
 tree is bind-mounted, so Python and template edits reload automatically.
 
+The compiled Tailwind/daisyUI stylesheet is committed and copied into the
+development image. If you change template classes, rebuild it from the host:
+
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py tailwind build
+```
+
+The development image includes `django-tailwind`; no Node installation is
+required. See [`tailwind-pipeline.md`](tailwind-pipeline.md).
+
 The stack enables `FUNCTIONAL_TESTS_ENABLED` and points the application at the
 `mailserver` service. Run the functional suite inside the web container:
 

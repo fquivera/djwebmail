@@ -1,9 +1,9 @@
 {% load i18n %}
 {% if page.page_count > 1 %}
-  <nav class="pagination" aria-label="{% translate 'Pagination' %}">
+  <nav class="flex items-center justify-between gap-3 pt-4" aria-label="{% translate 'Pagination' %}">
     {% if page.has_previous %}
       <a
-        class="pagination-link"
+        class="btn btn-outline btn-sm"
         href="{% url 'mail:folder' folder_name %}?page={{ page.previous_page }}"
         hx-get="{% url 'mail:folder' folder_name %}?page={{ page.previous_page }}"
         hx-target="#message-list"
@@ -13,13 +13,13 @@
       >{% translate "Previous" %}</a>
     {% endif %}
 
-    <span class="pagination-status">
+    <span class="text-sm text-base-content/60">
       {% blocktranslate with current=page.page total=page.page_count %}Page {{ current }} of {{ total }}{% endblocktranslate %}
     </span>
 
     {% if page.has_next %}
       <a
-        class="pagination-link"
+        class="btn btn-outline btn-sm"
         href="{% url 'mail:folder' folder_name %}?page={{ page.next_page }}"
         hx-get="{% url 'mail:folder' folder_name %}?page={{ page.next_page }}"
         hx-target="#message-list"

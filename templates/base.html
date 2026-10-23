@@ -1,28 +1,37 @@
-{% load i18n static %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
-<html lang="{{ LANGUAGE_CODE }}">
+{% load i18n tailwind_tags %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}" class="h-full">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}DjWebmail{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% tailwind_css %}
     {% block head %}{% endblock %}
   </head>
-  <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <header>
-      <nav aria-label="{% translate 'Main navigation' %}">
-        <a href="{% url 'home' %}">DjWebmail</a>
-        {% if request.session.mail_email %}
-          <span>{{ request.session.mail_email }}</span>
-          <form action="{% url 'accounts:logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit">{% translate "Sign out" %}</button>
-          </form>
-        {% else %}
-          <a href="{% url 'accounts:login' %}">{% translate "Sign in" %}</a>
-        {% endif %}
+  <body
+    class="flex min-h-screen flex-col bg-base-200 font-sans text-base-content antialiased"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+  >
+    <header class="border-b border-base-300 bg-base-100">
+      <nav class="navbar mx-auto w-full max-w-7xl gap-2 px-4" aria-label="{% translate 'Main navigation' %}">
+        <div class="flex-1">
+          <a class="btn btn-ghost px-2 text-xl font-semibold" href="{% url 'home' %}">DjWebmail</a>
+        </div>
+        <div class="flex items-center gap-2">
+          {% if request.session.mail_email %}
+            <span class="hidden max-w-64 truncate text-sm text-base-content/70 sm:inline">
+              {{ request.session.mail_email }}
+            </span>
+            <form action="{% url 'accounts:logout' %}" method="post">
+              {% csrf_token %}
+              <button class="btn btn-ghost btn-sm" type="submit">{% translate "Sign out" %}</button>
+            </form>
+          {% else %}
+            <a class="btn btn-primary btn-sm" href="{% url 'accounts:login' %}">{% translate "Sign in" %}</a>
+          {% endif %}
+        </div>
       </nav>
     </header>
-    <main>
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
       {% block content %}{% endblock %}
     </main>
     {% block scripts %}{% endblock %}

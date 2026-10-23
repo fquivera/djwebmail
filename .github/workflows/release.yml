@@ -49,6 +49,10 @@ jobs:
           uv run ruff check .
           uv run ruff format --check .
           uv run pyright
+      - name: Build Tailwind CSS
+        run: uv run python manage.py tailwind build
+      - name: Verify committed Tailwind CSS
+        run: git diff --exit-code -- theme/static/css/dist/styles.css
       - name: Tests
         run: uv run pytest
       - name: Django checks
