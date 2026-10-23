@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-  <div class="grid gap-6 lg:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] lg:items-start">
+  <div class="grid gap-6 lg:grid-cols-[minmax(12rem,15rem)_minmax(0,1fr)] lg:items-start xl:grid-cols-[16rem_minmax(0,1.4fr)_minmax(0,2fr)]">
     {% include "mail/_folder_nav.html" %}
 
     <section
@@ -27,6 +27,15 @@
       </div>
       <div id="message-list" class="px-4 py-2" aria-live="polite">
         {% include "mail/_message_list.html" %}
+      </div>
+    </section>
+
+    <section
+      class="min-w-0 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm lg:col-span-2 xl:col-span-1"
+      aria-label="{% translate 'Message' %}"
+    >
+      <div id="message-viewer" class="px-4 py-3" aria-live="polite">
+        {% include "mail/_empty_state.html" %}
       </div>
     </section>
   </div>

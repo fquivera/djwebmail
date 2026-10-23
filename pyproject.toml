@@ -12,6 +12,7 @@ dependencies = [
     "django-environ>=0.11",
     "django-tailwind>=4.6,<5",
     "imapclient>=3.0",
+    "nh3>=0.2,<1",
     "psycopg[binary]>=3.2",
     "redis>=5",
 ]

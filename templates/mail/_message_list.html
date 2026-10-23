@@ -6,7 +6,7 @@
 
   <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
     {% for message in page.messages %}
-      {% include "mail/_message_row.html" with message=message %}
+      {% include "mail/_message_row.html" with message=message folder_name=folder_name %}
     {% endfor %}
   </ul>
 
