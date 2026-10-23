@@ -64,17 +64,20 @@ pleasant to extend for Django developers.
 
 ---
 
-## Architecture (planned)
+## Architecture
 
 ```text
 djwebmail/
-├── config/           # Settings package, URLs, ASGI/WSGI
+├── config/           # Settings package (base/dev/test/prod), URLs, ASGI/WSGI
 ├── apps/
 │   ├── accounts/     # IMAP/SMTP login, session handling
 │   ├── mail/         # Folders, message list, message view
 │   ├── compose/      # Compose, reply, forward, send
 │   └── preferences/  # Per-user UI preferences
-└── common/           # Shared services, templatetags, base templates
+├── common/           # Shared views, services, templatetags
+├── templates/        # Base layout and partials
+├── static/           # Compiled CSS and static assets
+└── tests/            # Project-level smoke and integration tests
 ```
 
 The `ImapService` class encapsulates connection and operations, so views and
@@ -84,17 +87,46 @@ HTMX endpoints stay thin and testable.
 
 ## Getting started (development)
 
-> Placeholder — will be updated as the project takes shape.
+Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/). SQLite is the
+default database, so no external services are needed to start.
 
 ```bash
-git clone https://github.com/<your-org>/djwebmail.git
+git clone https://github.com/fquivera/djwebmail.git
 cd djwebmail
-# Install uv if missing: https://docs.astral.sh/uv/getting-started/installation/
 uv sync
-cp .env.example .env   # set your IMAP/SMTP credentials
+cp .env.example .env   # set your IMAP/SMTP credentials when you need them
 uv run python manage.py migrate
 uv run python manage.py runserver
 ```
+
+Open <http://127.0.0.1:8000/>. The container health probe lives at `/health/`.
+
+To use PostgreSQL (same engine as CI and production), set in `.env`:
+
+```bash
+DATABASE_URL=postgres://djwebmail:djwebmail@localhost:5432/djwebmail
+```
+
+### Settings modules
+
+| Module | Used by |
+|---|---|
+| `config.settings.development` | `manage.py` and local work (debug toolbar) |
+| `config.settings.test` | pytest and CI |
+| `config.settings.production` | `wsgi.py` / `asgi.py`, Gunicorn, containers |
+
+`DJANGO_SETTINGS_MODULE` selects the module; environment variables are read
+from `.env` when present and always win over the file.
+
+### Common commands
+
+```bash
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+uv run pyright
+uv run python manage.py makemigrations --check --dry-run
+```
+
 Node.js is only needed if you rebuild the Tailwind CSS bundle
 `(npm install && npm run build:css)`. The compiled CSS is committed so the app
 runs without Node.

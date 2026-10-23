@@ -30,6 +30,12 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
+# Static files are immutable per image; collect them at build time.
+RUN DJANGO_SETTINGS_MODULE=config.settings.production \
+    SECRET_KEY=build-only-not-a-runtime-secret \
+    ALLOWED_HOSTS=localhost \
+    python manage.py collectstatic --noinput
+
 RUN chown -R django:django /app
 
 USER django
@@ -37,8 +43,8 @@ USER django
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)" || exit 1
 
-# Gunicorn is in the production dependency group. collectstatic must run at
-# deploy time once static assets exist.
+# Gunicorn is in the production dependency group; static files were collected
+# during the build above.
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
