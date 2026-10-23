@@ -158,8 +158,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY = env("SECRET_KEY")
-DEBUG = env.bool("DEBUG", default=False)
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+DEBUG = env.bool("DJANGO_DEBUG", default=False)
 DATABASES = {"default": env.db("DATABASE_URL")}
 ```
 
@@ -167,7 +167,7 @@ DATABASES = {"default": env.db("DATABASE_URL")}
 # .env (local) — NEVER commit
 DJANGO_SETTINGS_MODULE=config.settings.development
 DATABASE_URL=postgres://user:pass@localhost:5432/mydb
-SECRET_KEY=change-me
+DJANGO_SECRET_KEY=change-me
 ```
 
 Commit `.env.example` with every required key and no real values.

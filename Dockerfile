@@ -32,8 +32,8 @@ COPY . .
 
 # Static files are immutable per image; collect them at build time.
 RUN DJANGO_SETTINGS_MODULE=config.settings.production \
-    SECRET_KEY=build-only-not-a-runtime-secret \
-    ALLOWED_HOSTS=localhost \
+    DJANGO_SECRET_KEY=build-only-not-a-runtime-secret \
+    DJANGO_ALLOWED_HOSTS=localhost \
     python manage.py collectstatic --noinput
 
 RUN chown -R django:django /app

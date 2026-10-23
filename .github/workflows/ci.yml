@@ -16,8 +16,8 @@ concurrency:
 env:
   DJANGO_SETTINGS_MODULE: config.settings.test
   DATABASE_URL: postgres://djwebmail:djwebmail@localhost:5432/djwebmail
-  SECRET_KEY: ci-insecure-secret-key
-  DEBUG: "False"
+  DJANGO_SECRET_KEY: ci-insecure-secret-key
+  DJANGO_DEBUG: "False"
 
 jobs:
   lint:
@@ -39,6 +39,15 @@ jobs:
         run: uv run ruff format --check .
       - name: Pyright
         run: uv run pyright
+
+  hardcode-scan:
+    name: hardcode-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan for hardcoded configuration
+        run: python3 scripts/check_hardcoding.py
 
   test:
     name: test
@@ -90,8 +99,8 @@ jobs:
       - name: Deployment checks
         env:
           DJANGO_SETTINGS_MODULE: config.settings.production
-          ALLOWED_HOSTS: example.com
-          SECRET_KEY: ci-insecure-secret-key
+          DJANGO_ALLOWED_HOSTS: example.com
+          DJANGO_SECRET_KEY: ci-insecure-secret-key
         run: uv run python manage.py check --deploy
 
   branch-policy:

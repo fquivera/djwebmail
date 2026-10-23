@@ -30,6 +30,7 @@ Jobs:
 | `django` | `django` | `manage.py check`, `makemigrations --check --dry-run` |
 | `branch-policy` | `branch-policy` | validates head/base branch per GitFlow |
 | `commit-messages` | `commit-messages` | validates the PR title with Commitizen |
+| `hardcode-scan` | `hardcode-scan` | rejects hardcoded URLs, hosts, ports, paths, and env access |
 
 Non-negotiables:
 
@@ -145,8 +146,12 @@ repository. Keep `platforms: linux/amd64` unless ARM images are actually needed
 - **CODEOWNERS**: `* @fquivera` — every PR requests review.
 - **Dependabot**: ecosystems `uv` and `github-actions`, weekly, grouped so one
   PR carries routine bumps; commits must still pass `commit-messages`.
+- **Hardcoding guard**: `scripts/check_hardcoding.py` scans `apps/`, `common/`,
+  `config/`, and `templates/`; suppress a justified line with
+  `# hardcode-ok: <reason>`. The `hardcode-scan` job is required.
 - **Required status checks** on `main` and `develop`: `lint`, `django`,
-  `branch-policy`, `commit-messages`, `test (3.12)`, `test (3.13)`.
+  `branch-policy`, `commit-messages`, `hardcode-scan`, `test (3.12)`,
+  `test (3.13)`.
   A matrix job produces one check per matrix entry — requiring `test` alone
   silently matches nothing.
 - **Merge strategy**: allow squash (feature → develop) and merge commits

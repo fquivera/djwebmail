@@ -7,16 +7,17 @@ this module and override only what differs.
 from pathlib import Path
 
 import environ
+from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-env = environ.Env(DEBUG=(bool, False))
+env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")
 
-SECRET_KEY = env.str("SECRET_KEY")
-DEBUG = env.bool("DEBUG", default=False)
+SECRET_KEY = env.str("DJANGO_SECRET_KEY")
+DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = [
-    host.strip() for host in env.str("ALLOWED_HOSTS", default="").split(",") if host.strip()
+    host.strip() for host in env.str("DJANGO_ALLOWED_HOSTS", default="").split(",") if host.strip()
 ]
 
 INSTALLED_APPS = [
@@ -35,6 +36,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -73,7 +75,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = env.str("DJANGO_LANGUAGE_CODE", default="en-us")
+LANGUAGES = [
+    ("en", _("English")),
+    ("es", _("Spanish")),
+]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
@@ -91,12 +98,15 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # IMAP/SMTP defaults consumed by apps.accounts services. Users can override
 # them from the UI later; empty values mean "not configured yet".
-MAIL_IMAP_HOST = env.str("MAIL_IMAP_HOST", default="")
-MAIL_IMAP_PORT = env.int("MAIL_IMAP_PORT", default=993)
-MAIL_IMAP_SSL = env.bool("MAIL_IMAP_SSL", default=True)
-MAIL_SMTP_HOST = env.str("MAIL_SMTP_HOST", default="")
-MAIL_SMTP_PORT = env.int("MAIL_SMTP_PORT", default=587)
-MAIL_SMTP_TLS = env.bool("MAIL_SMTP_TLS", default=True)
+MAIL_IMAP_HOST = env.str("DJANGO_MAIL_IMAP_HOST", default="")
+MAIL_IMAP_PORT = env.int("DJANGO_MAIL_IMAP_PORT", default=993)
+MAIL_IMAP_SECURITY = env.str("DJANGO_MAIL_IMAP_SECURITY", default="ssl")
+MAIL_VERIFY_TLS = env.bool("DJANGO_MAIL_VERIFY_TLS", default=True)
+MAIL_TIMEOUT_SECONDS = env.int("DJANGO_MAIL_TIMEOUT_SECONDS", default=30)
+MAIL_DOMAIN = env.str("DJANGO_MAIL_DOMAIN", default="")
+MAIL_SMTP_HOST = env.str("DJANGO_MAIL_SMTP_HOST", default="")
+MAIL_SMTP_PORT = env.int("DJANGO_MAIL_SMTP_PORT", default=587)
+MAIL_SMTP_SECURITY = env.str("DJANGO_MAIL_SMTP_SECURITY", default="starttls")
 
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -111,5 +121,5 @@ LOGGING = {
     "handlers": {
         "console": {"class": "logging.StreamHandler", "formatter": "console"},
     },
-    "root": {"handlers": ["console"], "level": env.str("LOG_LEVEL", default="INFO")},
+    "root": {"handlers": ["console"], "level": env.str("DJANGO_LOG_LEVEL", default="INFO")},
 }
