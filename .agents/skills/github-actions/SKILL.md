@@ -26,7 +26,7 @@ Jobs:
 | Job | Name for branch protection | What it does |
 |---|---|---|
 | `lint` | `lint` | `ruff check`, `ruff format --check`, `pyright` |
-| `test` | `test` | `pytest` on Python 3.12 + 3.13 with PostgreSQL |
+| `test` | `test (3.12)`, `test (3.13)` | `pytest` on Python 3.12 + 3.13 with PostgreSQL |
 | `django` | `django` | `manage.py check`, `makemigrations --check --dry-run` |
 | `branch-policy` | `branch-policy` | validates head/base branch per GitFlow |
 | `commit-messages` | `commit-messages` | validates the PR title with Commitizen |
@@ -155,8 +155,10 @@ repository. Keep `platforms: linux/amd64` unless ARM images are actually needed
 - **CODEOWNERS**: `* @fquivera` — every PR requests review.
 - **Dependabot**: ecosystems `uv` and `github-actions`, weekly, grouped so one
   PR carries routine bumps; commits must still pass `commit-messages`.
-- **Required status checks** on `main` and `develop`: `lint`, `test`, `django`,
-  `branch-policy`, `commit-messages`.
+- **Required status checks** on `main` and `develop`: `lint`, `django`,
+  `branch-policy`, `commit-messages`, `test (3.12)`, `test (3.13)`.
+  A matrix job produces one check per matrix entry — requiring `test` alone
+  silently matches nothing.
 - **Merge strategy**: allow squash (feature → develop) and merge commits
   (release/hotfix → main). Disable rebase merges to keep history predictable.
 - **Secrets**: repository/environment secrets only; never `.env` in the repo.
