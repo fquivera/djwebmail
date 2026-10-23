@@ -44,6 +44,8 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_MAIL_SMTP_SECURITY` | no | `starttls` | `ssl`, `starttls`, or `none` |
 | `DJANGO_MAIL_VERIFY_TLS` | no | `True` | verify IMAP/SMTP certificates |
 | `DJANGO_MAIL_TIMEOUT_SECONDS` | no | `30` | IMAP/SMTP socket timeout |
+| `DJANGO_MAIL_DEFAULT_PAGE_SIZE` | no | `50` | default messages per page |
+| `DJANGO_MAIL_MAX_PAGE_SIZE` | no | `200` | maximum accepted page size |
 | `REDIS_URL` | production | — | sessions and cache (when enabled) |
 | `FERNET_KEY` | production | — | encryption of transient secrets (when enabled) |
 
