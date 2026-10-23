@@ -54,7 +54,7 @@ def test_login_uses_real_imap_and_creates_server_side_session(client, account, p
     )
 
     assert response.status_code == 302
-    assert response["Location"] == reverse("home")
+    assert response["Location"] == reverse("mail:index")
     session = client.session
     assert session["mail_email"] == account.email
     assert session["mail_account_key"] == account.account_key
@@ -106,6 +106,50 @@ def test_smtp_message_is_visible_over_imap(account, password):
             if time.monotonic() >= deadline:
                 pytest.fail("SMTP message did not become visible over IMAP")
             time.sleep(0.2)
+
+
+def test_mail_view_lists_real_inbox_message(client, account, password):
+    subject = f"djwebmail-mail-view-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message rendered by the folder and message-list view.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            if any(subject.encode() in imap.fetch_message(uid).raw for uid in imap.search("ALL")):
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.get(reverse("mail:index"))
+
+    assert response.status_code == 200
+    assert b"INBOX" in response.content
+    assert subject.encode() in response.content
+    assert b"hx-get" in response.content
+
+    fragment = client.get(reverse("mail:index"), HTTP_HX_REQUEST="true")
+    assert fragment.status_code == 200
+    assert subject.encode() in fragment.content
+    assert b"hx-swap-oob" in fragment.content
 
 
 def test_logout_clears_real_mail_session(client, account, password):

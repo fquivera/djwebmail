@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <header>
       <nav aria-label="{% translate 'Main navigation' %}">
         <a href="{% url 'home' %}">DjWebmail</a>

@@ -1,0 +1,161 @@
+"""Tests for the mail folder and message-list views."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+
+import pytest
+from django.test import Client
+from django.urls import reverse
+
+from apps.accounts.exceptions import ImapConnectionError
+from apps.accounts.services.account import MailAccount
+from apps.mail.services.mailbox import FolderNode, MessagePage, MessageSummary
+
+
+class FakeImapContext:
+    """Context manager that stands in for a connected ImapService."""
+
+    def __enter__(self) -> object:
+        return object()
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+
+@pytest.fixture
+def mail_account() -> MailAccount:
+    return MailAccount(
+        email="user@example.com",
+        domain="example.com",
+        imap_host="imap.example.com",
+        imap_port=993,
+        imap_security="ssl",
+        smtp_host="smtp.example.com",
+        smtp_port=587,
+        smtp_security="starttls",
+    )
+
+
+@pytest.fixture
+def logged_in_client(
+    client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+    mail_account: MailAccount,
+) -> Client:
+    monkeypatch.setattr(
+        "apps.accounts.middleware.load_mail_account",
+        lambda request: mail_account,
+    )
+    monkeypatch.setattr(
+        "apps.accounts.middleware.activate_session_language",
+        lambda request: None,
+    )
+    monkeypatch.setattr(
+        "apps.mail.views.get_mail_imap_service",
+        lambda request: FakeImapContext(),
+    )
+    return client
+
+
+@pytest.fixture
+def mailbox_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    folders = (FolderNode(name="INBOX", label="INBOX", selectable=True),)
+    page = MessagePage(
+        folder="INBOX",
+        page=1,
+        page_size=50,
+        total=1,
+        page_count=1,
+        messages=(
+            MessageSummary(
+                uid=7,
+                subject="Hello from the test",
+                sender="Alice <alice@example.com>",
+                recipients="Bob <bob@example.com>",
+                date=datetime(2026, 10, 22, 10, 0, tzinfo=UTC),
+                flags=(),
+                size=1024,
+                is_seen=False,
+                is_flagged=True,
+            ),
+        ),
+        has_previous=False,
+        has_next=False,
+        previous_page=None,
+        next_page=None,
+    )
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: folders)
+    monkeypatch.setattr("apps.mail.views.list_messages", lambda imap, folder, **kwargs: page)
+
+
+def test_mail_requires_login(client: Client) -> None:
+    response: Any = client.get(reverse("mail:index"))
+
+    assert response.status_code == 302
+    assert response["Location"] == f"{reverse('accounts:login')}?next=%2Fmail%2F"
+
+
+def test_mail_requires_login_for_htmx_uses_hx_redirect(client: Client) -> None:
+    response: Any = client.get(reverse("mail:index"), HTTP_HX_REQUEST="true")
+
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == f"{reverse('accounts:login')}?next=%2Fmail%2F"
+
+
+def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: None) -> None:
+    response: Any = logged_in_client.get(reverse("mail:index"))
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/index.html" in template_names
+    assert b"Hello from the test" in response.content
+    assert b"hx-get" in response.content
+    assert b"hx-swap-oob" not in response.content
+
+
+def test_mail_htmx_returns_fragment_and_refreshes_tree(
+    logged_in_client: Client,
+    mailbox_data: None,
+) -> None:
+    response: Any = logged_in_client.get(reverse("mail:index"), HTTP_HX_REQUEST="true")
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_mailbox_response.html" in template_names
+    assert "mail/index.html" not in template_names
+    assert b"Hello from the test" in response.content
+    assert b'hx-swap-oob="outerHTML"' in response.content
+    assert "HX-Request" in response.headers["Vary"]
+
+
+def test_mail_imap_error_renders_alert_for_full_page(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(imap: Any) -> None:
+        raise ImapConnectionError("down")
+
+    monkeypatch.setattr("apps.mail.views.list_folders", fail)
+
+    response: Any = logged_in_client.get(reverse("mail:index"))
+
+    assert response.status_code == 503
+    assert b"Unable to load mail" in response.content
+
+
+def test_mail_imap_error_stays_visible_after_htmx_swap(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(imap: Any) -> None:
+        raise ImapConnectionError("down")
+
+    monkeypatch.setattr("apps.mail.views.list_folders", fail)
+
+    response: Any = logged_in_client.get(reverse("mail:index"), HTTP_HX_REQUEST="true")
+
+    assert response.status_code == 200
+    assert b'role="alert"' in response.content
+    assert b"Unable to load mail" in response.content

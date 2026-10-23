@@ -380,12 +380,16 @@ Done:
 - `apps/preferences`: `MailPreference` model, validation, admin, and migration.
 - Development and staging Compose stacks with PostgreSQL, Redis, GreenMail,
   functional IMAP/SMTP tests, and a dedicated `functional` CI job.
+- `apps/mail`: folder tree and paginated message list with HTMX partials,
+  newest-first pagination, settings-driven page sizes, and vendored HTMX 2.0.11.
+  Successful login now lands on `/mail/`.
 
 Next:
 
-1. `apps/mail`: folder tree and message list with HTMX.
-2. Tailwind/daisyUI pipeline per Phase 3.
-3. First `v0.1.0` release when login works end to end.
+1. Tailwind/daisyUI pipeline per Phase 3.
+2. Message viewer with safe HTML rendering and remote-content blocking.
+3. First `v0.1.0` release when the folder tree, message list, and viewer work
+   end to end.
 
 Do not start a new phase without closing the previous one with tests and a
 merged PR.

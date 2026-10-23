@@ -99,10 +99,12 @@ stack for the automated functional suite.
 `tests/functional/test_mail_stack.py` exercises the full Django request/view
 layer with Django's test client and real IMAP/SMTP connections. It checks:
 
-- login against GreenMail and creation of the server-side session;
+- login against GreenMail, creation of the server-side session, and the
+  redirect to `/mail/`;
 - rejection of a wrong IMAP password;
 - mailbox listing through `ImapService`;
 - SMTP delivery followed by an IMAP fetch;
+- folder tree and message-list rendering, including the HTMX partial response;
 - logout clearing the mail session.
 
 The tests are skipped unless `FUNCTIONAL_TESTS_ENABLED=True` and both

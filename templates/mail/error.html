@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Mail unavailable" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Mail unavailable" %}</h1>
+  <p class="error-message" role="alert">{{ error }}</p>
+  <p><a href="{% url 'mail:index' %}">{% translate "Try again" %}</a></p>
+{% endblock %}

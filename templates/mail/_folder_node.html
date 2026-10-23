@@ -1,0 +1,25 @@
+{% load i18n %}
+<li class="folder-item">
+  {% if node.selectable and node.name %}
+    <a
+      class="folder-link{% if node.name == current_folder %} is-active{% endif %}"
+      href="{% url 'mail:folder' node.name %}"
+      hx-get="{% url 'mail:folder' node.name %}"
+      hx-target="#message-list"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      hx-indicator="#list-spinner"
+      {% if node.name == current_folder %}aria-current="page"{% endif %}
+    >{{ node.label }}</a>
+  {% else %}
+    <span class="folder-label">{{ node.label }}</span>
+  {% endif %}
+
+  {% if node.children %}
+    <ul class="folder-children">
+      {% for child in node.children %}
+        {% include "mail/_folder_node.html" with node=child current_folder=current_folder %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+</li>

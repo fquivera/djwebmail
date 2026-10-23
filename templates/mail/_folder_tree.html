@@ -1,0 +1,8 @@
+{% load i18n %}
+<ul class="folder-list">
+  {% for node in folders %}
+    {% include "mail/_folder_node.html" with node=node current_folder=folder_name %}
+  {% empty %}
+    <li class="folder-empty">{% translate "No folders found." %}</li>
+  {% endfor %}
+</ul>

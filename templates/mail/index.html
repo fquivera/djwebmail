@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% blocktranslate with folder=folder_name %}Mail — {{ folder }}{% endblocktranslate %}{% endblock %}
+
+{% block scripts %}
+  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="mail-layout">
+    <nav id="folder-tree" class="folder-tree" aria-label="{% translate 'Folders' %}">
+      {% include "mail/_folder_tree.html" %}
+    </nav>
+
+    <section class="message-pane" aria-labelledby="folder-heading">
+      <div class="message-toolbar">
+        <h1 id="folder-heading">{{ folder_name }}</h1>
+        <span id="list-spinner" class="spinner" aria-hidden="true"></span>
+      </div>
+      <div id="message-list" aria-live="polite">
+        {% include "mail/_message_list.html" %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

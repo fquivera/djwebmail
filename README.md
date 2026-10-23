@@ -229,7 +229,7 @@ MIT — see the LICENSE file for details.
 ## Roadmap (high level)
 ☑ IMAP login and session management  
 ☑ Local development/staging mail stack and functional tests<br>
-□ Folder tree and message list with HTMX pagination  
+☑ Folder tree and message list with HTMX pagination<br>
 □ Message viewer with safe HTML rendering and remote-content blocking  
 □ Compose, reply, forward, send via SMTP  
 □ Per-user UI preferences (theme, density, signature)  

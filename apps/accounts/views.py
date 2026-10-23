@@ -102,7 +102,7 @@ class MailLoginView(FormView):
             require_https=self.request.is_secure(),
         ):
             return next_url
-        return reverse("home")
+        return reverse("mail:index")
 
     def _invalid(self, form: LoginForm, message: str, *, status: int = 200) -> HttpResponse:
         form.add_error(None, message)
