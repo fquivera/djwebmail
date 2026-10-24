@@ -20,6 +20,7 @@ from apps.accounts.exceptions import MailError, MailSessionError
 from apps.accounts.services.account import MailAccount, resolve_mail_account
 from apps.accounts.services.credentials import CredentialStore
 from apps.accounts.services.imap import ImapService
+from apps.accounts.services.smtp import SmtpService
 from apps.preferences.models import MailPreference
 
 
@@ -105,6 +106,18 @@ def activate_session_language(request: HttpRequest) -> None:
 
 def get_mail_imap_service(request: HttpRequest) -> ImapService:
     """Build a request-scoped IMAP service from the server-side credential."""
+    account, password = _mail_credentials(request)
+    return ImapService(account, account.email, password)
+
+
+def get_mail_smtp_service(request: HttpRequest) -> SmtpService:
+    """Build a request-scoped SMTP service from the server-side credential."""
+    account, password = _mail_credentials(request)
+    return SmtpService(account, account.email, password)
+
+
+def _mail_credentials(request: HttpRequest) -> tuple[MailAccount, str]:
+    """Return the authenticated account and its decrypted password."""
     account = getattr(request, "mail_account", None)
     if account is None:
         raise MailSessionError("No authenticated mail account on this request")
@@ -114,7 +127,7 @@ def get_mail_imap_service(request: HttpRequest) -> ImapService:
     password = CredentialStore().load(session_key)
     if not password:
         raise MailSessionError("The mail credential is missing or expired")
-    return ImapService(account, account.email, password)
+    return account, password
 
 
 def _available_languages() -> set[str]:

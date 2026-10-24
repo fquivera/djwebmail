@@ -10,5 +10,6 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("", include("apps.accounts.urls")),
     path("mail/", include("apps.mail.urls")),
+    path("compose/", include("apps.compose.urls")),
     path("admin/", admin.site.urls),
 ]
