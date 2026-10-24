@@ -1,5 +1,21 @@
 # AGENTS.md — DjWebmail
 
+<!-- caveman-begin -->
+The `caveman` skill is auto-initialized at `lite` intensity for every session in
+this repository. It is active by default; no manual invocation is needed.
+
+Lite mode: drop filler and hedging (just/really/basically/actually/simply) and
+pleasantries. Keep articles and full sentences. Professional but tight. No
+tool-call narration. Technical terms, code, CLI commands, commit keywords
+(feat/fix/...), and error strings stay exact. Preserve the user's language.
+
+Boundaries: code, commits, and PR descriptions are written normally.
+Auto-clarity: switch to normal prose for security warnings, irreversible-action
+confirmations, and ambiguous multi-step instructions; resume after.
+
+Stop with "stop caveman" or "normal mode".
+<!-- caveman-end -->
+
 Operating guide for AI agents working in this repository. It is mandatory. If
 another document contradicts this file, this file wins; if the change is
 deliberate, update this file in the same PR.
@@ -402,11 +418,17 @@ Done:
   allowlist, public-IP DNS check, redirect refusal, raster content-type
   allowlist, byte and timeout limits) and a "load images" action that re-renders
   the message body through it. See `docs/message-viewer.md`.
+- Message attachments: MIME parts listed under the viewer and streamed via
+  `/attachment/<part>/`; `cid:` inline images rewritten to `/inline/<part>/`.
+  See `docs/message-viewer.md`.
+- First `v0.1.0` release: `CHANGELOG.md`, tag `v0.1.0`, GHCR image, and GitHub
+  Release.
 
-Next:
+Next (Phase 3 order, `docs/upstream` §3.9):
 
-1. First `v0.1.0` release when the folder tree, message list, and viewer work
-   end to end.
+1. Flags, move, delete: mark read/star, delete, move with HTMX OOB row updates.
+2. Compose: compose/reply/forward form and SMTP send.
+3. Preferences UI and accessibility polish.
 
 Do not start a new phase without closing the previous one with tests and a
 merged PR.

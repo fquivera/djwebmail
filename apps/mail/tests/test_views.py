@@ -12,7 +12,7 @@ from django.urls import reverse
 from apps.accounts.exceptions import ImapConnectionError
 from apps.accounts.services.account import MailAccount
 from apps.mail.services.mailbox import FolderNode, MessagePage, MessageSummary
-from apps.mail.services.message import MessageDetail
+from apps.mail.services.message import Attachment, MessageDetail
 
 
 class FakeImapContext:
@@ -178,6 +178,8 @@ def message_view_data(monkeypatch: pytest.MonkeyPatch) -> MessageDetail:
         is_flagged=False,
         body_kind="html",
         body_html="<p>Sanitized body</p>",
+        attachments=(),
+        inline_cids={},
         remote_content_blocked=False,
     )
     monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
@@ -243,6 +245,8 @@ def test_message_view_shows_remote_content_warning(
         is_flagged=False,
         body_kind="html",
         body_html="<p>Body</p>",
+        attachments=(),
+        inline_cids={},
         remote_content_blocked=True,
     )
     monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: blocked)
@@ -274,6 +278,8 @@ def test_message_remote_images_returns_proxied_body(
         is_flagged=False,
         body_kind="html",
         body_html='<img src="https://example.com/x.png">',
+        attachments=(),
+        inline_cids={},
         remote_content_blocked=True,
     )
     monkeypatch.setattr(
@@ -329,3 +335,110 @@ def test_image_proxy_rejects_private_url(logged_in_client: Client) -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_message_view_lists_attachments(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="With attachment",
+        sender="Alice <alice@example.com>",
+        recipients="",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=False,
+        is_flagged=False,
+        body_kind="html",
+        body_html="<p>Body</p>",
+        attachments=(
+            Attachment(
+                part="2",
+                filename="report.pdf",
+                content_type="application/pdf",
+                size=1024,
+                disposition="attachment",
+            ),
+        ),
+        inline_cids={},
+        remote_content_blocked=False,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b"report.pdf" in response.content
+    assert b"/mail/message/INBOX/7/attachment/2/" in response.content
+
+
+def test_attachment_view_streams_part(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (
+            b"%PDF-1.4",
+            "application/pdf",
+            "report.pdf",
+            "attachment",
+        ),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:attachment", kwargs={"folder_name": "INBOX", "uid": 7, "part": "2"})
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"%PDF-1.4"
+    assert response["Content-Type"] == "application/pdf"
+    assert 'attachment; filename="report.pdf"' in response["Content-Disposition"]
+
+
+def test_attachment_view_requires_login(client: Client) -> None:
+    response: Any = client.get(
+        reverse("mail:attachment", kwargs={"folder_name": "INBOX", "uid": 7, "part": "2"})
+    )
+
+    assert response.status_code == 302
+
+
+def test_inline_view_rejects_non_image(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (b"%PDF-1.4", "application/pdf", "report.pdf", "inline"),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:inline_image", kwargs={"folder_name": "INBOX", "uid": 7, "part": "2"})
+    )
+
+    assert response.status_code == 404
+
+
+def test_inline_view_streams_image(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (b"\x89PNG", "image/png", "logo.png", "inline"),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:inline_image", kwargs={"folder_name": "INBOX", "uid": 7, "part": "2"})
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"\x89PNG"
+    assert response["Content-Type"] == "image/png"
+    assert "inline" in response["Content-Disposition"]

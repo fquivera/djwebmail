@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
@@ -14,10 +16,10 @@ from django.views.decorators.vary import vary_on_headers
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import ImapAuthError, MailError, MailSessionError
 from apps.accounts.services.session import end_mail_session, get_mail_imap_service
-from apps.mail.constants import IMAP_INBOX
+from apps.mail.constants import IMAGE_PROXY_ALLOWED_CONTENT_TYPES, IMAP_INBOX
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import list_folders, list_messages
-from apps.mail.services.message import get_message, proxy_remote_images
+from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
 
 
 @never_cache
@@ -75,6 +77,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     context = {
         "folder_name": folder,
         "message": message,
+        "body_html": _render_body_html(message, folder, uid, allow_remote=False),
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_message_view.html", context)
@@ -93,7 +96,7 @@ def message_remote_images(
     folder = folder_name or IMAP_INBOX
     try:
         with get_mail_imap_service(request) as imap:
-            message = get_message(imap, folder, uid, allow_images=True)
+            message = get_message(imap, folder, uid)
     except MailSessionError:
         return login_redirect(request)
     except ImapAuthError:
@@ -102,7 +105,7 @@ def message_remote_images(
     except MailError:
         return _error_response(request)
 
-    body_html = proxy_remote_images(message.body_html, reverse("mail:image_proxy"))
+    body_html = _render_body_html(message, folder, uid, allow_remote=True)
     return render(request, "mail/_message_body.html", {"body_html": body_html})
 
 
@@ -123,6 +126,102 @@ def image_proxy(request: HttpRequest) -> HttpResponse:
     response = HttpResponse(image.content, content_type=image.content_type)
     response["Cache-Control"] = "private, max-age=3600"
     return response
+
+
+@never_cache
+@mail_login_required
+def attachment_view(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+) -> HttpResponse:
+    """Stream one message part as a download."""
+    return _stream_part(request, folder_name, uid, part, inline=False)
+
+
+@never_cache
+@mail_login_required
+def inline_view(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+) -> HttpResponse:
+    """Stream one message part as an inline image (cid: references)."""
+    return _stream_part(request, folder_name, uid, part, inline=True)
+
+
+def _render_body_html(
+    message: MessageDetail,
+    folder: str,
+    uid: int,
+    *,
+    allow_remote: bool,
+) -> str:
+    def inline_url(part: str) -> str:
+        return reverse(
+            "mail:inline_image",
+            kwargs={"folder_name": folder, "uid": uid, "part": part},
+        )
+
+    return rewrite_images(
+        message.body_html,
+        proxy_base=reverse("mail:image_proxy"),
+        inline_url=inline_url,
+        inline_cids=message.inline_cids,
+        allow_remote=allow_remote,
+    )
+
+
+def _stream_part(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+    *,
+    inline: bool,
+) -> HttpResponse:
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            result = get_part(imap, folder, uid, part)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return HttpResponse(status=404)
+
+    if result is None:
+        return HttpResponse(status=404)
+    content, content_type, filename, disposition = result
+
+    if inline and content_type not in IMAGE_PROXY_ALLOWED_CONTENT_TYPES:
+        return HttpResponse(status=404)
+
+    response = HttpResponse(content, content_type=content_type)
+    response["Content-Disposition"] = _content_disposition(
+        "inline" if inline else disposition,
+        filename,
+    )
+    response["Cache-Control"] = "private, max-age=3600"
+    return response
+
+
+def _content_disposition(disposition: str, filename: str) -> str:
+    safe = _safe_filename(filename)
+    ascii_name = safe.encode("ascii", "replace").decode("ascii")
+    if ascii_name != safe:
+        return f"{disposition}; filename*=UTF-8''{quote(safe)}"
+    return f'{disposition}; filename="{ascii_name}"'
+
+
+def _safe_filename(filename: str) -> str:
+    for char in ("\r", "\n", '"', "\\"):
+        filename = filename.replace(char, "")
+    return filename.strip() or "attachment"
 
 
 def _parse_page(value: str | None) -> int:

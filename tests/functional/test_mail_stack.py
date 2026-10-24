@@ -204,6 +204,66 @@ def test_message_viewer_sanitizes_html_and_blocks_remote_content(client, account
     assert b"Remote content was blocked" in response.content
 
 
+def test_message_viewer_lists_and_streams_attachment(client, account, password):
+    subject = f"djwebmail-attachment-{uuid4().hex}"
+    payload = b"\x00\x01\x02\x03\x04"
+
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.make_mixed()
+
+    body = EmailMessage()
+    body.set_content("Body with an attachment.")
+    message.attach(body)
+
+    attachment = EmailMessage()
+    attachment.set_content(payload, maintype="application", subtype="octet-stream")
+    attachment["Content-Disposition"] = 'attachment; filename="data.bin"'
+    message.attach(attachment)
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    viewer = client.get(reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": uid}))
+    assert viewer.status_code == 200
+    assert b"data.bin" in viewer.content
+    assert f"/mail/message/INBOX/{uid}/attachment/2/".encode() in viewer.content
+
+    download = client.get(
+        reverse("mail:attachment", kwargs={"folder_name": "INBOX", "uid": uid, "part": "2"})
+    )
+    assert download.status_code == 200
+    assert download.content == payload
+    assert "data.bin" in download["Content-Disposition"]
+
+
 def test_logout_clears_real_mail_session(client, account, password):
     login = client.post(
         reverse("accounts:login"),

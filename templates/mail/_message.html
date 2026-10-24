@@ -54,7 +54,9 @@
     {% if message.body_kind == "empty" %}
       <p class="text-base-content/60">{% translate "This message has no content." %}</p>
     {% else %}
-      {{ message.body_html|safe }}
+      {{ body_html|safe }}
     {% endif %}
   </div>
+
+  {% include "mail/_attachment_list.html" %}
 </article>

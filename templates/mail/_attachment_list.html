@@ -1,0 +1,20 @@
+{% load i18n %}
+{% if message.attachments %}
+  <section class="mt-4" aria-label="{% translate 'Attachments' %}">
+    <h2 class="text-sm font-semibold text-base-content/80">{% translate "Attachments" %}</h2>
+    <ul class="mt-2 divide-y divide-base-300">
+      {% for attachment in message.attachments %}
+        <li class="flex items-center justify-between gap-2 py-2 text-sm">
+          <a
+            class="link link-hover min-w-0 break-all"
+            href="{% url 'mail:attachment' folder_name message.uid attachment.part %}"
+            download
+          >
+            {{ attachment.filename }}
+          </a>
+          <span class="shrink-0 text-base-content/60">{{ attachment.size|filesizeformat }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
