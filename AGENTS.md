@@ -1,5 +1,21 @@
 # AGENTS.md — DjWebmail
 
+<!-- caveman-begin -->
+The `caveman` skill is auto-initialized at `lite` intensity for every session in
+this repository. It is active by default; no manual invocation is needed.
+
+Lite mode: drop filler and hedging (just/really/basically/actually/simply) and
+pleasantries. Keep articles and full sentences. Professional but tight. No
+tool-call narration. Technical terms, code, CLI commands, commit keywords
+(feat/fix/...), and error strings stay exact. Preserve the user's language.
+
+Boundaries: code, commits, and PR descriptions are written normally.
+Auto-clarity: switch to normal prose for security warnings, irreversible-action
+confirmations, and ambiguous multi-step instructions; resume after.
+
+Stop with "stop caveman" or "normal mode".
+<!-- caveman-end -->
+
 Operating guide for AI agents working in this repository. It is mandatory. If
 another document contradicts this file, this file wins; if the change is
 deliberate, update this file in the same PR.
