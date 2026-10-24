@@ -6,7 +6,11 @@ from collections.abc import Callable
 
 from django.http import HttpRequest, HttpResponse
 
-from apps.accounts.services.session import activate_session_language, load_mail_account
+from apps.accounts.services.session import (
+    activate_session_language,
+    activate_session_timezone,
+    load_mail_account,
+)
 
 
 class MailSessionMiddleware:
@@ -18,4 +22,5 @@ class MailSessionMiddleware:
     def __call__(self, request: HttpRequest) -> HttpResponse:
         setattr(request, "mail_account", load_mail_account(request))  # noqa: B010
         activate_session_language(request)
+        activate_session_timezone(request)
         return self.get_response(request)

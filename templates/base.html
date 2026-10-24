@@ -1,5 +1,10 @@
 {% load i18n tailwind_tags %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
-<html lang="{{ LANGUAGE_CODE }}" class="h-full">
+<html
+  lang="{{ LANGUAGE_CODE }}"
+  class="h-full"
+  {% if request.session.mail_theme == "light" %}data-theme="mail-light"{% elif request.session.mail_theme == "dark" %}data-theme="mail-dark"{% endif %}
+  data-density="{{ request.session.mail_density|default:'compact' }}"
+>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,6 +16,10 @@
     class="flex min-h-screen flex-col bg-base-200 font-sans text-base-content antialiased"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
   >
+    <a
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-base-100 focus:px-3 focus:py-2 focus:text-sm focus:shadow"
+      href="#main-content"
+    >{% translate "Skip to main content" %}</a>
     <header class="border-b border-base-300 bg-base-100">
       <nav class="navbar mx-auto w-full max-w-7xl gap-2 px-4" aria-label="{% translate 'Main navigation' %}">
         <div class="flex-1">
@@ -21,6 +30,9 @@
             <span class="hidden max-w-64 truncate text-sm text-base-content/70 sm:inline">
               {{ request.session.mail_email }}
             </span>
+            <a class="btn btn-ghost btn-sm" href="{% url 'preferences:index' %}">
+              {% translate "Settings" %}
+            </a>
             <form action="{% url 'accounts:logout' %}" method="post">
               {% csrf_token %}
               <button class="btn btn-ghost btn-sm" type="submit">{% translate "Sign out" %}</button>
@@ -31,7 +43,17 @@
         </div>
       </nav>
     </header>
-    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
+    <main id="main-content" tabindex="-1" class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
+      {% if messages %}
+        <div class="mb-4 space-y-2">
+          {% for message in messages %}
+            <div
+              class="alert alert-{{ message.tags }} text-sm"
+              role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}"
+            >{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
     {% block scripts %}{% endblock %}

@@ -439,13 +439,16 @@ Done:
   `SmtpService` reuses the encrypted session credential. Attachments and
   drafts live in the cache for `MAIL_COMPOSE_TTL_SECONDS`; Sent append and the
   panel UI remain deferred. See `docs/compose.md`.
+- Preferences UI: `/settings/` edits language, time zone, theme, density, and
+  message page size. PostgreSQL is the source of truth, login mirrors the values
+  into the server-side session, and HTMX applies theme/density in place after a
+  save. See `docs/preferences.md`.
+- Accessibility polish: skip link and focusable main landmark, live-region
+  messages, labelled fieldsets, hidden unread text, `aria-pressed` on message
+  flags, and keyboard-readable focus styles.
 
-Next (Phase 3 order, `docs/upstream` §3.9):
-
-1. Preferences UI and accessibility polish.
-
-Do not start a new phase without closing the previous one with tests and a
-merged PR.
+Next: Phase 3 is complete. Define the scope of Phase 4 before implementing it;
+do not start it without closing this phase with tests and a merged PR.
 
 ## 12. Anti-patterns
 

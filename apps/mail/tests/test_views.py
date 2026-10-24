@@ -61,7 +61,7 @@ def logged_in_client(
 
 
 @pytest.fixture
-def mailbox_data(monkeypatch: pytest.MonkeyPatch) -> None:
+def mailbox_data(monkeypatch: pytest.MonkeyPatch) -> MessagePage:
     folders = (FolderNode(name="INBOX", label="INBOX", selectable=True),)
     page = MessagePage(
         folder="INBOX",
@@ -89,6 +89,7 @@ def mailbox_data(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: folders)
     monkeypatch.setattr("apps.mail.views.list_messages", lambda imap, folder, **kwargs: page)
+    return page
 
 
 def test_mail_requires_login(client: Client) -> None:
@@ -105,7 +106,7 @@ def test_mail_requires_login_for_htmx_uses_hx_redirect(client: Client) -> None:
     assert response["HX-Redirect"] == f"{reverse('accounts:login')}?next=%2Fmail%2F"
 
 
-def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: None) -> None:
+def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: MessagePage) -> None:
     response: Any = logged_in_client.get(reverse("mail:index"))
 
     assert response.status_code == 200
@@ -117,9 +118,32 @@ def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: None) ->
     assert b"hx-swap-oob" not in response.content
 
 
+@pytest.mark.django_db
+def test_mail_uses_page_size_from_session(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture_page(imap: Any, folder: str, **kwargs: Any) -> MessagePage:
+        captured.update(kwargs)
+        return mailbox_data
+
+    monkeypatch.setattr("apps.mail.views.list_messages", capture_page)
+    session = logged_in_client.session
+    session["mail_page_size"] = 25
+    session.save()
+
+    response: Any = logged_in_client.get(reverse("mail:index"))
+
+    assert response.status_code == 200
+    assert captured["page_size"] == 25
+
+
 def test_mail_htmx_returns_fragment_and_refreshes_tree(
     logged_in_client: Client,
-    mailbox_data: None,
+    mailbox_data: MessagePage,
 ) -> None:
     response: Any = logged_in_client.get(reverse("mail:index"), HTTP_HX_REQUEST="true")
 

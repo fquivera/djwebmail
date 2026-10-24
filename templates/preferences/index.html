@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Settings" %}{% endblock %}
+
+{% block scripts %}
+  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
+  <script defer src="{% static 'js/htmx-config.js' %}"></script>
+  <script defer src="{% static 'js/preferences.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-2xl">
+    <div class="mb-4 flex items-center justify-between gap-2">
+      <h1 class="text-xl font-semibold">{% translate "Settings" %}</h1>
+      <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
+    </div>
+    {% include "preferences/_settings_form.html" %}
+  </div>
+{% endblock %}
