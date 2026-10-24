@@ -423,10 +423,13 @@ Done:
   See `docs/message-viewer.md`.
 - First `v0.1.0` release: `CHANGELOG.md`, tag `v0.1.0`, GHCR image, and GitHub
   Release.
+- Message flags: mark read on open and star/unstar via
+  `POST /mail/message/<folder>/<uid>/flags/`, with out-of-band message-list row
+  refresh. See `docs/message-viewer.md`.
 
 Next (Phase 3 order, `docs/upstream` §3.9):
 
-1. Flags, move, delete: mark read/star, delete, move with HTMX OOB row updates.
+1. Delete and move: confirm dialog and folder picker, with list refresh.
 2. Compose: compose/reply/forward form and SMTP send.
 3. Preferences UI and accessibility polish.
 

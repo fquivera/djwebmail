@@ -32,6 +32,19 @@
         </div>
       {% endif %}
     </dl>
+    <div class="flex items-center gap-2 pt-2">
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
+        hx-vals='{"action": "{% if message.is_flagged %}unstar{% else %}star{% endif %}"}'
+        hx-target="#message-viewer"
+        hx-swap="innerHTML"
+        aria-label="{% if message.is_flagged %}{% translate 'Unflag message' %}{% else %}{% translate 'Flag message' %}{% endif %}"
+      >
+        {% if message.is_flagged %}★{% else %}☆{% endif %}
+      </button>
+    </div>
   </header>
 
   <div id="message-body" class="message-body break-words text-sm leading-relaxed">
@@ -59,4 +72,14 @@
   </div>
 
   {% include "mail/_attachment_list.html" %}
+
+  {% if not message.is_seen %}
+    <div
+      hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
+      hx-vals='{"action": "read"}'
+      hx-trigger="load"
+      hx-swap="none"
+      aria-hidden="true"
+    ></div>
+  {% endif %}
 </article>

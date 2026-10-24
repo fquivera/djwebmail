@@ -264,6 +264,55 @@ def test_message_viewer_lists_and_streams_attachment(client, account, password):
     assert "data.bin" in download["Content-Disposition"]
 
 
+def test_message_flags_marks_read_over_imap(client, account, password):
+    subject = f"djwebmail-flags-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message for the flags test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": uid}),
+        {"action": "read"},
+    )
+    assert response.status_code == 200
+    assert b'hx-swap-oob="outerHTML"' in response.content
+
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        fetched = imap.fetch_message(uid)
+    assert "\\Seen" in fetched.flags
+
+
 def test_logout_clears_real_mail_session(client, account, password):
     login = client.post(
         reverse("accounts:login"),

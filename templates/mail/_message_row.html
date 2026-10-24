@@ -1,5 +1,9 @@
 {% load i18n %}
-<li data-uid="{{ message.uid }}">
+<li
+  id="msg-{{ message.uid }}"
+  data-uid="{{ message.uid }}"
+  {% if oob %}hx-swap-oob="outerHTML"{% endif %}
+>
   <a
     class="grid gap-1 px-1 py-3 transition-colors hover:bg-base-200 sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
     href="{% url 'mail:message' folder_name message.uid %}"

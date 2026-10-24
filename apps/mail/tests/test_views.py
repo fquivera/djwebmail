@@ -442,3 +442,94 @@ def test_inline_view_streams_image(
     assert response.content == b"\x89PNG"
     assert response["Content-Type"] == "image/png"
     assert "inline" in response["Content-Disposition"]
+
+
+def _flags_double(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    flags: tuple[str, ...],
+) -> None:
+    summary = MessageSummary(
+        uid=7,
+        subject="Hello",
+        sender="Alice <alice@example.com>",
+        recipients="",
+        date=None,
+        flags=flags,
+        size=1,
+        is_seen="\\Seen" in flags,
+        is_flagged="\\Flagged" in flags,
+    )
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Hello",
+        sender="Alice <alice@example.com>",
+        recipients="",
+        cc="",
+        date=None,
+        flags=flags,
+        is_seen="\\Seen" in flags,
+        is_flagged="\\Flagged" in flags,
+        body_kind="html",
+        body_html="<p>Body</p>",
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=False,
+    )
+    monkeypatch.setattr(
+        "apps.mail.views.set_message_flags",
+        lambda imap, folder, uid, **kwargs: summary,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+
+
+def test_message_flags_requires_login(client: Client) -> None:
+    response: Any = client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "read"},
+    )
+
+    assert response.status_code == 302
+
+
+def test_message_flags_rejects_invalid_action(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "bogus"},
+    )
+
+    assert response.status_code == 400
+
+
+def test_message_flags_marks_read_returns_oob_row(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _flags_double(monkeypatch, flags=("\\Seen",))
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "read"},
+    )
+
+    assert response.status_code == 200
+    assert b'hx-swap-oob="outerHTML"' in response.content
+    assert b'id="msg-7"' in response.content
+    assert b"<article" not in response.content
+
+
+def test_message_flags_star_returns_viewer_and_row(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _flags_double(monkeypatch, flags=("\\Flagged",))
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "star"},
+    )
+
+    assert response.status_code == 200
+    assert b'id="msg-7"' in response.content
+    assert b"Hello" in response.content
