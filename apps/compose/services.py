@@ -17,6 +17,7 @@ from django.utils import formats
 from django.utils.translation import gettext as _
 
 from apps.accounts.services.smtp import SmtpService
+from apps.compose.attachments import Attachment
 from apps.compose.constants import (
     MAX_SUBJECT_LENGTH,
     SUBJECT_FORWARD_PREFIX,
@@ -35,6 +36,7 @@ def build_message(
     cc: Sequence[str],
     subject: str,
     body: str,
+    attachments: Sequence[Attachment] = (),
 ) -> EmailMessage:
     """Assemble a plain-text RFC 5322 message with a stable Message-ID."""
     message = EmailMessage()
@@ -46,6 +48,8 @@ def build_message(
     message["Date"] = formatdate(localtime=True)
     message["Message-ID"] = make_msgid(domain=sender.rsplit("@", 1)[-1])
     message.set_content(body)
+    for attachment in attachments:
+        _add_attachment(message, attachment)
     return message
 
 
@@ -57,10 +61,30 @@ def send_message(
     cc: Sequence[str],
     subject: str,
     body: str,
+    attachments: Sequence[Attachment] = (),
 ) -> None:
     """Build the message and hand it to SMTP for every recipient."""
-    message = build_message(sender=sender, to=to, cc=cc, subject=subject, body=body)
+    message = build_message(
+        sender=sender,
+        to=to,
+        cc=cc,
+        subject=subject,
+        body=body,
+        attachments=attachments,
+    )
     smtp.send(sender, [*to, *cc], message.as_bytes())
+
+
+def _add_attachment(message: EmailMessage, attachment: Attachment) -> None:
+    maintype, _, subtype = attachment.content_type.partition("/")
+    if not maintype or not subtype:
+        maintype, subtype = "application", "octet-stream"
+    message.add_attachment(
+        attachment.content,
+        maintype=maintype,
+        subtype=subtype,
+        filename=attachment.name,
+    )
 
 
 def reply_initial(message: MessageDetail) -> dict[str, str]:

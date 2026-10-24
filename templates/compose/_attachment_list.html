@@ -1,0 +1,28 @@
+{% load i18n %}
+{% if attachment_error %}
+  <div class="alert alert-error text-sm" role="alert">{{ attachment_error }}</div>
+{% endif %}
+{% if attachments %}
+  <ul class="space-y-1">
+    {% for attachment in attachments %}
+      <li class="flex items-center justify-between gap-2 text-sm">
+        <span class="min-w-0 truncate">
+          {{ attachment.name }}
+          <span class="text-base-content/60">({{ attachment.size|filesizeformat }})</span>
+        </span>
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs"
+          hx-post="{% url 'compose:attachment_delete' attachment.id %}"
+          hx-target="#attachment-list"
+          hx-swap="innerHTML"
+        >
+          {% translate "Remove" %}
+        </button>
+        <input type="hidden" name="attachment_ids" value="{{ attachment.id }}">
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="text-sm text-base-content/60">{% translate "No attachments." %}</p>
+{% endif %}

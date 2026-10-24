@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 from apps.accounts.services.smtp import SmtpService
+from apps.compose.attachments import Attachment
 from apps.compose.services import (
     build_message,
     forward_initial,
@@ -88,6 +89,52 @@ def test_forward_initial_quotes_original_body() -> None:
 
 def test_html_to_text_strips_tags_and_unescapes() -> None:
     assert html_to_text("<p>Hello&nbsp;<b>world</b></p>") == "Hello world"
+
+
+def test_build_message_adds_attachments() -> None:
+    attachment = Attachment(
+        id="attachment-1",
+        name="report.txt",
+        content_type="text/plain",
+        content=b"attachment body",
+    )
+
+    message = build_message(
+        sender="user@example.com",
+        to=["alice@example.com"],
+        cc=[],
+        subject="Hello",
+        body="Body text",
+        attachments=[attachment],
+    )
+
+    assert message.get_content_type() == "multipart/mixed"
+    parts = list(message.iter_attachments())
+    assert len(parts) == 1
+    assert parts[0].get_filename() == "report.txt"
+    assert parts[0].get_content_type() == "text/plain"
+    assert parts[0].get_payload(decode=True) == b"attachment body"
+
+
+def test_build_message_falls_back_for_invalid_content_type() -> None:
+    attachment = Attachment(
+        id="attachment-1",
+        name="data.bin",
+        content_type="not-a-content-type",
+        content=b"\x00\x01",
+    )
+
+    message = build_message(
+        sender="user@example.com",
+        to=["alice@example.com"],
+        cc=[],
+        subject="Hello",
+        body="Body text",
+        attachments=[attachment],
+    )
+
+    part = next(message.iter_attachments())
+    assert part.get_content_type() == "application/octet-stream"
 
 
 def test_send_message_uses_all_recipients() -> None:

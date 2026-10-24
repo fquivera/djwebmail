@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import smtplib
 import time
+from email import message_from_bytes
 from email.message import EmailMessage
 from typing import Any, cast
 from uuid import uuid4
@@ -16,10 +17,12 @@ from uuid import uuid4
 import pytest
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.accounts.services.account import MailAccount, resolve_mail_account
 from apps.accounts.services.imap import ImapService
+from apps.compose.attachments import list_attachments
 from apps.preferences.models import MailPreference
 
 pytestmark = [pytest.mark.functional, pytest.mark.django_db]
@@ -468,4 +471,60 @@ def test_compose_send_delivers_over_smtp(client, account, password):
                     return
             if time.monotonic() >= deadline:
                 pytest.fail("Composed message did not arrive over SMTP")
+            time.sleep(0.2)
+
+
+def test_compose_attachment_is_delivered_over_smtp(client, account, password):
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    payload = b"attachment payload from the functional suite"
+    upload = client.post(
+        reverse("compose:attachments"),
+        {
+            "attachments": SimpleUploadedFile(
+                "functional-note.txt",
+                payload,
+                content_type="text/plain",
+            )
+        },
+    )
+    assert upload.status_code == 200
+    session_key = client.session.session_key
+    assert session_key
+    refs = list_attachments(session_key)
+    assert len(refs) == 1
+
+    subject = f"djwebmail-compose-attachment-{uuid4().hex}"
+    response = client.post(
+        reverse("compose:send"),
+        {
+            "to": account.email,
+            "cc": "",
+            "subject": subject,
+            "body": "Body with an attachment.",
+            "attachment_ids": [refs[0].id],
+        },
+    )
+    assert response.status_code == 302
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                fetched = imap.fetch_message(candidate)
+                if subject.encode() not in fetched.raw:
+                    continue
+                message = message_from_bytes(fetched.raw)
+                for part in message.walk():
+                    if part.get_filename() == "functional-note.txt":
+                        assert part.get_payload(decode=True) == payload
+                        return
+                pytest.fail("The delivered message has no expected attachment")
+            if time.monotonic() >= deadline:
+                pytest.fail("Composed attachment did not arrive over SMTP")
             time.sleep(0.2)

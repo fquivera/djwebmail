@@ -1,7 +1,12 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% translate "Compose" %}{% endblock %}
+
+{% block scripts %}
+  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
+  <script defer src="{% static 'js/htmx-config.js' %}"></script>
+{% endblock %}
 
 {% block content %}
   <div class="mx-auto max-w-2xl">
@@ -10,7 +15,18 @@
       <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
     </div>
 
+    {% if draft_autosave %}
+      <div
+        hx-post="{% url 'compose:draft' %}"
+        hx-trigger="input changed delay:5s from:#compose-form"
+        hx-include="#compose-form"
+        hx-swap="none"
+        aria-hidden="true"
+      ></div>
+    {% endif %}
+
     <form
+      id="compose-form"
       method="post"
       action="{% url 'compose:send' %}"
       class="space-y-4 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
@@ -39,6 +55,30 @@
           {% endif %}
         </div>
       {% endfor %}
+
+      <div class="space-y-2">
+        <label class="block text-sm font-medium" for="compose-attachments">
+          {% translate "Attachments" %}
+        </label>
+        <input
+          id="compose-attachments"
+          type="file"
+          name="attachments"
+          multiple
+          class="file-input w-full"
+          hx-post="{% url 'compose:attachments' %}"
+          hx-encoding="multipart/form-data"
+          hx-trigger="change"
+          hx-target="#attachment-list"
+          hx-swap="innerHTML"
+        >
+        <p class="text-xs text-base-content/60">
+          {% blocktranslate with maximum=max_attachment_bytes|filesizeformat %}Each file up to {{ maximum }}.{% endblocktranslate %}
+        </p>
+        <div id="attachment-list" class="space-y-1" aria-live="polite">
+          {% include "compose/_attachment_list.html" %}
+        </div>
+      </div>
 
       <div class="flex justify-end gap-2">
         <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Cancel" %}</a>
