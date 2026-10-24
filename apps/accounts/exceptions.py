@@ -33,5 +33,21 @@ class ImapProtocolError(ImapError):
     """The IMAP server returned an unexpected or failed response."""
 
 
+class SmtpError(MailError):
+    """Base class for SMTP failures."""
+
+
+class SmtpAuthError(SmtpError):
+    """The SMTP server rejected the credentials."""
+
+
+class SmtpConnectionError(SmtpError):
+    """The SMTP server could not be reached or refused the TLS handshake."""
+
+
+class SmtpSendError(SmtpError):
+    """The SMTP server rejected the message or the recipient list."""
+
+
 class MailSessionError(MailError):
     """The server-side mail session is missing or no longer usable."""

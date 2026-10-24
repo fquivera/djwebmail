@@ -21,6 +21,9 @@
         <h1 id="folder-heading" class="min-w-0 flex-1 truncate text-xl font-semibold">
           {{ folder_name }}
         </h1>
+        <a class="btn btn-primary btn-sm" href="{% url 'compose:new' %}">
+          {% translate "Compose" %}
+        </a>
         <span
           id="list-spinner"
           class="loading loading-spinner loading-sm htmx-indicator text-primary"

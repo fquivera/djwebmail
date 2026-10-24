@@ -434,3 +434,38 @@ def test_logout_clears_real_mail_session(client, account, password):
     assert response.status_code == 302
     assert response["Location"] == reverse("accounts:login")
     assert client.session.get("mail_email") is None
+
+
+def test_compose_send_delivers_over_smtp(client, account, password):
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    subject = f"djwebmail-compose-{uuid4().hex}"
+    body = f"Body sent by the compose test {uuid4().hex}"
+    response = client.post(
+        reverse("compose:send"),
+        {
+            "to": account.email,
+            "cc": "",
+            "subject": subject,
+            "body": body,
+        },
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse("mail:index")
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                raw = imap.fetch_message(candidate).raw
+                if subject.encode() in raw and body.encode() in raw:
+                    return
+            if time.monotonic() >= deadline:
+                pytest.fail("Composed message did not arrive over SMTP")
+            time.sleep(0.2)

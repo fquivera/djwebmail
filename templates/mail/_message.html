@@ -32,7 +32,13 @@
         </div>
       {% endif %}
     </dl>
-    <div class="flex items-center gap-2 pt-2">
+    <div class="flex flex-wrap items-center gap-2 pt-2">
+      <a class="btn btn-ghost btn-sm" href="{% url 'compose:reply' folder_name message.uid %}">
+        {% translate "Reply" %}
+      </a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'compose:forward' folder_name message.uid %}">
+        {% translate "Forward" %}
+      </a>
       <button
         type="button"
         class="btn btn-ghost btn-sm"

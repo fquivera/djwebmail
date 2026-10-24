@@ -432,10 +432,14 @@ Done:
 - Message delete: a native `<dialog>` confirmation (opened by
   `static/js/confirm.js`) posts to `POST /mail/message/<folder>/<uid>/delete/`
   and redirects to the folder. See `docs/message-viewer.md`.
+- Compose: `/compose/`, `/compose/reply/...`, `/compose/forward/...`, and
+  `POST /compose/send/`. `SmtpService` reuses the encrypted session credential;
+  attachments, drafts, Sent append, and the panel UI are deferred. See
+  `docs/compose.md`.
 
 Next (Phase 3 order, `docs/upstream` §3.9):
 
-1. Compose: compose/reply/forward form and SMTP send.
+1. Compose attachments and draft autosave.
 2. Preferences UI and accessibility polish.
 
 Do not start a new phase without closing the previous one with tests and a
