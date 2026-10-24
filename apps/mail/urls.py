@@ -8,6 +8,7 @@ from apps.mail.views import (
     inline_view,
     mailbox,
     message_flags,
+    message_move,
     message_remote_images,
     message_view,
 )
@@ -27,6 +28,11 @@ urlpatterns = [
         "message/<path:folder_name>/<int:uid>/flags/",
         message_flags,
         name="message_flags",
+    ),
+    path(
+        "message/<path:folder_name>/<int:uid>/move/",
+        message_move,
+        name="message_move",
     ),
     path(
         "message/<path:folder_name>/<int:uid>/attachment/<part>/",

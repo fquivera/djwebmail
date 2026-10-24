@@ -183,6 +183,7 @@ def message_view_data(monkeypatch: pytest.MonkeyPatch) -> MessageDetail:
         remote_content_blocked=False,
     )
     monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: ())
     return detail
 
 
@@ -367,6 +368,7 @@ def test_message_view_lists_attachments(
         remote_content_blocked=False,
     )
     monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: ())
 
     response: Any = logged_in_client.get(
         reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
@@ -482,6 +484,7 @@ def _flags_double(
         lambda imap, folder, uid, **kwargs: summary,
     )
     monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: ())
 
 
 def test_message_flags_requires_login(client: Client) -> None:
@@ -533,3 +536,51 @@ def test_message_flags_star_returns_viewer_and_row(
     assert response.status_code == 200
     assert b'id="msg-7"' in response.content
     assert b"Hello" in response.content
+
+
+def test_message_move_requires_login(client: Client) -> None:
+    response: Any = client.post(
+        reverse("mail:message_move", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"dest": "Archive"},
+    )
+
+    assert response.status_code == 302
+
+
+def test_message_move_rejects_missing_dest(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.post(
+        reverse("mail:message_move", kwargs={"folder_name": "INBOX", "uid": 7}),
+    )
+
+    assert response.status_code == 400
+
+
+def test_message_move_redirects_to_destination(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("apps.mail.views.move_message", lambda imap, folder, uid, dest: None)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_move", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"dest": "Archive"},
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == "/mail/folder/Archive/"
+
+
+def test_message_move_htmx_uses_hx_redirect(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("apps.mail.views.move_message", lambda imap, folder, uid, dest: None)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_move", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"dest": "Archive"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == "/mail/folder/Archive/"
