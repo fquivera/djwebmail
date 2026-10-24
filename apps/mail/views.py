@@ -16,9 +16,14 @@ from django.views.decorators.vary import vary_on_headers
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import ImapAuthError, MailError, MailSessionError
 from apps.accounts.services.session import end_mail_session, get_mail_imap_service
-from apps.mail.constants import IMAGE_PROXY_ALLOWED_CONTENT_TYPES, IMAP_INBOX
+from apps.mail.constants import (
+    IMAGE_PROXY_ALLOWED_CONTENT_TYPES,
+    IMAP_INBOX,
+    MESSAGE_FLAG_FLAGGED,
+    MESSAGE_FLAG_SEEN,
+)
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
-from apps.mail.services.mailbox import list_folders, list_messages
+from apps.mail.services.mailbox import list_folders, list_messages, set_message_flags
 from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
 
 
@@ -129,6 +134,52 @@ def image_proxy(request: HttpRequest) -> HttpResponse:
 
 
 @never_cache
+@require_POST
+@mail_login_required
+def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Apply a read/star flag change and refresh the row (and viewer)."""
+    action = request.POST.get("action")
+    if not isinstance(action, str):
+        return HttpResponse(status=400)
+    add, remove = _flag_action(action)
+    if not add and not remove:
+        return HttpResponse(status=400)
+
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            summary = set_message_flags(imap, folder, uid, add=add, remove=remove)
+            message = get_message(imap, folder, uid)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    if summary is None:
+        return HttpResponse(status=404)
+
+    if action in ("star", "unstar"):
+        return render(
+            request,
+            "mail/_message_flags_response.html",
+            {
+                "folder_name": folder,
+                "message": message,
+                "body_html": _render_body_html(message, folder, uid, allow_remote=False),
+                "row": summary,
+            },
+        )
+    return render(
+        request,
+        "mail/_message_row.html",
+        {"message": summary, "folder_name": folder, "oob": True},
+    )
+
+
+@never_cache
 @mail_login_required
 def attachment_view(
     request: HttpRequest,
@@ -222,6 +273,18 @@ def _safe_filename(filename: str) -> str:
     for char in ("\r", "\n", '"', "\\"):
         filename = filename.replace(char, "")
     return filename.strip() or "attachment"
+
+
+_FLAG_ACTIONS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "read": ((MESSAGE_FLAG_SEEN,), ()),
+    "unread": ((), (MESSAGE_FLAG_SEEN,)),
+    "star": ((MESSAGE_FLAG_FLAGGED,), ()),
+    "unstar": ((), (MESSAGE_FLAG_FLAGGED,)),
+}
+
+
+def _flag_action(action: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    return _FLAG_ACTIONS.get(action or "", ((), ()))
 
 
 def _parse_page(value: str | None) -> int:

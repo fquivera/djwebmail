@@ -146,6 +146,27 @@ def list_messages(
     )
 
 
+def set_message_flags(
+    imap: ImapService,
+    folder: str,
+    uid: int,
+    *,
+    add: Sequence[str] = (),
+    remove: Sequence[str] = (),
+) -> MessageSummary | None:
+    """Add/remove flags on one message and return its refreshed summary."""
+    imap.select(folder, readonly=False)
+    imap.store_flags([uid], add=add, remove=remove)
+    summaries = imap.fetch_summaries([uid])
+    return _parse_summary(summaries[0]) if summaries else None
+
+
+def delete_message(imap: ImapService, folder: str, uid: int) -> None:
+    """Mark one message deleted and expunge it."""
+    imap.select(folder, readonly=False)
+    imap.delete([uid], expunge=True)
+
+
 def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     children = sorted(
         node.children.values(),

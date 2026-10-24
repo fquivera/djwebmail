@@ -14,6 +14,8 @@
   a download.
 - `GET /mail/message/<folder>/<uid>/inline/<part>/` streams one inline image
   part referenced by `cid:`.
+- `POST /mail/message/<folder>/<uid>/flags/` applies a read/star change
+  (`action` = `read` | `unread` | `star` | `unstar`).
 
 The view opens the folder read-only and fetches the message with `BODY.PEEK[]`
 (`peek=True`), so merely reading a message never sets the `\Seen` flag. Flag
@@ -92,6 +94,17 @@ the image proxy's allowlist; anything else returns 404.
 Attachments and inline parts are served from a fresh `BODY.PEEK[]` fetch. For
 large messages a later change should fetch only the requested part with
 `BODY.PEEK[<part>]`.
+
+## Read and star flags
+
+Opening a message marks it read: the viewer fires a `read` flag request on load
+(`hx-swap="none"`) and the message-list row is refreshed out-of-band. A star
+button in the viewer header toggles `\Flagged`; the response re-renders the
+viewer and the row. The list row carries a stable `id="msg-<uid>"` so HTMX can
+swap it with `hx-swap-oob="outerHTML"`.
+
+Flags are written with `ImapService.store_flags` on a read-write selection.
+Delete and move are not wired yet.
 
 ## Tests
 
