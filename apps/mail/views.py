@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
@@ -23,7 +23,12 @@ from apps.mail.constants import (
     MESSAGE_FLAG_SEEN,
 )
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
-from apps.mail.services.mailbox import list_folders, list_messages, set_message_flags
+from apps.mail.services.mailbox import (
+    list_folders,
+    list_messages,
+    move_message,
+    set_message_flags,
+)
 from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
 
 
@@ -71,6 +76,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     try:
         with get_mail_imap_service(request) as imap:
             message = get_message(imap, folder, uid)
+            folders = list_folders(imap)
     except MailSessionError:
         return login_redirect(request)
     except ImapAuthError:
@@ -81,6 +87,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
 
     context = {
         "folder_name": folder,
+        "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=False),
     }
@@ -150,6 +157,7 @@ def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
         with get_mail_imap_service(request) as imap:
             summary = set_message_flags(imap, folder, uid, add=add, remove=remove)
             message = get_message(imap, folder, uid)
+            folders = list_folders(imap)
     except MailSessionError:
         return login_redirect(request)
     except ImapAuthError:
@@ -167,6 +175,7 @@ def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
             "mail/_message_flags_response.html",
             {
                 "folder_name": folder,
+                "folders": folders,
                 "message": message,
                 "body_html": _render_body_html(message, folder, uid, allow_remote=False),
                 "row": summary,
@@ -177,6 +186,33 @@ def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
         "mail/_message_row.html",
         {"message": summary, "folder_name": folder, "oob": True},
     )
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def message_move(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Move one message to another folder and follow it there."""
+    destination = request.POST.get("dest")
+    if not isinstance(destination, str) or not destination:
+        return HttpResponse(status=400)
+
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            move_message(imap, folder, uid, destination)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = reverse("mail:folder", kwargs={"folder_name": destination})
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
 
 
 @never_cache

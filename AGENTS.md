@@ -426,10 +426,13 @@ Done:
 - Message flags: mark read on open and star/unstar via
   `POST /mail/message/<folder>/<uid>/flags/`, with out-of-band message-list row
   refresh. See `docs/message-viewer.md`.
+- Message move: a folder selector in the viewer moves the message via
+  `POST /mail/message/<folder>/<uid>/move/` and redirects to the destination.
+  See `docs/message-viewer.md`.
 
 Next (Phase 3 order, `docs/upstream` §3.9):
 
-1. Delete and move: confirm dialog and folder picker, with list refresh.
+1. Delete: confirm dialog and `/delete/` endpoint, with list refresh.
 2. Compose: compose/reply/forward form and SMTP send.
 3. Preferences UI and accessibility polish.
 

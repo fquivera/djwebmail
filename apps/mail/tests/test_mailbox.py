@@ -11,6 +11,7 @@ from apps.mail.services.mailbox import (
     build_folder_tree,
     delete_message,
     list_messages,
+    move_message,
     set_message_flags,
 )
 
@@ -24,6 +25,7 @@ class FakeImap:
         self.selected: tuple[str, bool] | None = None
         self.stored_flags: list[tuple[list[int], tuple[str, ...], tuple[str, ...]]] = []
         self.deleted: list[tuple[list[int], bool]] = []
+        self.moved: list[tuple[list[int], str]] = []
 
     def select(self, folder: str, *, readonly: bool = False) -> None:
         self.selected = (folder, readonly)
@@ -45,6 +47,9 @@ class FakeImap:
 
     def delete(self, uids: list[int], *, expunge: bool = False) -> None:
         self.deleted.append((list(uids), expunge))
+
+    def move(self, uids: list[int], destination: str) -> None:
+        self.moved.append((list(uids), destination))
 
 
 def make_summary(uid: int, subject: str | None = None, **overrides: object) -> FetchedSummary:
@@ -206,3 +211,12 @@ def test_delete_message_deletes_and_expunges() -> None:
 
     assert imap.selected == ("INBOX", False)
     assert imap.deleted == [([5], True)]
+
+
+def test_move_message_moves_to_destination() -> None:
+    imap = FakeImap([5], {5: make_summary(5)})
+
+    move_message(cast(ImapService, imap), "INBOX", 5, "Archive")
+
+    assert imap.selected == ("INBOX", False)
+    assert imap.moved == [([5], "Archive")]
