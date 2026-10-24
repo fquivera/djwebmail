@@ -18,6 +18,8 @@
   (`action` = `read` | `unread` | `star` | `unstar`).
 - `POST /mail/message/<folder>/<uid>/move/` moves the message to `dest` and
   redirects to that folder.
+- `POST /mail/message/<folder>/<uid>/delete/` permanently deletes the message
+  and redirects to its folder.
 
 The view opens the folder read-only and fetches the message with `BODY.PEEK[]`
 (`peek=True`), so merely reading a message never sets the `\Seen` flag. Flag
@@ -97,7 +99,7 @@ Attachments and inline parts are served from a fresh `BODY.PEEK[]` fetch. For
 large messages a later change should fetch only the requested part with
 `BODY.PEEK[<part>]`.
 
-## Read and star flags, and move
+## Read and star flags, move, and delete
 
 Opening a message marks it read: the viewer fires a `read` flag request on load
 (`hx-swap="none"`) and the message-list row is refreshed out-of-band. A star
@@ -108,7 +110,15 @@ swap it with `hx-swap-oob="outerHTML"`.
 A folder `<select>` in the viewer header moves the message to another selectable
 folder and redirects there. Flags and move are written with
 `ImapService.store_flags` / `ImapService.move` on a read-write selection.
-Delete is not wired yet.
+
+Delete opens a native `<dialog>` confirmation (no `window.confirm`, no
+`hx-confirm`) handled by `static/js/confirm.js`, which traps focus and closes on
+`Escape` for free. Confirming posts to the delete endpoint, which marks the
+message `\Deleted` and expunges it; the response redirects to the folder. The
+dialog states that the removal is permanent. A list-level batch delete that
+moves selected messages to Trash (the endpoint in
+`docs/upstream/migracion-django-fase3.md` §6.5) is deferred until selection
+checkboxes exist.
 
 ## Tests
 

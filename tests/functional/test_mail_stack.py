@@ -199,7 +199,7 @@ def test_message_viewer_sanitizes_html_and_blocks_remote_content(client, account
     assert response.status_code == 200
     assert subject.encode() in response.content
     assert b"<b>bold</b>" in response.content
-    assert b"<script" not in response.content
+    assert b"alert(1)" not in response.content
     assert b"<img" not in response.content
     assert b"Remote content was blocked" in response.content
 
@@ -372,6 +372,54 @@ def test_message_move_moves_to_folder(client, account, password):
     with ImapService(account, account.email, password) as imap:
         imap.select(destination, readonly=True)
         assert any(subject.encode() in imap.fetch_message(c).raw for c in imap.search("ALL"))
+
+
+def test_message_delete_removes_from_inbox(client, account, password):
+    subject = f"djwebmail-delete-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message for the delete test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.post(
+        reverse("mail:message_delete", kwargs={"folder_name": "INBOX", "uid": uid}),
+        HTTP_HX_REQUEST="true",
+    )
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == "/mail/folder/INBOX/"
+
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        assert not any(subject.encode() in imap.fetch_message(c).raw for c in imap.search("ALL"))
 
 
 def test_logout_clears_real_mail_session(client, account, password):

@@ -429,12 +429,14 @@ Done:
 - Message move: a folder selector in the viewer moves the message via
   `POST /mail/message/<folder>/<uid>/move/` and redirects to the destination.
   See `docs/message-viewer.md`.
+- Message delete: a native `<dialog>` confirmation (opened by
+  `static/js/confirm.js`) posts to `POST /mail/message/<folder>/<uid>/delete/`
+  and redirects to the folder. See `docs/message-viewer.md`.
 
 Next (Phase 3 order, `docs/upstream` §3.9):
 
-1. Delete: confirm dialog and `/delete/` endpoint, with list refresh.
-2. Compose: compose/reply/forward form and SMTP send.
-3. Preferences UI and accessibility polish.
+1. Compose: compose/reply/forward form and SMTP send.
+2. Preferences UI and accessibility polish.
 
 Do not start a new phase without closing the previous one with tests and a
 merged PR.

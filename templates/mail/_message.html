@@ -60,8 +60,50 @@
           <button type="submit" class="btn btn-ghost btn-sm">{% translate "Move" %}</button>
         </form>
       {% endif %}
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        data-confirm-open="delete-dialog-{{ message.uid }}"
+        aria-haspopup="dialog"
+      >
+        {% translate "Delete" %}
+      </button>
     </div>
   </header>
+
+  <dialog
+    id="delete-dialog-{{ message.uid }}"
+    class="modal"
+    aria-labelledby="delete-title-{{ message.uid }}"
+  >
+    <div class="modal-box">
+      <h2 id="delete-title-{{ message.uid }}" class="text-lg font-semibold">
+        {% translate "Delete this message?" %}
+      </h2>
+      <p class="py-4 text-sm">
+        {% translate "This permanently removes the message from the server and cannot be undone." %}
+      </p>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-ghost btn-sm">{% translate "Cancel" %}</button>
+        </form>
+        <form
+          method="post"
+          action="{% url 'mail:message_delete' folder_name message.uid %}"
+          hx-post="{% url 'mail:message_delete' folder_name message.uid %}"
+          hx-target="body"
+          hx-swap="none"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn btn-error btn-sm">{% translate "Delete" %}</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>{% translate "Close" %}</button>
+    </form>
+  </dialog>
 
   <div id="message-body" class="message-body break-words text-sm leading-relaxed">
     {% if message.remote_content_blocked %}

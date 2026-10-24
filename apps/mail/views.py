@@ -24,6 +24,7 @@ from apps.mail.constants import (
 )
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
+    delete_message,
     list_folders,
     list_messages,
     move_message,
@@ -210,6 +211,29 @@ def message_move(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
         return _error_response(request)
 
     target = reverse("mail:folder", kwargs={"folder_name": destination})
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def message_delete(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Permanently delete one message and return to its folder."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            delete_message(imap, folder, uid)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = reverse("mail:folder", kwargs={"folder_name": folder})
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return HttpResponse(status=204, headers={"HX-Redirect": target})
     return redirect(target)
