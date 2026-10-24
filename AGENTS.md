@@ -248,9 +248,9 @@ The marker is not a shortcut: without a reason, the reviewer rejects it.
   `LocaleMiddleware` is already active; `LANGUAGE_CODE` is only the fallback.
 - Emails use `translation.override(user.language)`.
 - Logs, audit records, error codes, and URL names are not translated.
-- Catalogs live in `locale/<lang>/LC_MESSAGES/django.po`; `.mo` is generated at
-  build/deploy time. After changing strings, regenerate the catalog in the same
-  commit.
+- Catalogs live in `locale/<lang>/LC_MESSAGES/django.po`; commit the compiled
+  `django.mo` too because the runtime image does not install GNU gettext. After
+  changing strings, regenerate and compile the catalog in the same commit.
 - Tests use `translation.override("es")` and an English fallback.
 
 Full detail: `i18n` skill.

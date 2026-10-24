@@ -8,12 +8,20 @@ from typing import Any, cast
 import pytest
 from django.test import Client
 from django.urls import reverse
+from django.utils import translation
 
 from apps.accounts.services.account import MailAccount
 from apps.preferences.constants import Density, Theme
 from apps.preferences.models import MailPreference
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture(autouse=True)
+def reset_translation():
+    translation.deactivate()
+    yield
+    translation.deactivate()
 
 
 @pytest.fixture
@@ -52,10 +60,6 @@ def logged_in_client(
     monkeypatch.setattr(
         "apps.accounts.middleware.load_mail_account",
         lambda request: account,
-    )
-    monkeypatch.setattr(
-        "apps.accounts.middleware.activate_session_language",
-        lambda request: None,
     )
     monkeypatch.setattr(
         "apps.accounts.middleware.activate_session_timezone",
@@ -136,6 +140,25 @@ def test_settings_non_htmx_save_redirects_and_updates(
     assert preference.page_size == 25
 
 
+def test_settings_renders_in_saved_language(
+    logged_in_client: Client,
+    preference: MailPreference,
+) -> None:
+    preference.language = "es"
+    preference.save(update_fields=["language"])
+    session = logged_in_client.session
+    session["mail_language"] = "es"
+    session.save()
+
+    response: Any = logged_in_client.get(reverse("preferences:index"))
+
+    assert response.status_code == 200
+    assert b"Idioma" in response.content
+    assert b"Zona horaria" in response.content
+    assert b"Guardar preferencias" in response.content
+    assert b'<html\n  lang="es"' in response.content
+
+
 def test_settings_htmx_save_returns_partial_and_trigger(
     logged_in_client: Client,
     preference: MailPreference,
@@ -148,7 +171,7 @@ def test_settings_htmx_save_returns_partial_and_trigger(
 
     assert response.status_code == 200
     assert b'id="settings-form"' in response.content
-    assert b"Preferences saved." in response.content
+    assert b"Preferencias guardadas." in response.content
     trigger = json.loads(response["HX-Trigger"])
     assert trigger["mail:preference-changed"] == {
         "theme": Theme.DARK,

@@ -202,10 +202,13 @@ uv run python manage.py compilemessages
 - A language switcher must update `MailPreference.language` and the
   `mail_language` session key; a cookie-only switch is overwritten by the
   account preference.
-- Requires GNU gettext (`xgettext`, `msgfmt`).
-- Commit `locale/es/LC_MESSAGES/django.po`; generate `.mo` at build/deploy time
-  and keep it out of git.
-- After changing source strings, regenerate the catalog in the same commit.
+- Requires GNU gettext (`xgettext`, `msgfmt`) to regenerate the catalog.
+- Commit both `locale/es/LC_MESSAGES/django.po` and the compiled
+  `locale/es/LC_MESSAGES/django.mo`. The runtime image and the test environment
+  do not install GNU gettext, so the compiled catalog must be present in the
+  checkout.
+- After changing source strings, regenerate and compile the catalog in the same
+  commit:
 - CI verifies the catalog is current:
 
 ```bash

@@ -89,6 +89,14 @@ falling back to `TIME_ZONE`.
 - Focus styles come from the compiled Tailwind/daisyUI CSS; no inline styles
   and no inline scripts are introduced.
 
+## Translations
+
+The Spanish catalog is `locale/es/LC_MESSAGES/django.po`. Its compiled
+`django.mo` is committed because the runtime image does not install GNU
+gettext; update both files in the same change. Changing the language requires a
+full document render so every label, validation message, and template string
+uses the new catalog; the HTMX response sends `HX-Refresh` for that reason.
+
 ## Tests
 
 - `apps/preferences/tests/test_forms.py`: choices, range validation, save.
