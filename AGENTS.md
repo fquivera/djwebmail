@@ -168,6 +168,8 @@ DJANGO_MAIL_TIMEOUT_SECONDS  DJANGO_MAIL_DEFAULT_PAGE_SIZE
 DJANGO_MAIL_MAX_PAGE_SIZE  DJANGO_MAIL_LOGIN_MAX_ATTEMPTS
 DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES
 DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS  DJANGO_SESSION_COOKIE_AGE
+DJANGO_MAIL_MAX_ATTACHMENT_BYTES  DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES
+DJANGO_MAIL_MAX_ATTACHMENTS  DJANGO_MAIL_COMPOSE_TTL_SECONDS
 REDIS_URL  FERNET_KEY
 FUNCTIONAL_TESTS_ENABLED  FUNCTIONAL_MAIL_USER  FUNCTIONAL_MAIL_PASSWORD
 ```
@@ -432,15 +434,15 @@ Done:
 - Message delete: a native `<dialog>` confirmation (opened by
   `static/js/confirm.js`) posts to `POST /mail/message/<folder>/<uid>/delete/`
   and redirects to the folder. See `docs/message-viewer.md`.
-- Compose: `/compose/`, `/compose/reply/...`, `/compose/forward/...`, and
-  `POST /compose/send/`. `SmtpService` reuses the encrypted session credential;
-  attachments, drafts, Sent append, and the panel UI are deferred. See
-  `docs/compose.md`.
+- Compose: `/compose/`, `/compose/reply/...`, `/compose/forward/...`,
+  `POST /compose/send/`, HTMX attachment upload/removal, and draft autosave.
+  `SmtpService` reuses the encrypted session credential. Attachments and
+  drafts live in the cache for `MAIL_COMPOSE_TTL_SECONDS`; Sent append and the
+  panel UI remain deferred. See `docs/compose.md`.
 
 Next (Phase 3 order, `docs/upstream` §3.9):
 
-1. Compose attachments and draft autosave.
-2. Preferences UI and accessibility polish.
+1. Preferences UI and accessibility polish.
 
 Do not start a new phase without closing the previous one with tests and a
 merged PR.
