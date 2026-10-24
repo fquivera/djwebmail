@@ -26,6 +26,20 @@ def test_timezone_choices_include_utc() -> None:
     assert ("UTC", "UTC") in timezone_choices()
 
 
+def test_form_renders_language_and_timezone_choices() -> None:
+    form = MailPreferenceForm(
+        instance=MailPreference(language="es", timezone="Europe/Madrid"),
+    )
+
+    language_html = str(form["language"])
+    timezone_html = str(form["timezone"])
+
+    assert 'value="en"' in language_html
+    assert 'value="es" selected' in language_html
+    assert 'value="Europe/Madrid" selected' in timezone_html
+    assert 'value="UTC"' in timezone_html
+
+
 def test_valid_form_updates_preference() -> None:
     preference = make_preference()
     form = MailPreferenceForm(

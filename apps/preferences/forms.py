@@ -60,8 +60,8 @@ class MailPreferenceForm(forms.ModelForm):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.fields["language"].choices = settings.LANGUAGES
-        self.fields["timezone"].choices = timezone_choices()
+        self.fields["language"].widget.choices = settings.LANGUAGES
+        self.fields["timezone"].widget.choices = timezone_choices()
         auto_id = self.auto_id
         if isinstance(auto_id, str):
             for name, field in self.fields.items():
