@@ -1,7 +1,11 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% if message.subject %}{{ message.subject }}{% else %}{% translate "Message" %}{% endif %}{% endblock %}
+
+{% block scripts %}
+  <script defer src="{% static 'js/confirm.js' %}"></script>
+{% endblock %}
 
 {% block content %}
   <div class="mx-auto max-w-3xl">

@@ -584,3 +584,54 @@ def test_message_move_htmx_uses_hx_redirect(
 
     assert response.status_code == 204
     assert response["HX-Redirect"] == "/mail/folder/Archive/"
+
+
+def test_message_delete_requires_login(client: Client) -> None:
+    response: Any = client.post(
+        reverse("mail:message_delete", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 302
+
+
+def test_message_delete_redirects_to_folder(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("apps.mail.views.delete_message", lambda imap, folder, uid: None)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_delete", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == "/mail/folder/INBOX/"
+
+
+def test_message_delete_htmx_uses_hx_redirect(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("apps.mail.views.delete_message", lambda imap, folder, uid: None)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_delete", kwargs={"folder_name": "INBOX", "uid": 7}),
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == "/mail/folder/INBOX/"
+
+
+def test_message_view_renders_delete_confirmation(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b'data-confirm-open="delete-dialog-7"' in response.content
+    assert b'id="delete-dialog-7"' in response.content
+    assert b"/mail/message/INBOX/7/delete/" in response.content
