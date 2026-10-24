@@ -167,6 +167,12 @@ def delete_message(imap: ImapService, folder: str, uid: int) -> None:
     imap.delete([uid], expunge=True)
 
 
+def move_message(imap: ImapService, folder: str, uid: int, destination: str) -> None:
+    """Move one message to another folder."""
+    imap.select(folder, readonly=False)
+    imap.move([uid], destination)
+
+
 def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     children = sorted(
         node.children.values(),

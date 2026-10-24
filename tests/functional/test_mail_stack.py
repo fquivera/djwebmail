@@ -313,6 +313,67 @@ def test_message_flags_marks_read_over_imap(client, account, password):
     assert "\\Seen" in fetched.flags
 
 
+def test_message_move_moves_to_folder(client, account, password):
+    from imapclient import IMAPClient
+
+    destination = f"Archive-{uuid4().hex[:8]}"
+    with IMAPClient(
+        settings.MAIL_IMAP_HOST,
+        port=settings.MAIL_IMAP_PORT,
+        ssl=settings.MAIL_IMAP_SECURITY == "ssl",
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as raw:
+        raw.login(account.email, password)
+        raw.create_folder(destination)
+
+    subject = f"djwebmail-move-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message for the move test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.post(
+        reverse("mail:message_move", kwargs={"folder_name": "INBOX", "uid": uid}),
+        {"dest": destination},
+        HTTP_HX_REQUEST="true",
+    )
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == f"/mail/folder/{destination}/"
+
+    with ImapService(account, account.email, password) as imap:
+        imap.select(destination, readonly=True)
+        assert any(subject.encode() in imap.fetch_message(c).raw for c in imap.search("ALL"))
+
+
 def test_logout_clears_real_mail_session(client, account, password):
     login = client.post(
         reverse("accounts:login"),

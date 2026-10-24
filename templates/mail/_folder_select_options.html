@@ -1,0 +1,8 @@
+{% for node in folders %}
+  {% if node.selectable and node.name and node.name != current_folder %}
+    <option value="{{ node.name }}">{{ node.label }}</option>
+  {% endif %}
+  {% if node.children %}
+    {% include "mail/_folder_select_options.html" with folders=node.children current_folder=current_folder %}
+  {% endif %}
+{% endfor %}

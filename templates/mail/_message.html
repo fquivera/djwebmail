@@ -44,6 +44,22 @@
       >
         {% if message.is_flagged %}★{% else %}☆{% endif %}
       </button>
+
+      {% if folders %}
+        <form
+          class="flex items-center gap-2"
+          hx-post="{% url 'mail:message_move' folder_name message.uid %}"
+          hx-target="body"
+          hx-swap="none"
+        >
+          <label class="sr-only" for="move-dest-{{ message.uid }}">{% translate "Move to folder" %}</label>
+          <select id="move-dest-{{ message.uid }}" name="dest" class="select select-sm">
+            <option value="" selected disabled>{% translate "Move to…" %}</option>
+            {% include "mail/_folder_select_options.html" with folders=folders current_folder=folder_name %}
+          </select>
+          <button type="submit" class="btn btn-ghost btn-sm">{% translate "Move" %}</button>
+        </form>
+      {% endif %}
     </div>
   </header>
 
