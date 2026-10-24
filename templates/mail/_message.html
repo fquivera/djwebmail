@@ -47,6 +47,7 @@
         hx-target="#message-viewer"
         hx-swap="innerHTML"
         aria-label="{% if message.is_flagged %}{% translate 'Unflag message' %}{% else %}{% translate 'Flag message' %}{% endif %}"
+        aria-pressed="{% if message.is_flagged %}true{% else %}false{% endif %}"
       >
         {% if message.is_flagged %}★{% else %}☆{% endif %}
       </button>

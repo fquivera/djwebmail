@@ -1,0 +1,54 @@
+{% load i18n %}
+<form
+  id="settings-form"
+  method="post"
+  action="{% url 'preferences:index' %}"
+  hx-post="{% url 'preferences:index' %}"
+  hx-target="#settings-form"
+  hx-swap="outerHTML"
+  class="space-y-6 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
+>
+  {% csrf_token %}
+
+  <p class="text-sm text-base-content/70">
+    {% blocktranslate with address=email %}Signed in as {{ address }}.{% endblocktranslate %}
+  </p>
+
+  {% if saved %}
+    <div class="alert alert-success text-sm" role="status">
+      {% translate "Preferences saved." %}
+    </div>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-error text-sm" role="alert">
+      {% for error in form.non_field_errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <fieldset class="space-y-4">
+    <legend class="text-base font-semibold">{% translate "Language and time" %}</legend>
+    {% include "preferences/_field.html" with field=form.language %}
+    {% include "preferences/_field.html" with field=form.timezone %}
+  </fieldset>
+
+  <fieldset class="space-y-4">
+    <legend class="text-base font-semibold">{% translate "Appearance" %}</legend>
+    {% include "preferences/_field.html" with field=form.theme %}
+    {% include "preferences/_field.html" with field=form.density %}
+  </fieldset>
+
+  <fieldset class="space-y-4">
+    <legend class="text-base font-semibold">{% translate "Reading" %}</legend>
+    {% include "preferences/_field.html" with field=form.page_size %}
+  </fieldset>
+
+  <div class="flex justify-end">
+    <button type="submit" class="btn btn-primary btn-sm" hx-disabled-elt="this">
+      <span class="loading loading-spinner loading-sm htmx-indicator" aria-hidden="true"></span>
+      {% translate "Save preferences" %}
+    </button>
+  </div>
+</form>

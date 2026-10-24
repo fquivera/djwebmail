@@ -29,7 +29,7 @@
               </label>
               {{ form.email }}
               {% if form.email.errors %}
-                <div class="mt-1 text-sm text-error">{{ form.email.errors }}</div>
+                <div class="mt-1 text-sm text-error" role="alert">{{ form.email.errors }}</div>
               {% endif %}
             </div>
 
@@ -39,7 +39,7 @@
               </label>
               {{ form.password }}
               {% if form.password.errors %}
-                <div class="mt-1 text-sm text-error">{{ form.password.errors }}</div>
+                <div class="mt-1 text-sm text-error" role="alert">{{ form.password.errors }}</div>
               {% endif %}
             </div>
 

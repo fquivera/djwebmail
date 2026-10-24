@@ -7,6 +7,7 @@ from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, override_settings
@@ -84,6 +85,10 @@ def test_login_success_creates_session_and_encrypted_credential(client, monkeypa
     session = client.session
     assert session["mail_email"] == "user@example.com"
     assert session["mail_account_key"] == account.account_key
+    assert session["mail_theme"] == "system"
+    assert session["mail_density"] == "compact"
+    assert session["mail_timezone"] == "UTC"
+    assert session["mail_page_size"] == settings.MAIL_DEFAULT_PAGE_SIZE
     assert "secret" not in str(dict(session))
 
     credential_key = CredentialStore._cache_key(session.session_key)

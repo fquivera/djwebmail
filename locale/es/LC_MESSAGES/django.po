@@ -1,0 +1,501 @@
+# DjWebmail Spanish translation.
+# This file is distributed under the same license as the project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: DjWebmail\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-24 23:39+0000\n"
+"PO-Revision-Date: 2026-10-24 23:39+0000\n"
+"Last-Translator: DjWebmail contributors\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/accounts/forms.py:16
+msgid "Email address"
+msgstr "Dirección de correo electrónico"
+
+#: apps/accounts/forms.py:27
+msgid "Password"
+msgstr "Contraseña"
+
+#: apps/accounts/forms.py:42
+msgid "Enter a valid email address."
+msgstr "Introduzca una dirección de correo electrónico válida."
+
+#: apps/accounts/views.py:59
+msgid "Too many failed attempts. Try again later."
+msgstr "Demasiados intentos fallidos. Inténtelo de nuevo más tarde."
+
+#: apps/accounts/views.py:67
+msgid "Invalid email or password."
+msgstr "Correo electrónico o contraseña incorrectos."
+
+#: apps/accounts/views.py:72 apps/compose/views.py:126
+msgid "The mail server is unavailable. Try again later."
+msgstr "El servidor de correo no está disponible. Inténtelo de nuevo más tarde."
+
+#: apps/accounts/views.py:78 apps/accounts/views.py:90
+msgid "Mail sign-in is not configured. Contact the administrator."
+msgstr "El inicio de sesión de correo no está configurado. Contacte con el administrador."
+
+#: apps/accounts/views.py:83
+msgid "Unable to sign in."
+msgstr "No se pudo iniciar sesión."
+
+#: apps/compose/forms.py:19 templates/mail/_message.html:16
+msgid "To"
+msgstr "Para"
+
+#: apps/compose/forms.py:25
+msgid "name@example.com, another@example.com"
+msgstr "nombre@ejemplo.com, otro@ejemplo.com"
+
+#: apps/compose/forms.py:30 templates/mail/_message.html:22
+msgid "Cc"
+msgstr "Cc"
+
+#: apps/compose/forms.py:40
+msgid "Subject"
+msgstr "Asunto"
+
+#: apps/compose/forms.py:46 templates/mail/index.html:40
+#: templates/mail/message.html:4
+msgid "Message"
+msgstr "Mensaje"
+
+#: apps/compose/forms.py:60
+msgid "The subject cannot contain line breaks."
+msgstr "El asunto no puede contener saltos de línea."
+
+#: apps/compose/forms.py:66
+msgid "Enter addresses separated by commas."
+msgstr "Introduzca las direcciones separadas por comas."
+
+#: apps/compose/forms.py:71
+msgid "Enter at least one recipient."
+msgstr "Introduzca al menos un destinatario."
+
+#: apps/compose/forms.py:75
+#, python-format
+msgid "You can address at most %(maximum)s recipients."
+msgstr "Puede enviar como máximo a %(maximum)s destinatarios."
+
+#: apps/compose/forms.py:82
+msgid "Enter valid email addresses."
+msgstr "Introduzca direcciones de correo electrónico válidas."
+
+#: apps/compose/services.py:115
+msgid "---------- Forwarded message ---------"
+msgstr "---------- Mensaje reenviado ---------"
+
+#: apps/compose/services.py:116
+#, python-format
+msgid "From: %(value)s"
+msgstr "De: %(value)s"
+
+#: apps/compose/services.py:117
+#, python-format
+msgid "Date: %(value)s"
+msgstr "Fecha: %(value)s"
+
+#: apps/compose/services.py:118
+#, python-format
+msgid "Subject: %(value)s"
+msgstr "Asunto: %(value)s"
+
+#: apps/compose/services.py:119
+#, python-format
+msgid "To: %(value)s"
+msgstr "Para: %(value)s"
+
+#: apps/compose/views.py:122
+msgid "The mail server rejected the stored credentials. Sign in again."
+msgstr "El servidor de correo rechazó las credenciales guardadas. Vuelva a iniciar sesión."
+
+#: apps/compose/views.py:131
+msgid "The message could not be sent. Check the recipients and try again."
+msgstr "No se pudo enviar el mensaje. Compruebe los destinatarios e inténtelo de nuevo."
+
+#: apps/compose/views.py:149
+msgid "Choose at least one file to attach."
+msgstr "Elija al menos un archivo para adjuntar."
+
+#: apps/compose/views.py:154
+msgid "One of the files is empty."
+msgstr "Uno de los archivos está vacío."
+
+#: apps/compose/views.py:156
+msgid "That file is too large to attach."
+msgstr "Ese archivo es demasiado grande para adjuntarlo."
+
+#: apps/compose/views.py:158
+msgid "You reached the attachment limit."
+msgstr "Ha alcanzado el límite de adjuntos."
+
+#: apps/compose/views.py:270
+msgid "Unable to load the message. Try again later."
+msgstr "No se pudo cargar el mensaje. Inténtelo de nuevo más tarde."
+
+#: apps/mail/views.py:360
+msgid "Unable to load mail. Try again later."
+msgstr "No se pudo cargar el correo. Inténtelo de nuevo más tarde."
+
+#: apps/preferences/constants.py:8
+msgid "System"
+msgstr "Sistema"
+
+#: apps/preferences/constants.py:9
+msgid "Light"
+msgstr "Claro"
+
+#: apps/preferences/constants.py:10
+msgid "Dark"
+msgstr "Oscuro"
+
+#: apps/preferences/constants.py:14
+msgid "Compact"
+msgstr "Compacta"
+
+#: apps/preferences/constants.py:15
+msgid "Comfortable"
+msgstr "Cómoda"
+
+#: apps/preferences/constants.py:19
+msgid "Side by side"
+msgstr "Lado a lado"
+
+#: apps/preferences/constants.py:20
+msgid "Top"
+msgstr "Superior"
+
+#: apps/preferences/constants.py:24
+msgid "Ask before loading"
+msgstr "Preguntar antes de cargar"
+
+#: apps/preferences/constants.py:25
+msgid "Always load"
+msgstr "Cargar siempre"
+
+#: apps/preferences/constants.py:26
+msgid "Never load"
+msgstr "No cargar nunca"
+
+#: apps/preferences/forms.py:33
+msgid "Language"
+msgstr "Idioma"
+
+#: apps/preferences/forms.py:34
+msgid "Time zone"
+msgstr "Zona horaria"
+
+#: apps/preferences/forms.py:35
+msgid "Theme"
+msgstr "Tema"
+
+#: apps/preferences/forms.py:36
+msgid "Density"
+msgstr "Densidad"
+
+#: apps/preferences/forms.py:37
+msgid "Messages per page"
+msgstr "Mensajes por página"
+
+#: apps/preferences/forms.py:40
+msgid "Applies to this account after saving."
+msgstr "Se aplica a esta cuenta después de guardar."
+
+#: apps/preferences/forms.py:41
+msgid "Used for message dates and times."
+msgstr "Se usa para las fechas y horas de los mensajes."
+
+#: apps/preferences/forms.py:42
+msgid "System follows the operating system preference."
+msgstr "El sistema sigue la preferencia del sistema operativo."
+
+#: apps/preferences/forms.py:43
+msgid "Compact shows more messages in the list."
+msgstr "La densidad compacta muestra más mensajes en la lista."
+
+#: apps/preferences/forms.py:44
+#, python-format
+msgid "Between %(minimum)s and %(maximum)s."
+msgstr "Entre %(minimum)s y %(maximum)s."
+
+#: apps/preferences/models.py:89
+msgid "mail preference"
+msgstr "preferencia de correo"
+
+#: apps/preferences/models.py:90
+msgid "mail preferences"
+msgstr "preferencias de correo"
+
+#: apps/preferences/models.py:101
+msgid "Select a language available in this deployment."
+msgstr "Seleccione un idioma disponible en esta instalación."
+
+#: apps/preferences/models.py:106
+msgid "Select a valid time zone."
+msgstr "Seleccione una zona horaria válida."
+
+#: apps/preferences/models.py:109
+#, python-format
+msgid "Page size must be between %(minimum)s and %(maximum)s."
+msgstr "El tamaño de página debe estar entre %(minimum)s y %(maximum)s."
+
+#: apps/preferences/views.py:59 templates/preferences/_settings_form.html:19
+msgid "Preferences saved."
+msgstr "Preferencias guardadas."
+
+#: config/settings/base.py:109
+msgid "English"
+msgstr "Inglés"
+
+#: config/settings/base.py:110
+msgid "Spanish"
+msgstr "Español"
+
+#: templates/accounts/login.html:4 templates/accounts/login.html:11
+#: templates/accounts/login.html:46 templates/base.html:41
+msgid "Sign in"
+msgstr "Iniciar sesión"
+
+#: templates/accounts/login.html:13
+msgid "Use your email address and password to connect to the mail server."
+msgstr "Use su dirección de correo electrónico y contraseña para conectarse al servidor de correo."
+
+#: templates/accounts/login.html:50
+msgid "Back to home"
+msgstr "Volver al inicio"
+
+#: templates/base.html:22
+msgid "Skip to main content"
+msgstr "Saltar al contenido principal"
+
+#: templates/base.html:24
+msgid "Main navigation"
+msgstr "Navegación principal"
+
+#: templates/base.html:34 templates/preferences/index.html:4
+#: templates/preferences/index.html:15
+msgid "Settings"
+msgstr "Ajustes"
+
+#: templates/base.html:38
+msgid "Sign out"
+msgstr "Cerrar sesión"
+
+#: templates/common/home.html:4
+msgid "DjWebmail — early development"
+msgstr "DjWebmail — desarrollo inicial"
+
+#: templates/common/home.html:12
+msgid "A modern, HTMX-driven webmail client built with Django."
+msgstr "Un cliente de correo web moderno basado en HTMX y creado con Django."
+
+#: templates/common/home.html:15
+msgid "The mail interface is under construction. See the project README for the roadmap."
+msgstr "La interfaz de correo está en construcción. Consulte el README del proyecto para ver la hoja de ruta."
+
+#: templates/compose/_attachment_list.html:20
+msgid "Remove"
+msgstr "Quitar"
+
+#: templates/compose/_attachment_list.html:27
+msgid "No attachments."
+msgstr "No hay adjuntos."
+
+#: templates/compose/compose.html:4 templates/compose/compose.html:14
+#: templates/mail/index.html:25
+msgid "Compose"
+msgstr "Redactar"
+
+#: templates/compose/compose.html:15 templates/preferences/index.html:16
+msgid "Back to mail"
+msgstr "Volver al correo"
+
+#: templates/compose/compose.html:61 templates/mail/_attachment_list.html:3
+#: templates/mail/_attachment_list.html:4
+msgid "Attachments"
+msgstr "Adjuntos"
+
+#: templates/compose/compose.html:76
+#, python-format
+msgid "Each file up to %(maximum)s."
+msgstr "Cada archivo de hasta %(maximum)s."
+
+#: templates/compose/compose.html:84 templates/mail/_message.html:96
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: templates/compose/compose.html:85
+msgid "Send"
+msgstr "Enviar"
+
+#: templates/mail/_empty_state.html:3
+msgid "Select a message to read it."
+msgstr "Seleccione un mensaje para leerlo."
+
+#: templates/mail/_folder_nav.html:5
+msgid "Folders"
+msgstr "Carpetas"
+
+#: templates/mail/_folder_tree.html:6
+msgid "No folders found."
+msgstr "No se encontraron carpetas."
+
+#: templates/mail/_message.html:5 templates/mail/_message_row.html:25
+#: templates/mail/_message_row.html:27
+msgid "(No subject)"
+msgstr "(Sin asunto)"
+
+#: templates/mail/_message.html:9
+msgid "From"
+msgstr "De"
+
+#: templates/mail/_message.html:11 templates/mail/_message_row.html:18
+#: templates/mail/_message_row.html:20
+msgid "Unknown sender"
+msgstr "Remitente desconocido"
+
+#: templates/mail/_message.html:28
+msgid "Date"
+msgstr "Fecha"
+
+#: templates/mail/_message.html:37
+msgid "Reply"
+msgstr "Responder"
+
+#: templates/mail/_message.html:40
+msgid "Forward"
+msgstr "Reenviar"
+
+#: templates/mail/_message.html:49
+msgid "Unflag message"
+msgstr "Quitar marca al mensaje"
+
+#: templates/mail/_message.html:49
+msgid "Flag message"
+msgstr "Marcar mensaje"
+
+#: templates/mail/_message.html:62
+msgid "Move to folder"
+msgstr "Mover a la carpeta"
+
+#: templates/mail/_message.html:64
+msgid "Move to…"
+msgstr "Mover a…"
+
+#: templates/mail/_message.html:67
+msgid "Move"
+msgstr "Mover"
+
+#: templates/mail/_message.html:77 templates/mail/_message.html:106
+msgid "Delete"
+msgstr "Eliminar"
+
+#: templates/mail/_message.html:89
+msgid "Delete this message?"
+msgstr "¿Eliminar este mensaje?"
+
+#: templates/mail/_message.html:92
+msgid "This permanently removes the message from the server and cannot be undone."
+msgstr "Esto elimina permanentemente el mensaje del servidor y no se puede deshacer."
+
+#: templates/mail/_message.html:111
+msgid "Close"
+msgstr "Cerrar"
+
+#: templates/mail/_message.html:118
+msgid "Remote content was blocked to protect your privacy."
+msgstr "El contenido remoto se bloqueó para proteger su privacidad."
+
+#: templates/mail/_message.html:127
+msgid "Load images"
+msgstr "Cargar imágenes"
+
+#: templates/mail/_message.html:133
+msgid "This message has no content."
+msgstr "Este mensaje no tiene contenido."
+
+#: templates/mail/_message_list.html:4
+#, python-format
+msgid "%(counter)s message"
+msgid_plural "%(counter)s messages"
+msgstr[0] "%(counter)s mensaje"
+msgstr[1] "%(counter)s mensajes"
+
+#: templates/mail/_message_list.html:7
+msgid "Messages"
+msgstr "Mensajes"
+
+#: templates/mail/_message_list.html:15
+msgid "This folder is empty."
+msgstr "Esta carpeta está vacía."
+
+#: templates/mail/_message_row.html:30
+msgid "Unread"
+msgstr "No leído"
+
+#: templates/mail/_message_row.html:35
+msgid "Flagged"
+msgstr "Marcado"
+
+#: templates/mail/_pagination.html:3
+msgid "Pagination"
+msgstr "Paginación"
+
+#: templates/mail/_pagination.html:13
+msgid "Previous"
+msgstr "Anterior"
+
+#: templates/mail/_pagination.html:17
+#, python-format
+msgid "Page %(current)s of %(total)s"
+msgstr "Página %(current)s de %(total)s"
+
+#: templates/mail/_pagination.html:29
+msgid "Next"
+msgstr "Siguiente"
+
+#: templates/mail/error.html:4 templates/mail/error.html:8
+msgid "Mail unavailable"
+msgstr "Correo no disponible"
+
+#: templates/mail/error.html:10
+msgid "Try again"
+msgstr "Reintentar"
+
+#: templates/mail/index.html:4
+#, python-format
+msgid "Mail — %(folder)s"
+msgstr "Correo — %(folder)s"
+
+#: templates/mail/message.html:13
+msgid "Back to folder"
+msgstr "Volver a la carpeta"
+
+#: templates/preferences/_settings_form.html:14
+#, python-format
+msgid "Signed in as %(address)s."
+msgstr "Sesión iniciada como %(address)s."
+
+#: templates/preferences/_settings_form.html:32
+msgid "Language and time"
+msgstr "Idioma y hora"
+
+#: templates/preferences/_settings_form.html:38
+msgid "Appearance"
+msgstr "Apariencia"
+
+#: templates/preferences/_settings_form.html:44
+msgid "Reading"
+msgstr "Lectura"
+
+#: templates/preferences/_settings_form.html:51
+msgid "Save preferences"
+msgstr "Guardar preferencias"

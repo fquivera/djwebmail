@@ -79,6 +79,20 @@
 /* Density is a per-user variant; it does not change Tailwind's global scale. */
 @custom-variant density-compact (&:where([data-density="compact"] *));
 
+@layer components {
+  .mail-row {
+    padding-block: 0.75rem;
+  }
+
+  [data-density="compact"] .mail-row {
+    padding-block: 0.5rem;
+  }
+
+  [data-density="comfortable"] .mail-row {
+    padding-block: 1rem;
+  }
+}
+
 @layer base {
   html {
     color-scheme: light dark;

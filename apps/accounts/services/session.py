@@ -7,14 +7,18 @@ from typing import Any, cast
 
 from django.conf import settings
 from django.http import HttpRequest
-from django.utils import translation
+from django.utils import timezone, translation
 
 from apps.accounts.constants import (
     SESSION_ACCOUNT_KEY,
     SESSION_AUTHENTICATED_AT_KEY,
+    SESSION_DENSITY_KEY,
     SESSION_EMAIL_KEY,
     SESSION_EXPIRES_AT_KEY,
     SESSION_LANGUAGE_KEY,
+    SESSION_PAGE_SIZE_KEY,
+    SESSION_THEME_KEY,
+    SESSION_TIMEZONE_KEY,
 )
 from apps.accounts.exceptions import MailError, MailSessionError
 from apps.accounts.services.account import MailAccount, resolve_mail_account
@@ -59,6 +63,10 @@ def start_mail_session(request: HttpRequest, account: MailAccount, password: str
     session[SESSION_AUTHENTICATED_AT_KEY] = now
     session[SESSION_EXPIRES_AT_KEY] = now + settings.SESSION_COOKIE_AGE
     session[SESSION_LANGUAGE_KEY] = language
+    session[SESSION_THEME_KEY] = preference.theme
+    session[SESSION_DENSITY_KEY] = preference.density
+    session[SESSION_TIMEZONE_KEY] = preference.timezone
+    session[SESSION_PAGE_SIZE_KEY] = preference.page_size
     setattr(request, "mail_account", account)  # noqa: B010
     translation.activate(language)
     return preference
@@ -102,6 +110,28 @@ def activate_session_language(request: HttpRequest) -> None:
     if isinstance(language, str) and language in _available_languages():
         translation.activate(language)
         setattr(request, "LANGUAGE_CODE", language)  # noqa: B010
+
+
+def activate_session_timezone(request: HttpRequest) -> None:
+    """Apply the stored per-account time zone after LocaleMiddleware."""
+    name = _session(request).get(SESSION_TIMEZONE_KEY)
+    if isinstance(name, str) and name:
+        try:
+            timezone.activate(name)
+            return
+        except (ValueError, KeyError):
+            pass
+    timezone.deactivate()
+
+
+def get_mail_page_size(request: HttpRequest) -> int:
+    """Return the account page size, clamped to the deployment maximum."""
+    maximum = max(1, settings.MAIL_MAX_PAGE_SIZE)
+    default = min(max(1, settings.MAIL_DEFAULT_PAGE_SIZE), maximum)
+    value = _session(request).get(SESSION_PAGE_SIZE_KEY)
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
+        return min(value, maximum)
+    return default
 
 
 def get_mail_imap_service(request: HttpRequest) -> ImapService:

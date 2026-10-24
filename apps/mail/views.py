@@ -15,7 +15,11 @@ from django.views.decorators.vary import vary_on_headers
 
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import ImapAuthError, MailError, MailSessionError
-from apps.accounts.services.session import end_mail_session, get_mail_imap_service
+from apps.accounts.services.session import (
+    end_mail_session,
+    get_mail_imap_service,
+    get_mail_page_size,
+)
 from apps.mail.constants import (
     IMAGE_PROXY_ALLOWED_CONTENT_TYPES,
     IMAP_INBOX,
@@ -41,10 +45,7 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
     folder = folder_name or IMAP_INBOX
     page_value = request.GET.get("page")
     page_number = _parse_page(page_value if isinstance(page_value, str) else None)
-    page_size = min(
-        max(1, settings.MAIL_DEFAULT_PAGE_SIZE),
-        max(1, settings.MAIL_MAX_PAGE_SIZE),
-    )
+    page_size = get_mail_page_size(request)
 
     try:
         with get_mail_imap_service(request) as imap:
