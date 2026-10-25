@@ -1,0 +1,67 @@
+{% load i18n %}
+<dialog
+  id="shortcuts-dialog"
+  class="modal"
+  aria-labelledby="shortcuts-title"
+>
+  <div class="modal-box max-w-lg">
+    <h2 id="shortcuts-title" class="text-lg font-semibold">{% translate "Keyboard shortcuts" %}</h2>
+    <p class="mt-1 text-sm text-base-content/60">
+      {% translate "Shortcuts do not fire while you are typing in a field." %}
+    </p>
+    <dl class="mt-4 divide-y divide-base-300 text-sm">
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Command palette" %}</dt>
+        <dd><kbd class="kbd kbd-sm">Ctrl</kbd> <kbd class="kbd kbd-sm">K</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Compose" %}</dt>
+        <dd><kbd class="kbd kbd-sm">c</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Focus search" %}</dt>
+        <dd><kbd class="kbd kbd-sm">/</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Next or previous message" %}</dt>
+        <dd><kbd class="kbd kbd-sm">j</kbd> <kbd class="kbd kbd-sm">k</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Open focused message" %}</dt>
+        <dd><kbd class="kbd kbd-sm">Enter</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Reply" %}</dt>
+        <dd><kbd class="kbd kbd-sm">r</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Toggle read and unread" %}</dt>
+        <dd><kbd class="kbd kbd-sm">e</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Move message" %}</dt>
+        <dd><kbd class="kbd kbd-sm">m</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Back to the message list" %}</dt>
+        <dd><kbd class="kbd kbd-sm">u</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "This dialog" %}</dt>
+        <dd><kbd class="kbd kbd-sm">?</kbd></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 py-2">
+        <dt>{% translate "Close a dialog or panel" %}</dt>
+        <dd><kbd class="kbd kbd-sm">Esc</kbd></dd>
+      </div>
+    </dl>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-sm">{% translate "Close" %}</button>
+      </form>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>{% translate "Close" %}</button>
+  </form>
+</dialog>

@@ -258,7 +258,8 @@ MIT — see the LICENSE file for details.
 ☑ Search within a folder<br>
 □ Search across all folders<br>
 ☑ Accessibility pass<br>
-□ Keyboard shortcuts<br>
+☑ Keyboard shortcuts and command palette<br>
+☑ Responsive single-panel navigation and optimistic flags<br>
 ☑ Docker image publishing<br>
 □ Deployment guide<br>
 

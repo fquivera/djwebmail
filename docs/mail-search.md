@@ -70,6 +70,9 @@ handling renders the mail-unavailable alert.
   follow-up.
 - Global search across all selectable folders is Phase 4 item 2, not part of
   this route.
+- The command palette (`/mail/palette/`) reuses this folder-scoped service with
+  only `folder` and `q`, and is likewise limited to the current folder. Its
+  contract is in [`docs/ui-interaction.md`](ui-interaction.md).
 
 ## Tests
 

@@ -40,7 +40,10 @@ class NamedTextInput(forms.TextInput):
 class MailSearchForm(forms.Form):
     """Search parameters accepted by ``/mail/search/``."""
 
-    folder = forms.CharField(required=False, widget=forms.HiddenInput)
+    folder = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(attrs={"id": "current-folder"}),
+    )
     q = forms.CharField(
         label=_("Search this folder"),
         required=False,

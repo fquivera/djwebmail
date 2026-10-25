@@ -1,5 +1,25 @@
 {% load i18n %}
-<article class="space-y-4">
+<article
+  class="space-y-4"
+  x-data="messageActions"
+  data-seen="{% if message.is_seen %}true{% else %}false{% endif %}"
+  data-flagged="{% if message.is_flagged %}true{% else %}false{% endif %}"
+  x-bind:data-seen="seen ? 'true' : 'false'"
+  x-bind:data-flagged="flagged ? 'true' : 'false'"
+  x-bind:data-flag-error="error ? 'true' : 'false'"
+>
+  <a
+    class="btn btn-ghost btn-sm"
+    href="{% url 'mail:folder' folder_name %}?view=list"
+    data-shortcut="back"
+  >
+    {% translate "Back to folder" %}
+  </a>
+
+  <div class="alert alert-error when-flag-error text-sm" role="alert">
+    {% translate "Could not update the message. Try again." %}
+  </div>
+
   <header class="space-y-2 border-b border-base-300 pb-3">
     <h1 id="message-subject" tabindex="-1" class="break-words text-lg font-semibold">
       {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
@@ -33,24 +53,70 @@
       {% endif %}
     </dl>
     <div class="flex flex-wrap items-center gap-2 pt-2">
-      <a class="btn btn-ghost btn-sm" href="{% url 'compose:reply' folder_name message.uid %}">
+      <a
+        class="btn btn-ghost btn-sm"
+        href="{% url 'compose:reply' folder_name message.uid %}"
+        data-shortcut="reply"
+      >
         {% translate "Reply" %}
       </a>
       <a class="btn btn-ghost btn-sm" href="{% url 'compose:forward' folder_name message.uid %}">
         {% translate "Forward" %}
       </a>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
+
+      <form
+        x-ref="readForm"
+        data-flag-kind="seen"
         hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
-        hx-vals='{"action": "{% if message.is_flagged %}unstar{% else %}star{% endif %}"}'
-        hx-target="#message-viewer"
-        hx-swap="innerHTML"
-        aria-label="{% if message.is_flagged %}{% translate 'Unflag message' %}{% else %}{% translate 'Flag message' %}{% endif %}"
-        aria-pressed="{% if message.is_flagged %}true{% else %}false{% endif %}"
+        hx-swap="none"
+        @htmx:after-request="afterFlagRequest($event)"
       >
-        {% if message.is_flagged %}★{% else %}☆{% endif %}
-      </button>
+        <input
+          type="hidden"
+          name="action"
+          x-ref="readAction"
+          value="{% if message.is_seen %}unread{% else %}read{% endif %}"
+        >
+        {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          data-shortcut="toggle-read"
+          x-bind:disabled="busySeen"
+          @click="toggleSeen()"
+        >
+          <span class="when-seen">{% translate "Mark as unread" %}</span>
+          <span class="when-unseen">{% translate "Mark as read" %}</span>
+        </button>
+      </form>
+
+      <form
+        x-ref="flagForm"
+        data-flag-kind="flagged"
+        hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
+        hx-swap="none"
+        @htmx:after-request="afterFlagRequest($event)"
+      >
+        <input
+          type="hidden"
+          name="action"
+          x-ref="flagAction"
+          value="{% if message.is_flagged %}unstar{% else %}star{% endif %}"
+        >
+        {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          aria-label="{% translate 'Flag message' %}"
+          aria-pressed="{% if message.is_flagged %}true{% else %}false{% endif %}"
+          x-bind:aria-pressed="flagged"
+          x-bind:disabled="busyFlag"
+          @click="toggleFlag()"
+        >
+          <span class="when-unflagged" aria-hidden="true">☆</span>
+          <span class="when-flagged" aria-hidden="true">★</span>
+        </button>
+      </form>
 
       {% if folders %}
         <form
@@ -60,7 +126,12 @@
           hx-swap="none"
         >
           <label class="sr-only" for="move-dest-{{ message.uid }}">{% translate "Move to folder" %}</label>
-          <select id="move-dest-{{ message.uid }}" name="dest" class="select select-sm">
+          <select
+            id="move-dest-{{ message.uid }}"
+            name="dest"
+            class="select select-sm"
+            data-shortcut="move"
+          >
             <option value="" selected disabled>{% translate "Move to…" %}</option>
             {% include "mail/_folder_select_options.html" with folders=folders current_folder=folder_name %}
           </select>
@@ -139,12 +210,17 @@
   {% include "mail/_attachment_list.html" %}
 
   {% if not message.is_seen %}
-    <div
+    <form
+      data-auto-read
       hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
-      hx-vals='{"action": "read"}'
       hx-trigger="load"
       hx-swap="none"
+      @htmx:before-request="onAutoReadStart($event)"
+      @htmx:after-request="onAutoReadEnd($event)"
       aria-hidden="true"
-    ></div>
+    >
+      <input type="hidden" name="action" value="read">
+      {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+    </form>
   {% endif %}
 </article>

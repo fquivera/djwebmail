@@ -450,10 +450,18 @@ Done:
   `subject`, `date_from`, `date_to`, and `unread`; it reuses the message-list
   partial, preserves filters in pagination, and retries in ASCII with a visible
   notice when the server rejects UTF-8. See `docs/mail-search.md`.
+- Mail interaction layer: responsive `?view=list|message`, mobile folder
+  drawer, native command palette, keyboard shortcuts, skeleton loading states,
+  and optimistic read/star with revert. Alpine CSP 3.17.5 is vendored and only
+  holds local state; HTMX still performs every mutation and returns HTML. See
+  `docs/ui-interaction.md`, `docs/security-csp.md`, and `docs/phase-4.md`.
+- Command palette: `/mail/palette/` reuses folder-scoped search and lists
+  matching folders for the current folder. Global all-folder search remains
+  pending.
 
-Next: Phase 4 is defined in `docs/phase-4.md`. The remaining deliverables are
-all-folder search and the §8.4 keyboard shortcuts; do not open new protocol
-areas before those close with tests and a merged PR.
+Next: Phase 4 is defined in `docs/phase-4.md`. The only remaining deliverable
+is all-folder search; do not open new protocol areas before it closes with
+tests and a merged PR.
 
 ## 12. Anti-patterns
 

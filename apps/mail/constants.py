@@ -11,6 +11,11 @@ SEARCH_QUERY_MAX_LENGTH = 200
 SEARCH_ADDRESS_MAX_LENGTH = 320
 SEARCH_SUBJECT_MAX_LENGTH = 500
 
+# The command palette is an incremental search affordance, not a full result
+# page. Keep its response short enough to stay useful above the fold.
+PALETTE_MESSAGE_LIMIT = 8
+PALETTE_FOLDER_LIMIT = 6
+
 # The image proxy only forwards plain HTTP(S) and only raster formats. SVG is
 # excluded because serving it same-origin could execute script if navigated.
 IMAGE_PROXY_ALLOWED_SCHEMES = frozenset({"http", "https"})

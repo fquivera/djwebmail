@@ -12,6 +12,7 @@ from apps.mail.views import (
     message_move,
     message_remote_images,
     message_view,
+    palette,
     search,
 )
 
@@ -21,6 +22,7 @@ urlpatterns = [
     path("", mailbox, name="index"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),
     path("search/", search, name="search"),
+    path("palette/", palette, name="palette"),
     path("image-proxy/", image_proxy, name="image_proxy"),
     path(
         "message/<path:folder_name>/<int:uid>/remote-images/",

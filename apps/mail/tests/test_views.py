@@ -115,8 +115,14 @@ def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: MessageP
     assert "mail/index.html" in template_names
     assert b"Hello from the test" in response.content
     assert b"hx-get" in response.content
-    assert b"/mail/message/INBOX/7/" in response.content
+    assert b"/mail/message/INBOX/7/?view=message" in response.content
     assert b"hx-swap-oob" not in response.content
+    assert b"data-mail-shell" in response.content
+    assert b'data-view="list"' in response.content
+    assert b'x-data="mailShell"' in response.content
+    assert b"alpine-csp.min.js" in response.content
+    assert b"js/app.js" in response.content
+    assert b'hx-include="#current-folder"' in response.content
 
 
 @pytest.mark.django_db
@@ -142,6 +148,26 @@ def test_mail_uses_page_size_from_session(
     assert captured["page_size"] == 25
 
 
+def test_mail_accepts_mobile_message_view(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(reverse("mail:index"), {"view": "message"})
+
+    assert response.status_code == 200
+    assert b'data-view="message"' in response.content
+
+
+def test_mail_rejects_unknown_mobile_view(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(reverse("mail:index"), {"view": "bogus"})
+
+    assert response.status_code == 200
+    assert b'data-view="list"' in response.content
+
+
 def test_mail_htmx_returns_fragment_and_refreshes_tree(
     logged_in_client: Client,
     mailbox_data: MessagePage,
@@ -153,6 +179,7 @@ def test_mail_htmx_returns_fragment_and_refreshes_tree(
     assert "mail/_mailbox_response.html" in template_names
     assert "mail/index.html" not in template_names
     assert b"Hello from the test" in response.content
+    assert b'id="folder-heading"' in response.content
     assert b'hx-swap-oob="outerHTML"' in response.content
     assert "HX-Request" in response.headers["Vary"]
 
@@ -381,6 +408,72 @@ def test_search_rejects_reversed_dates_for_htmx(
     assert b"Check the search filters." in response.content
 
 
+def test_palette_requires_login(client: Client) -> None:
+    response: Any = client.get(reverse("mail:palette"))
+
+    assert response.status_code == 302
+    assert response["Location"] == f"{reverse('accounts:login')}?next=%2Fmail%2Fpalette%2F"
+
+
+def test_palette_empty_query_does_not_search(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_search(*args: object, **kwargs: object) -> None:
+        raise AssertionError("empty palette query must not reach IMAP search")
+
+    monkeypatch.setattr("apps.mail.views.search_messages", fail_search)
+
+    response: Any = logged_in_client.get(reverse("mail:palette"), {"folder": "INBOX"})
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_palette_results.html" in template_names
+    assert b"Type to search this folder." in response.content
+
+
+def test_palette_rejects_long_query(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:palette"),
+        {"folder": "INBOX", "q": "x" * 201},
+    )
+
+    assert response.status_code == 200
+    assert b"Check the search filters." in response.content
+
+
+def test_palette_renders_current_folder_results(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:palette"),
+        {"folder": "INBOX", "q": "hello"},
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_palette_results.html" in template_names
+    assert b"Hello from search" in response.content
+    assert b"/mail/message/INBOX/7/?view=message" in response.content
+    assert b'hx-target="#message-viewer"' in response.content
+    assert b"data-palette-close" in response.content
+
+
+def test_palette_matches_folder_names(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:palette"),
+        {"folder": "INBOX", "q": "inb"},
+    )
+
+    assert response.status_code == 200
+    assert b"Folders" in response.content
+    assert b"/mail/folder/INBOX/?view=list" in response.content
+
+
 @pytest.fixture
 def message_view_data(monkeypatch: pytest.MonkeyPatch) -> MessageDetail:
     detail = MessageDetail(
@@ -427,6 +520,11 @@ def test_message_view_renders_full_page(
     assert "mail/message.html" in template_names
     assert b"Hello from the viewer" in response.content
     assert b"Sanitized body" in response.content
+    assert b'x-data="messageActions"' in response.content
+    assert b'data-shortcut="toggle-read"' in response.content
+    assert b'data-shortcut="reply"' in response.content
+    assert b"alpine-csp.min.js" in response.content
+    assert b'name="standalone" value="1"' in response.content
 
 
 def test_message_view_returns_fragment_for_htmx(
@@ -443,6 +541,7 @@ def test_message_view_returns_fragment_for_htmx(
     assert "mail/_message_view.html" in template_names
     assert "mail/message.html" not in template_names
     assert b"Sanitized body" in response.content
+    assert b'name="standalone" value="1"' not in response.content
     assert "HX-Request" in response.headers["Vary"]
 
 
@@ -740,7 +839,7 @@ def test_message_flags_marks_read_returns_oob_row(
     assert b"<article" not in response.content
 
 
-def test_message_flags_star_returns_viewer_and_row(
+def test_message_flags_star_returns_only_oob_row(
     logged_in_client: Client,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -752,8 +851,42 @@ def test_message_flags_star_returns_viewer_and_row(
     )
 
     assert response.status_code == 200
+    assert b'hx-swap-oob="outerHTML"' in response.content
     assert b'id="msg-7"' in response.content
-    assert b"Hello" in response.content
+    assert b"<article" not in response.content
+
+
+def test_message_flags_standalone_page_returns_no_content(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _flags_double(monkeypatch, flags=("\\Seen",))
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "read", "standalone": "1"},
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+def test_message_flags_returns_failure_for_optimistic_revert(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ImapConnectionError("down")
+
+    monkeypatch.setattr("apps.mail.views.set_message_flags", fail)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "star"},
+    )
+
+    assert response.status_code == 503
+    assert b"<article" not in response.content
 
 
 def test_message_move_requires_login(client: Client) -> None:

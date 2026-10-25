@@ -25,10 +25,13 @@ from apps.mail.constants import (
     IMAP_INBOX,
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
+    PALETTE_FOLDER_LIMIT,
+    PALETTE_MESSAGE_LIMIT,
 )
 from apps.mail.forms import MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
+    FolderNode,
     delete_message,
     list_folders,
     list_messages,
@@ -71,6 +74,7 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
         "used_ascii_fallback": False,
         "pagination_url": reverse("mail:folder", kwargs={"folder_name": folder}),
         "query_string": "",
+        "view": _mail_view(request),
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_mailbox_response.html", context)
@@ -122,10 +126,71 @@ def search(request: HttpRequest) -> HttpResponse:
         "used_ascii_fallback": result.used_ascii_fallback,
         "pagination_url": reverse("mail:search"),
         "query_string": filters.query_string(),
+        "view": "list",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_message_list.html", context)
     return render(request, "mail/index.html", context)
+
+
+@never_cache
+@mail_login_required
+@require_GET
+def palette(request: HttpRequest) -> HttpResponse:
+    """Return the command-palette fragment for the current folder.
+
+    The palette is deliberately folder-scoped. Global search across every
+    selectable folder is still Phase 4 work, so this endpoint reuses
+    ``search_messages`` with a single folder instead of inventing a second
+    search model.
+    """
+    form = MailSearchForm(request.GET)
+    folder_value = request.GET.get("folder")
+    folder = folder_value if isinstance(folder_value, str) and folder_value else IMAP_INBOX
+    context: dict[str, object] = {
+        "folder_name": folder,
+        "q": "",
+        "folders": (),
+        "page": None,
+        "palette_error": "",
+        "used_ascii_fallback": False,
+    }
+
+    if not form.is_valid():
+        context["palette_error"] = _("Check the search filters.")
+        return render(request, "mail/_palette_results.html", context)
+
+    folder = str(form.cleaned_data.get("folder") or IMAP_INBOX)
+    query = str(form.cleaned_data.get("q") or "").strip()
+    context.update({"folder_name": folder, "q": query})
+    if not query:
+        return render(request, "mail/_palette_results.html", context)
+
+    try:
+        with get_mail_imap_service(request) as imap:
+            folder_nodes = list_folders(imap)
+            result = search_messages(
+                imap,
+                SearchFilters(folder=folder, q=query),
+                page=1,
+                page_size=PALETTE_MESSAGE_LIMIT,
+            )
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    context.update(
+        {
+            "folders": _matching_folders(folder_nodes, query),
+            "page": result.page,
+            "used_ascii_fallback": result.used_ascii_fallback,
+        }
+    )
+    return render(request, "mail/_palette_results.html", context)
 
 
 @never_cache
@@ -151,6 +216,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
         "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=False),
+        "view": "message",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_message_view.html", context)
@@ -205,7 +271,7 @@ def image_proxy(request: HttpRequest) -> HttpResponse:
 @require_POST
 @mail_login_required
 def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
-    """Apply a read/star flag change and refresh the row (and viewer)."""
+    """Apply a read/star flag change and refresh the list row."""
     action = request.POST.get("action")
     if not isinstance(action, str):
         return HttpResponse(status=400)
@@ -217,31 +283,26 @@ def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
     try:
         with get_mail_imap_service(request) as imap:
             summary = set_message_flags(imap, folder, uid, add=add, remove=remove)
-            message = get_message(imap, folder, uid)
-            folders = list_folders(imap)
     except MailSessionError:
         return login_redirect(request)
     except ImapAuthError:
         end_mail_session(request)
         return login_redirect(request)
     except MailError:
-        return _error_response(request)
+        # 2xx errors would look successful to the optimistic UI. Return a
+        # failure status so the Alpine component can revert and show its alert.
+        return HttpResponse(status=503)
 
     if summary is None:
         return HttpResponse(status=404)
 
-    if action in ("star", "unstar"):
-        return render(
-            request,
-            "mail/_message_flags_response.html",
-            {
-                "folder_name": folder,
-                "folders": folders,
-                "message": message,
-                "body_html": _render_body_html(message, folder, uid, allow_remote=False),
-                "row": summary,
-            },
-        )
+    if request.POST.get("standalone") == "1":
+        # The full-page message route has no list row to refresh.
+        return HttpResponse(status=204)
+
+    # The viewer updates read/star state optimistically in Alpine. The response
+    # only refreshes the list row, so it never replaces the viewer and wipes the
+    # local state before the user sees the change.
     return render(
         request,
         "mail/_message_row.html",
@@ -431,10 +492,36 @@ def _search_filter_error(
         "used_ascii_fallback": False,
         "pagination_url": reverse("mail:search"),
         "query_string": "",
+        "view": "list",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_message_list.html", context)
     return render(request, "mail/index.html", context)
+
+
+def _mail_view(request: HttpRequest) -> str:
+    """Return a validated mobile panel selection for the mail shell."""
+    return "message" if request.GET.get("view") == "message" else "list"
+
+
+def _matching_folders(
+    nodes: tuple[FolderNode, ...],
+    query: str,
+) -> tuple[FolderNode, ...]:
+    """Return selectable folders whose name or label matches the palette query."""
+    needle = query.casefold()
+    matches: list[FolderNode] = []
+
+    def visit(items: tuple[FolderNode, ...]) -> None:
+        for node in items:
+            if len(matches) >= PALETTE_FOLDER_LIMIT:
+                return
+            if node.selectable and node.name and needle in f"{node.name} {node.label}".casefold():
+                matches.append(node)
+            visit(node.children)
+
+    visit(nodes)
+    return tuple(matches)
 
 
 def _error_response(request: HttpRequest) -> HttpResponse:

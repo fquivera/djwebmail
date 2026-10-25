@@ -160,6 +160,18 @@ Force full page refresh
 - **Not disabling buttons**: Use `hx-disabled-elt="this"` to prevent duplicate submissions
 - **N+1 queries**: HTMX views need `select_related()`/`prefetch_related()` just like regular views
 
+## DjWebmail optimistic actions
+
+- For an optimistic control, return only the affected OOB row from the mutation
+  endpoint. Do not replace the viewer or the component that owns the optimistic
+  state.
+- Return a non-2xx status for server failures that must trigger a client revert;
+  a `200` error partial looks successful to HTMX. Render the user-facing failure
+  from the Alpine component.
+- Keep the real route in `action` and `hx-post`; use hidden inputs for the
+  action value instead of `hx-vals="js:"`.
+- Full contract: `docs/ui-interaction.md`.
+
 ## Integration with Other Skills
 
 - **htmx-alpine**: Interaction model, Alpine.js state, accessibility, SSE/WebSocket

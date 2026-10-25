@@ -1,0 +1,86 @@
+{% load i18n %}
+{% if palette_error %}
+  <div class="alert alert-error m-2 text-sm" role="alert">{{ palette_error }}</div>
+{% elif not q %}
+  <p class="px-2 py-6 text-center text-sm text-base-content/60">
+    {% translate "Type to search this folder." %}
+  </p>
+{% else %}
+  {% if used_ascii_fallback %}
+    <div class="alert alert-warning m-2 text-sm" role="status">
+      {% translate "The server does not support UTF-8 search; results use an ASCII approximation." %}
+    </div>
+  {% endif %}
+
+  {% if folders %}
+    <div class="mb-2">
+      <p class="px-2 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+        {% translate "Folders" %}
+      </p>
+      <ul class="menu w-full p-0">
+        {% for folder in folders %}
+          <li>
+            <a
+              href="{% url 'mail:folder' folder.name %}?view=list"
+              hx-get="{% url 'mail:folder' folder.name %}?view=list"
+              hx-target="#message-list"
+              hx-swap="innerHTML"
+              hx-push-url="true"
+              hx-indicator="#list-spinner"
+              data-palette-close
+            >
+              <span class="truncate">{{ folder.label }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if page.messages %}
+    <div>
+      <p class="px-2 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+        {% translate "Messages" %}
+      </p>
+      <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
+        {% for message in page.messages %}
+          <li>
+            <a
+              class="flex flex-col gap-1 rounded-md px-2 py-2 text-sm hover:bg-base-200"
+              href="{% url 'mail:message' folder_name message.uid %}?view=message"
+              hx-get="{% url 'mail:message' folder_name message.uid %}?view=message"
+              hx-target="#message-viewer"
+              hx-swap="innerHTML"
+              hx-push-url="true"
+              hx-indicator="#list-spinner"
+              data-palette-close
+            >
+              <span class="flex items-center gap-2">
+                <span class="min-w-0 flex-1 truncate font-medium">
+                  {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+                </span>
+                {% if not message.is_seen %}
+                  <span class="badge badge-primary badge-xs">{% translate "Unread" %}</span>
+                {% endif %}
+              </span>
+              <span class="flex items-center gap-2 text-xs text-base-content/60">
+                <span class="min-w-0 flex-1 truncate">
+                  {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+                </span>
+                {% if message.date %}
+                  <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
+                {% endif %}
+              </span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if not folders and not page.messages %}
+    <p class="px-2 py-6 text-center text-sm text-base-content/60">
+      {% translate "No matching messages or folders in this folder." %}
+    </p>
+  {% endif %}
+{% endif %}
