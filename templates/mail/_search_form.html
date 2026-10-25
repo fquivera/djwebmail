@@ -1,0 +1,70 @@
+{% load i18n %}
+<form
+  id="search-form"
+  class="mb-3 space-y-2"
+  method="get"
+  action="{% url 'mail:search' %}"
+  hx-get="{% url 'mail:search' %}"
+  hx-trigger="input changed delay:400ms, search, submit"
+  hx-target="#message-list-results"
+  hx-swap="innerHTML"
+  hx-push-url="true"
+  hx-sync="this:replace"
+  hx-indicator="#list-spinner"
+  role="search"
+>
+  {{ search_form.folder }}
+  <div class="flex flex-wrap items-center gap-2">
+    <label class="sr-only" for="{{ search_form.q.id_for_label }}">{{ search_form.q.label }}</label>
+    <div class="min-w-40 flex-1">
+      {{ search_form.q }}
+    </div>
+    <button class="btn btn-sm" type="submit">{% translate "Search" %}</button>
+    <a
+      class="btn btn-ghost btn-sm"
+      href="{% url 'mail:folder' folder_name %}"
+      hx-get="{% url 'mail:folder' folder_name %}"
+      hx-target="#message-list"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      hx-indicator="#list-spinner"
+    >{% translate "Clear" %}</a>
+  </div>
+
+  <details class="rounded-box border border-base-300 bg-base-200/40 px-3 py-2"{% if search_active %} open{% endif %}>
+    <summary class="cursor-pointer text-sm font-medium">{% translate "Filters" %}</summary>
+    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+      <div>
+        <label class="mb-1 block text-sm" for="{{ search_form.from_.id_for_label }}">{{ search_form.from_.label }}</label>
+        {{ search_form.from_ }}
+        {{ search_form.from_.errors }}
+      </div>
+      <div>
+        <label class="mb-1 block text-sm" for="{{ search_form.to.id_for_label }}">{{ search_form.to.label }}</label>
+        {{ search_form.to }}
+        {{ search_form.to.errors }}
+      </div>
+      <div class="sm:col-span-2">
+        <label class="mb-1 block text-sm" for="{{ search_form.subject.id_for_label }}">{{ search_form.subject.label }}</label>
+        {{ search_form.subject }}
+        {{ search_form.subject.errors }}
+      </div>
+      <div>
+        <label class="mb-1 block text-sm" for="{{ search_form.date_from.id_for_label }}">{{ search_form.date_from.label }}</label>
+        {{ search_form.date_from }}
+        {{ search_form.date_from.errors }}
+      </div>
+      <div>
+        <label class="mb-1 block text-sm" for="{{ search_form.date_to.id_for_label }}">{{ search_form.date_to.label }}</label>
+        {{ search_form.date_to }}
+        {{ search_form.date_to.errors }}
+      </div>
+      <div class="flex items-center gap-2 sm:col-span-2">
+        {{ search_form.unread }}
+        <label class="text-sm" for="{{ search_form.unread.id_for_label }}">{{ search_form.unread.label }}</label>
+        {{ search_form.unread.errors }}
+      </div>
+    </div>
+    {{ search_form.non_field_errors }}
+  </details>
+</form>

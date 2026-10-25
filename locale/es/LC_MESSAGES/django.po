@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DjWebmail\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 23:39+0000\n"
-"PO-Revision-Date: 2026-10-24 23:39+0000\n"
+"POT-Creation-Date: 2026-10-25 00:14+0000\n"
+"PO-Revision-Date: 2026-10-25 00:15+0000\n"
 "Last-Translator: DjWebmail contributors\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -47,7 +47,8 @@ msgstr "El inicio de sesión de correo no está configurado. Contacte con el adm
 msgid "Unable to sign in."
 msgstr "No se pudo iniciar sesión."
 
-#: apps/compose/forms.py:19 templates/mail/_message.html:16
+#: apps/compose/forms.py:19 apps/mail/forms.py:62
+#: templates/mail/_message.html:16
 msgid "To"
 msgstr "Para"
 
@@ -59,11 +60,11 @@ msgstr "nombre@ejemplo.com, otro@ejemplo.com"
 msgid "Cc"
 msgstr "Cc"
 
-#: apps/compose/forms.py:40
+#: apps/compose/forms.py:40 apps/mail/forms.py:69
 msgid "Subject"
 msgstr "Asunto"
 
-#: apps/compose/forms.py:46 templates/mail/index.html:40
+#: apps/compose/forms.py:46 templates/mail/index.html:43
 #: templates/mail/message.html:4
 msgid "Message"
 msgstr "Mensaje"
@@ -141,7 +142,35 @@ msgstr "Ha alcanzado el límite de adjuntos."
 msgid "Unable to load the message. Try again later."
 msgstr "No se pudo cargar el mensaje. Inténtelo de nuevo más tarde."
 
-#: apps/mail/views.py:360
+#: apps/mail/forms.py:39
+msgid "Search this folder"
+msgstr "Buscar en esta carpeta"
+
+#: apps/mail/forms.py:52 templates/mail/_message.html:9
+msgid "From"
+msgstr "De"
+
+#: apps/mail/forms.py:76
+msgid "From date"
+msgstr "Fecha desde"
+
+#: apps/mail/forms.py:83
+msgid "To date"
+msgstr "Fecha hasta"
+
+#: apps/mail/forms.py:90
+msgid "Unread only"
+msgstr "Solo no leídos"
+
+#: apps/mail/forms.py:109
+msgid "End date must be on or after start date."
+msgstr "La fecha hasta debe ser igual o posterior a la fecha desde."
+
+#: apps/mail/views.py:429
+msgid "Check the search filters."
+msgstr "Revise los filtros de búsqueda."
+
+#: apps/mail/views.py:440
 msgid "Unable to load mail. Try again later."
 msgstr "No se pudo cargar el correo. Inténtelo de nuevo más tarde."
 
@@ -353,10 +382,6 @@ msgstr "No se encontraron carpetas."
 msgid "(No subject)"
 msgstr "(Sin asunto)"
 
-#: templates/mail/_message.html:9
-msgid "From"
-msgstr "De"
-
 #: templates/mail/_message.html:11 templates/mail/_message_row.html:18
 #: templates/mail/_message_row.html:20
 msgid "Unknown sender"
@@ -422,18 +447,26 @@ msgstr "Cargar imágenes"
 msgid "This message has no content."
 msgstr "Este mensaje no tiene contenido."
 
-#: templates/mail/_message_list.html:4
+#: templates/mail/_message_list.html:7
+msgid "The server does not support UTF-8 search; results use an ASCII approximation."
+msgstr "El servidor no admite búsquedas UTF-8; los resultados usan una aproximación ASCII."
+
+#: templates/mail/_message_list.html:13
 #, python-format
 msgid "%(counter)s message"
 msgid_plural "%(counter)s messages"
 msgstr[0] "%(counter)s mensaje"
 msgstr[1] "%(counter)s mensajes"
 
-#: templates/mail/_message_list.html:7
+#: templates/mail/_message_list.html:16
 msgid "Messages"
 msgstr "Mensajes"
 
-#: templates/mail/_message_list.html:15
+#: templates/mail/_message_list.html:24
+msgid "No messages match your search."
+msgstr "Ningún mensaje coincide con la búsqueda."
+
+#: templates/mail/_message_list.html:26
 msgid "This folder is empty."
 msgstr "Esta carpeta está vacía."
 
@@ -461,6 +494,18 @@ msgstr "Página %(current)s de %(total)s"
 #: templates/mail/_pagination.html:29
 msgid "Next"
 msgstr "Siguiente"
+
+#: templates/mail/_search_form.html:22
+msgid "Search"
+msgstr "Buscar"
+
+#: templates/mail/_search_form.html:31
+msgid "Clear"
+msgstr "Limpiar"
+
+#: templates/mail/_search_form.html:35
+msgid "Filters"
+msgstr "Filtros"
 
 #: templates/mail/error.html:4 templates/mail/error.html:8
 msgid "Mail unavailable"

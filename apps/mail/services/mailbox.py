@@ -58,6 +58,7 @@ class MessagePage:
     has_next: bool
     previous_page: int | None
     next_page: int | None
+    query_string: str = ""
 
 
 @dataclass
@@ -102,13 +103,16 @@ def list_messages(
     *,
     page: int,
     page_size: int,
+    criteria: Sequence[object] | str = "ALL",
+    charset: str | None = "UTF-8",
+    query_string: str = "",
 ) -> MessagePage:
     """Select one folder and return the requested page, newest messages first."""
     if page_size < 1:
         raise ValueError("page_size must be positive")
 
     imap.select(folder, readonly=True)
-    uids = sorted(imap.search("ALL") or [])
+    uids = sorted(imap.search(criteria, charset=charset) or [])
     total = len(uids)
     page_count = max(1, ceil(total / page_size))
     current_page = min(max(1, page), page_count)
@@ -125,6 +129,7 @@ def list_messages(
             has_next=False,
             previous_page=None,
             next_page=None,
+            query_string=query_string,
         )
 
     end = total - (current_page - 1) * page_size
@@ -143,6 +148,7 @@ def list_messages(
         has_next=current_page < page_count,
         previous_page=current_page - 1 if current_page > 1 else None,
         next_page=current_page + 1 if current_page < page_count else None,
+        query_string=query_string,
     )
 
 

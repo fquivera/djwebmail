@@ -1,16 +1,28 @@
 {% load i18n %}
-{% if page.messages %}
-  <p class="py-2 text-sm text-base-content/60">
-    {% blocktranslate count counter=page.total %}{{ counter }} message{% plural %}{{ counter }} messages{% endblocktranslate %}
-  </p>
-
-  <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
-    {% for message in page.messages %}
-      {% include "mail/_message_row.html" with message=message folder_name=folder_name %}
-    {% endfor %}
-  </ul>
-
-  {% include "mail/_pagination.html" with page=page folder_name=folder_name %}
+{% if search_error %}
+  <div class="alert alert-error mb-3 text-sm" role="alert">{{ search_error }}</div>
 {% else %}
-  <p class="py-8 text-center text-sm text-base-content/60">{% translate "This folder is empty." %}</p>
+  {% if used_ascii_fallback %}
+    <div class="alert alert-warning mb-3 text-sm" role="status">
+      {% translate "The server does not support UTF-8 search; results use an ASCII approximation." %}
+    </div>
+  {% endif %}
+
+  {% if page.messages %}
+    <p class="py-2 text-sm text-base-content/60">
+      {% blocktranslate count counter=page.total %}{{ counter }} message{% plural %}{{ counter }} messages{% endblocktranslate %}
+    </p>
+
+    <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
+      {% for message in page.messages %}
+        {% include "mail/_message_row.html" with message=message folder_name=folder_name %}
+      {% endfor %}
+    </ul>
+
+    {% include "mail/_pagination.html" with page=page folder_name=folder_name pagination_url=pagination_url query_string=query_string %}
+  {% elif search_active %}
+    <p class="py-8 text-center text-sm text-base-content/60">{% translate "No messages match your search." %}</p>
+  {% else %}
+    <p class="py-8 text-center text-sm text-base-content/60">{% translate "This folder is empty." %}</p>
+  {% endif %}
 {% endif %}

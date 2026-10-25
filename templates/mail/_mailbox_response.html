@@ -1,3 +1,7 @@
-{% include "mail/_message_list.html" %}
+{% include "mail/_search_form.html" %}
+
+<div id="message-list-results" aria-live="polite">
+  {% include "mail/_message_list.html" %}
+</div>
 
 {% include "mail/_folder_nav.html" with oob=True %}

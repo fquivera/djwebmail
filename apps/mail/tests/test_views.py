@@ -13,6 +13,7 @@ from apps.accounts.exceptions import ImapConnectionError
 from apps.accounts.services.account import MailAccount
 from apps.mail.services.mailbox import FolderNode, MessagePage, MessageSummary
 from apps.mail.services.message import Attachment, MessageDetail
+from apps.mail.services.search import SearchResult
 
 
 class FakeImapContext:
@@ -185,6 +186,199 @@ def test_mail_imap_error_stays_visible_after_htmx_swap(
     assert response.status_code == 200
     assert b'role="alert"' in response.content
     assert b"Unable to load mail" in response.content
+
+
+def _search_page(*, total: int = 1, next_page: int | None = None) -> MessagePage:
+    return MessagePage(
+        folder="INBOX",
+        page=1,
+        page_size=50,
+        total=total,
+        page_count=2 if next_page else 1,
+        messages=(
+            MessageSummary(
+                uid=7,
+                subject="Hello from search",
+                sender="Alice <alice@example.com>",
+                recipients="Bob <bob@example.com>",
+                date=datetime(2026, 10, 22, 10, 0, tzinfo=UTC),
+                flags=(),
+                size=1024,
+                is_seen=False,
+                is_flagged=False,
+            ),
+        )
+        if total
+        else (),
+        has_previous=False,
+        has_next=next_page is not None,
+        previous_page=None,
+        next_page=next_page,
+        query_string="folder=INBOX&q=hello",
+    )
+
+
+@pytest.fixture
+def search_data(monkeypatch: pytest.MonkeyPatch) -> MessagePage:
+    page = _search_page()
+    folders = (FolderNode(name="INBOX", label="INBOX", selectable=True),)
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: folders)
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(page=page),
+    )
+    return page
+
+
+def test_search_requires_login(client: Client) -> None:
+    response: Any = client.get(reverse("mail:search"))
+
+    assert response.status_code == 302
+    assert response["Location"] == f"{reverse('accounts:login')}?next=%2Fmail%2Fsearch%2F"
+
+
+def test_search_renders_full_page_with_bound_form(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {
+            "folder": "INBOX",
+            "q": "hello",
+            "from": "alice@example.com",
+            "unread": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/index.html" in template_names
+    assert b"Hello from search" in response.content
+    assert b'name="q" value="hello"' in response.content
+    assert b'name="from" value="alice@example.com"' in response.content
+    assert b'name="folder" value="INBOX"' in response.content
+    assert b"checked" in response.content
+
+
+def test_search_htmx_returns_list_fragment(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "q": "hello"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_message_list.html" in template_names
+    assert "mail/index.html" not in template_names
+    assert b"Hello from search" in response.content
+    assert b"<html" not in response.content
+    assert "HX-Request" in response.headers["Vary"]
+
+
+def test_search_pagination_preserves_filters(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    page = _search_page(total=3, next_page=2)
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(page=page),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "q": "hello"},
+    )
+
+    assert b'href="/mail/search/?folder=INBOX&amp;q=hello&amp;page=2"' in response.content
+    assert b'hx-get="/mail/search/?folder=INBOX&amp;q=hello&amp;page=2"' in response.content
+    assert b'hx-target="#message-list-results"' in response.content
+
+
+def test_search_without_results_shows_search_empty_state(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(page=_search_page(total=0)),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "q": "nothing"},
+    )
+
+    assert response.status_code == 200
+    assert b"No messages match your search." in response.content
+
+
+def test_search_shows_ascii_fallback_notice(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(
+            page=_search_page(),
+            used_ascii_fallback=True,
+        ),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "q": "búsqueda"},
+    )
+
+    assert response.status_code == 200
+    assert b"The server does not support UTF-8 search" in response.content
+
+
+def test_search_rejects_reversed_dates(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {
+            "folder": "INBOX",
+            "date_from": "2026-10-31",
+            "date_to": "2026-10-01",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"End date must be on or after start date." in response.content
+    assert b"Check the search filters." in response.content
+
+
+def test_search_rejects_reversed_dates_for_htmx(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {
+            "folder": "INBOX",
+            "date_from": "2026-10-31",
+            "date_to": "2026-10-01",
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    template_names = [template.name for template in response.templates]
+    assert "mail/_message_list.html" in template_names
+    assert b'role="alert"' in response.content
+    assert b"Check the search filters." in response.content
 
 
 @pytest.fixture
