@@ -446,9 +446,14 @@ Done:
 - Accessibility polish: skip link and focusable main landmark, live-region
   messages, labelled fieldsets, hidden unread text, `aria-pressed` on message
   flags, and keyboard-readable focus styles.
+- Folder-scoped search: `/mail/search/` accepts `folder`, `q`, `from`, `to`,
+  `subject`, `date_from`, `date_to`, and `unread`; it reuses the message-list
+  partial, preserves filters in pagination, and retries in ASCII with a visible
+  notice when the server rejects UTF-8. See `docs/mail-search.md`.
 
-Next: Phase 3 is complete. Define the scope of Phase 4 before implementing it;
-do not start it without closing this phase with tests and a merged PR.
+Next: Phase 4 is defined in `docs/phase-4.md`. The remaining deliverables are
+all-folder search and the §8.4 keyboard shortcuts; do not open new protocol
+areas before those close with tests and a merged PR.
 
 ## 12. Anti-patterns
 

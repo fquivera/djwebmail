@@ -155,6 +155,56 @@ def test_mail_view_lists_real_inbox_message(client, account, password):
     assert b"hx-swap-oob" in fragment.content
 
 
+def test_search_finds_real_message_by_subject(client, account, password):
+    subject = f"djwebmail-search-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message discovered by the search functional test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            if imap.search(["SUBJECT", subject]):
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become searchable over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "subject": subject},
+    )
+
+    assert response.status_code == 200
+    assert subject.encode() in response.content
+    assert b'name="subject" value="' in response.content
+
+    fragment = client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "subject": subject},
+        HTTP_HX_REQUEST="true",
+    )
+    assert fragment.status_code == 200
+    assert subject.encode() in fragment.content
+    assert b"<html" not in fragment.content
+
+
 def test_message_viewer_sanitizes_html_and_blocks_remote_content(client, account, password):
     subject = f"djwebmail-viewer-{uuid4().hex}"
     message = EmailMessage()

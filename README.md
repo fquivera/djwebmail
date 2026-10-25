@@ -249,15 +249,18 @@ tag, publishes a container image to GHCR, and creates a GitHub Release.
 MIT — see the LICENSE file for details.
 
 ## Roadmap (high level)
-☑ IMAP login and session management  
+☑ IMAP login and session management<br>
 ☑ Local development/staging mail stack and functional tests<br>
 ☑ Folder tree and message list with HTMX pagination<br>
-□ Message viewer with safe HTML rendering and remote-content blocking  
-□ Compose, reply, forward, send via SMTP  
-□ Per-user UI preferences (theme, density, signature)  
-□ Search across folders  
-□ Accessibility pass and keyboard shortcuts  
-□ Docker image publishing and deployment guide  
+☑ Message viewer with safe HTML rendering and remote-content blocking<br>
+☑ Compose, reply, forward, send via SMTP<br>
+☑ Per-user UI preferences (theme, density, signature)<br>
+☑ Search within a folder<br>
+□ Search across all folders<br>
+☑ Accessibility pass<br>
+□ Keyboard shortcuts<br>
+☑ Docker image publishing<br>
+□ Deployment guide<br>
 
 ## Acknowledgements
 Built with Django, HTMX,

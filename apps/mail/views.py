@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.vary import vary_on_headers
 
 from apps.accounts.decorators import login_redirect, mail_login_required
@@ -26,6 +26,7 @@ from apps.mail.constants import (
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
 )
+from apps.mail.forms import MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
     delete_message,
@@ -35,6 +36,7 @@ from apps.mail.services.mailbox import (
     set_message_flags,
 )
 from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
+from apps.mail.services.search import SearchFilters, search_messages
 
 
 @never_cache
@@ -63,9 +65,66 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
         "folder_name": folder,
         "folders": folders,
         "page": page,
+        "search_form": MailSearchForm(initial={"folder": folder}),
+        "search_active": False,
+        "search_error": "",
+        "used_ascii_fallback": False,
+        "pagination_url": reverse("mail:folder", kwargs={"folder_name": folder}),
+        "query_string": "",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_mailbox_response.html", context)
+    return render(request, "mail/index.html", context)
+
+
+@never_cache
+@vary_on_headers("HX-Request")
+@mail_login_required
+@require_GET
+def search(request: HttpRequest) -> HttpResponse:
+    """Search the selected folder and render the shared message-list partial."""
+    form = MailSearchForm(request.GET)
+    raw_folder = request.GET.get("folder")
+    folder = raw_folder if isinstance(raw_folder, str) and raw_folder else IMAP_INBOX
+
+    if not form.is_valid():
+        return _search_filter_error(request, form, folder)
+
+    filters = SearchFilters.from_cleaned_data(form.cleaned_data)
+    page_value = request.GET.get("page")
+    page_number = _parse_page(page_value if isinstance(page_value, str) else None)
+    page_size = get_mail_page_size(request)
+
+    try:
+        with get_mail_imap_service(request) as imap:
+            folders = list_folders(imap)
+            result = search_messages(
+                imap,
+                filters,
+                page=page_number,
+                page_size=page_size,
+            )
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    context = {
+        "folder_name": filters.folder,
+        "folders": folders,
+        "page": result.page,
+        "search_form": form,
+        "search_active": filters.is_active,
+        "search_error": "",
+        "used_ascii_fallback": result.used_ascii_fallback,
+        "pagination_url": reverse("mail:search"),
+        "query_string": filters.query_string(),
+    }
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return render(request, "mail/_message_list.html", context)
     return render(request, "mail/index.html", context)
 
 
@@ -354,6 +413,28 @@ def _parse_page(value: str | None) -> int:
     except (TypeError, ValueError):
         return 1
     return max(1, page)
+
+
+def _search_filter_error(
+    request: HttpRequest,
+    form: MailSearchForm,
+    folder: str,
+) -> HttpResponse:
+    """Render invalid filters as a 200 response so HTMX swaps the alert."""
+    context = {
+        "folder_name": folder,
+        "folders": (),
+        "page": None,
+        "search_form": form,
+        "search_active": True,
+        "search_error": _("Check the search filters."),
+        "used_ascii_fallback": False,
+        "pagination_url": reverse("mail:search"),
+        "query_string": "",
+    }
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return render(request, "mail/_message_list.html", context)
+    return render(request, "mail/index.html", context)
 
 
 def _error_response(request: HttpRequest) -> HttpResponse:
