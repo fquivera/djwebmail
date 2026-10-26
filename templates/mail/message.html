@@ -3,11 +3,13 @@
 
 {% block title %}{% if message.subject %}{{ message.subject }}{% else %}{% translate "Message" %}{% endif %}{% endblock %}
 
+{% block scripts %}
+  {% include "mail/_scripts.html" %}
+{% endblock %}
+
 {% block content %}
-  <div class="mx-auto max-w-3xl">
-    <a class="btn btn-ghost btn-sm mb-4" href="{% url 'mail:folder' folder_name %}">
-      {% translate "Back to folder" %}
-    </a>
-    {% include "mail/_message.html" %}
+  <div class="mx-auto max-w-3xl" data-compose-url="{% url 'compose:new' %}">
+    {% include "mail/_message.html" with standalone=True %}
   </div>
+  {% include "mail/_shortcuts_dialog.html" %}
 {% endblock %}

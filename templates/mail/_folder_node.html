@@ -2,21 +2,67 @@
 <li>
   {% if node.selectable and node.name %}
     <a
-      class="flex items-center rounded-md px-2 py-1 text-sm transition-colors{% if node.name == current_folder %} bg-primary font-semibold text-primary-content{% else %} hover:bg-base-200{% endif %}"
-      href="{% url 'mail:folder' node.name %}"
-      hx-get="{% url 'mail:folder' node.name %}"
+      class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors{% if node.name == current_folder %} bg-primary text-primary-content font-semibold shadow-xs{% else %} text-base-content/80 hover:bg-base-200 hover:text-base-content{% endif %}"
+      href="{% url 'mail:folder' node.name %}?view=list"
+      hx-get="{% url 'mail:folder' node.name %}?view=list"
       hx-target="#message-list"
       hx-swap="innerHTML"
       hx-push-url="true"
       hx-indicator="#list-spinner"
+      @click="closeFoldersAfterNavigation()"
       {% if node.name == current_folder %}aria-current="page"{% endif %}
-    >{{ node.label }}</a>
+    >
+      {% with lower_name=node.name|lower lower_label=node.label|lower %}
+        {% if "inbox" in lower_name or "bandeja" in lower_label %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+            <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+          </svg>
+        {% elif "sent" in lower_name or "enviad" in lower_label %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        {% elif "draft" in lower_name or "borrador" in lower_label %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        {% elif "trash" in lower_name or "deleted" in lower_name or "papelera" in lower_label %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        {% elif "spam" in lower_name or "junk" in lower_name or "deseado" in lower_label %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+        {% elif "archive" in lower_name or "archivo" in lower_label %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="20" height="5" x="2" y="3" rx="1"/>
+            <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+            <path d="M10 12h4"/>
+          </svg>
+        {% else %}
+          <svg class="size-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+          </svg>
+        {% endif %}
+      {% endwith %}
+      <span class="truncate flex-1">{{ node.label }}</span>
+    </a>
   {% else %}
-    <span class="block px-2 py-1 text-sm font-medium text-base-content/60">{{ node.label }}</span>
+    <span class="flex items-center gap-2.5 px-2.5 py-1.5 text-sm font-medium text-base-content/60">
+      <svg class="size-4 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+      </svg>
+      <span class="truncate">{{ node.label }}</span>
+    </span>
   {% endif %}
 
   {% if node.children %}
-    <ul class="ml-2 border-l border-base-300 pl-2">
+    <ul class="ml-4 border-l border-base-300 pl-2 space-y-0.5 mt-0.5">
       {% for child in node.children %}
         {% include "mail/_folder_node.html" with node=child current_folder=current_folder %}
       {% endfor %}

@@ -1,60 +1,328 @@
 {% load i18n %}
-<article class="space-y-4">
-  <header class="space-y-2 border-b border-base-300 pb-3">
-    <h1 id="message-subject" tabindex="-1" class="break-words text-lg font-semibold">
+<article
+  class="space-y-3"
+  x-data="messageActions"
+  data-seen="{% if message.is_seen %}true{% else %}false{% endif %}"
+  data-flagged="{% if message.is_flagged %}true{% else %}false{% endif %}"
+  x-bind:data-seen="seen ? 'true' : 'false'"
+  x-bind:data-flagged="flagged ? 'true' : 'false'"
+  x-bind:data-flag-error="error ? 'true' : 'false'"
+>
+  <div class="flex items-center gap-2 border-b border-base-200 pb-2.5">
+    <a
+      class="btn btn-ghost btn-sm btn-square shrink-0 text-base-content/70 hover:text-base-content"
+      href="{% url 'mail:folder' folder_name %}?view=list"
+      data-shortcut="back"
+      title="{% translate 'Back to folder' %}"
+      aria-label="{% translate 'Back to folder' %}"
+    >
+      <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m12 19-7-7 7-7"></path>
+        <path d="M19 12H5"></path>
+      </svg>
+      <span class="sr-only">{% translate "Back to folder" %}</span>
+    </a>
+    <h1 id="message-subject" tabindex="-1" class="min-w-0 flex-1 break-words text-base font-semibold text-base-content">
       {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
     </h1>
-    <dl class="space-y-1 text-sm text-base-content/80">
-      <div class="flex gap-2">
-        <dt class="w-14 shrink-0 text-base-content/60">{% translate "From" %}</dt>
-        <dd class="min-w-0 break-words">
-          {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
-        </dd>
+  </div>
+
+  <div class="when-flag-error">
+    <div class="alert alert-error text-sm" role="alert">
+      {% translate "Could not update the message. Try again." %}
+    </div>
+  </div>
+
+  <header class="space-y-2.5 border-b border-base-300 pb-3">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="flex items-start gap-3 min-w-0 flex-1">
+        <div class="avatar placeholder shrink-0 pt-0.5">
+          <div class="size-10 rounded-full bg-base-200 text-base-content/85 border border-base-300 font-semibold text-sm flex items-center justify-center">
+            <span>{{ message.sender|default:"?"|slice:":1"|upper }}</span>
+          </div>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="font-semibold text-sm text-base-content break-words">
+            {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+          </div>
+
+          <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-base-content/70">
+            {% if message.recipients %}
+              <span class="truncate max-w-md">
+                <span class="text-base-content/50">{% translate "To" %}:</span> {{ message.recipients }}
+              </span>
+            {% endif %}
+            {% if message.cc %}
+              <span class="truncate max-w-md">
+                <span class="text-base-content/50">{% translate "Cc" %}:</span> {{ message.cc }}
+              </span>
+            {% endif %}
+          </div>
+
+          <details class="mt-1 text-xs text-base-content/75">
+            <summary class="link link-primary link-hover cursor-pointer select-none inline-flex items-center gap-1 font-medium">
+              {% translate "Show details" %}
+            </summary>
+            <dl class="mt-2 rounded-md bg-base-200/60 border border-base-300/70 p-2.5 space-y-1 text-xs text-base-content/80">
+              <div class="flex gap-2">
+                <dt class="w-14 shrink-0 text-base-content/60">{% translate "From" %}</dt>
+                <dd class="min-w-0 break-words">
+                  {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+                </dd>
+              </div>
+              {% if message.recipients %}
+                <div class="flex gap-2">
+                  <dt class="w-14 shrink-0 text-base-content/60">{% translate "To" %}</dt>
+                  <dd class="min-w-0 break-words">{{ message.recipients }}</dd>
+                </div>
+              {% endif %}
+              {% if message.cc %}
+                <div class="flex gap-2">
+                  <dt class="w-14 shrink-0 text-base-content/60">{% translate "Cc" %}</dt>
+                  <dd class="min-w-0 break-words">{{ message.cc }}</dd>
+                </div>
+              {% endif %}
+              {% if message.date %}
+                <div class="flex gap-2">
+                  <dt class="w-14 shrink-0 text-base-content/60">{% translate "Date" %}</dt>
+                  <dd>
+                    <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
+                  </dd>
+                </div>
+              {% endif %}
+            </dl>
+          </details>
+        </div>
       </div>
-      {% if message.recipients %}
-        <div class="flex gap-2">
-          <dt class="w-14 shrink-0 text-base-content/60">{% translate "To" %}</dt>
-          <dd class="min-w-0 break-words">{{ message.recipients }}</dd>
+
+      <div class="flex flex-col items-end gap-1.5 shrink-0">
+        {% if message.date %}
+          <time datetime="{{ message.date|date:'c' }}" class="text-xs text-base-content/60 whitespace-nowrap">
+            {{ message.date|date:"SHORT_DATETIME_FORMAT" }}
+          </time>
+        {% endif %}
+
+        <div class="flex flex-wrap items-center gap-1" role="toolbar" aria-label="{% translate 'Message actions' %}">
+          <a
+            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+            href="{% url 'compose:reply' folder_name message.uid %}"
+            data-shortcut="reply"
+            title="{% translate 'Reply' %}"
+            aria-label="{% translate 'Reply' %}"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 17 4 12 9 7"></polyline>
+              <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+            </svg>
+            <span class="sr-only">{% translate "Reply" %}</span>
+          </a>
+
+          <a
+            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+            href="{% url 'compose:reply_all' folder_name message.uid %}"
+            title="{% translate 'Reply all' %}"
+            aria-label="{% translate 'Reply all' %}"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="7 17 2 12 7 7"></polyline>
+              <polyline points="12 17 7 12 12 7"></polyline>
+              <path d="M22 18v-2a4 4 0 0 0-4-4H7"></path>
+            </svg>
+            <span class="sr-only">{% translate "Reply all" %}</span>
+          </a>
+
+          <a
+            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+            href="{% url 'compose:forward' folder_name message.uid %}"
+            title="{% translate 'Forward' %}"
+            aria-label="{% translate 'Forward' %}"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 17 20 12 15 7"></polyline>
+              <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
+            </svg>
+            <span class="sr-only">{% translate "Forward" %}</span>
+          </a>
+
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-error"
+            data-confirm-open="delete-dialog-{{ message.uid }}"
+            aria-haspopup="dialog"
+            title="{% translate 'Delete' %}"
+            aria-label="{% translate 'Delete' %}"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            </svg>
+            <span class="sr-only">{% translate "Delete" %}</span>
+          </button>
+
+          <form
+            x-ref="readForm"
+            data-flag-kind="seen"
+            hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
+            hx-swap="none"
+            @htmx:after-request="afterFlagRequest($event)"
+            class="inline-flex"
+          >
+            <input
+              type="hidden"
+              name="action"
+              x-ref="readAction"
+              value="{% if message.is_seen %}unread{% else %}read{% endif %}"
+            >
+            {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+            {% if search_scope == search_scope_all %}<input type="hidden" name="scope" value="{{ search_scope_all }}">{% endif %}
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+              data-shortcut="toggle-read"
+              x-bind:disabled="busySeen"
+              @click="toggleSeen()"
+              title="{% translate 'Mark as unread' %}"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+              </svg>
+              <span class="when-seen sr-only">{% translate "Mark as unread" %}</span>
+              <span class="when-unseen sr-only">{% translate "Mark as read" %}</span>
+            </button>
+          </form>
+
+          <form
+            x-ref="flagForm"
+            data-flag-kind="flagged"
+            hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
+            hx-swap="none"
+            @htmx:after-request="afterFlagRequest($event)"
+            class="inline-flex"
+          >
+            <input
+              type="hidden"
+              name="action"
+              x-ref="flagAction"
+              value="{% if message.is_flagged %}unstar{% else %}star{% endif %}"
+            >
+            {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+            {% if search_scope == search_scope_all %}<input type="hidden" name="scope" value="{{ search_scope_all }}">{% endif %}
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-warning"
+              aria-label="{% translate 'Flag message' %}"
+              title="{% translate 'Flag message' %}"
+              aria-pressed="{% if message.is_flagged %}true{% else %}false{% endif %}"
+              x-bind:aria-pressed="flagged"
+              x-bind:disabled="busyFlag"
+              @click="toggleFlag()"
+            >
+              <span class="when-unflagged" aria-hidden="true">☆</span>
+              <span class="when-flagged text-warning" aria-hidden="true">★</span>
+            </button>
+          </form>
+
+          {% if folders %}
+            <form
+              class="flex items-center gap-1 ml-1"
+              hx-post="{% url 'mail:message_move' folder_name message.uid %}"
+              hx-target="body"
+              hx-swap="none"
+            >
+              <label class="sr-only" for="move-dest-{{ message.uid }}">{% translate "Move to folder" %}</label>
+              <select
+                id="move-dest-{{ message.uid }}"
+                name="dest"
+                class="select select-xs"
+                data-shortcut="move"
+              >
+                <option value="" selected disabled>{% translate "Move to…" %}</option>
+                {% include "mail/_folder_select_options.html" with folders=folders current_folder=folder_name %}
+              </select>
+              <button type="submit" class="btn btn-ghost btn-xs">{% translate "Move" %}</button>
+            </form>
+          {% endif %}
         </div>
-      {% endif %}
-      {% if message.cc %}
-        <div class="flex gap-2">
-          <dt class="w-14 shrink-0 text-base-content/60">{% translate "Cc" %}</dt>
-          <dd class="min-w-0 break-words">{{ message.cc }}</dd>
-        </div>
-      {% endif %}
-      {% if message.date %}
-        <div class="flex gap-2">
-          <dt class="w-14 shrink-0 text-base-content/60">{% translate "Date" %}</dt>
-          <dd>
-            <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
-          </dd>
-        </div>
-      {% endif %}
-    </dl>
+      </div>
+    </div>
   </header>
 
+  {% include "mail/_attachment_list.html" %}
+
+  <dialog
+    id="delete-dialog-{{ message.uid }}"
+    class="modal"
+    aria-labelledby="delete-title-{{ message.uid }}"
+  >
+    <div class="modal-box">
+      <h2 id="delete-title-{{ message.uid }}" class="text-lg font-semibold">
+        {% translate "Delete this message?" %}
+      </h2>
+      <p class="py-4 text-sm">
+        {% translate "This permanently removes the message from the server and cannot be undone." %}
+      </p>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-ghost btn-sm">{% translate "Cancel" %}</button>
+        </form>
+        <form
+          method="post"
+          action="{% url 'mail:message_delete' folder_name message.uid %}"
+          hx-post="{% url 'mail:message_delete' folder_name message.uid %}"
+          hx-target="body"
+          hx-swap="none"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn btn-error btn-sm">{% translate "Delete" %}</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>{% translate "Close" %}</button>
+    </form>
+  </dialog>
+
   <div id="message-body" class="message-body break-words text-sm leading-relaxed">
-    {% if message.remote_content_blocked %}
+    {% if message.remote_content_blocked and not remote_images_loaded %}
       <div class="alert alert-warning mb-3 text-sm" role="status">
         <span>{% translate "Remote content was blocked to protect your privacy." %}</span>
-        <button
-          class="btn btn-outline btn-sm"
-          type="button"
-          hx-post="{% url 'mail:message_remote_images' folder_name message.uid %}"
-          hx-target="#message-body"
-          hx-swap="innerHTML"
-          hx-disabled-elt="this"
-        >
-          {% translate "Load images" %}
-        </button>
+        {% if not remote_images_never %}
+          <button
+            class="btn btn-outline btn-sm"
+            type="button"
+            hx-post="{% url 'mail:message_remote_images' folder_name message.uid %}"
+            hx-target="#message-body"
+            hx-swap="innerHTML"
+            hx-disabled-elt="this"
+          >
+            {% translate "Load images" %}
+          </button>
+        {% endif %}
       </div>
     {% endif %}
 
     {% if message.body_kind == "empty" %}
       <p class="text-base-content/60">{% translate "This message has no content." %}</p>
     {% else %}
-      {{ message.body_html|safe }}
+      {{ body_html|safe }}
     {% endif %}
   </div>
+
+  {% if not message.is_seen %}
+    <form
+      data-auto-read
+      hx-post="{% url 'mail:message_flags' folder_name message.uid %}"
+      hx-trigger="load"
+      hx-swap="none"
+      @htmx:before-request="onAutoReadStart($event)"
+      @htmx:after-request="onAutoReadEnd($event)"
+      aria-hidden="true"
+    >
+      <input type="hidden" name="action" value="read">
+      {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+    </form>
+  {% endif %}
 </article>

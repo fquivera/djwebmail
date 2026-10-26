@@ -1,5 +1,21 @@
 # AGENTS.md — DjWebmail
 
+<!-- caveman-begin -->
+The `caveman` skill is auto-initialized at `lite` intensity for every session in
+this repository. It is active by default; no manual invocation is needed.
+
+Lite mode: drop filler and hedging (just/really/basically/actually/simply) and
+pleasantries. Keep articles and full sentences. Professional but tight. No
+tool-call narration. Technical terms, code, CLI commands, commit keywords
+(feat/fix/...), and error strings stay exact. Preserve the user's language.
+
+Boundaries: code, commits, and PR descriptions are written normally.
+Auto-clarity: switch to normal prose for security warnings, irreversible-action
+confirmations, and ambiguous multi-step instructions; resume after.
+
+Stop with "stop caveman" or "normal mode".
+<!-- caveman-end -->
+
 Operating guide for AI agents working in this repository. It is mandatory. If
 another document contradicts this file, this file wins; if the change is
 deliberate, update this file in the same PR.
@@ -152,6 +168,8 @@ DJANGO_MAIL_TIMEOUT_SECONDS  DJANGO_MAIL_DEFAULT_PAGE_SIZE
 DJANGO_MAIL_MAX_PAGE_SIZE  DJANGO_MAIL_LOGIN_MAX_ATTEMPTS
 DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES
 DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS  DJANGO_SESSION_COOKIE_AGE
+DJANGO_MAIL_MAX_ATTACHMENT_BYTES  DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES
+DJANGO_MAIL_MAX_ATTACHMENTS  DJANGO_MAIL_COMPOSE_TTL_SECONDS
 REDIS_URL  FERNET_KEY
 FUNCTIONAL_TESTS_ENABLED  FUNCTIONAL_MAIL_USER  FUNCTIONAL_MAIL_PASSWORD
 ```
@@ -230,9 +248,9 @@ The marker is not a shortcut: without a reason, the reviewer rejects it.
   `LocaleMiddleware` is already active; `LANGUAGE_CODE` is only the fallback.
 - Emails use `translation.override(user.language)`.
 - Logs, audit records, error codes, and URL names are not translated.
-- Catalogs live in `locale/<lang>/LC_MESSAGES/django.po`; `.mo` is generated at
-  build/deploy time. After changing strings, regenerate the catalog in the same
-  commit.
+- Catalogs live in `locale/<lang>/LC_MESSAGES/django.po`; commit the compiled
+  `django.mo` too because the runtime image does not install GNU gettext. After
+  changing strings, regenerate and compile the catalog in the same commit.
 - Tests use `translation.override("es")` and an English fallback.
 
 Full detail: `i18n` skill.
@@ -402,14 +420,61 @@ Done:
   allowlist, public-IP DNS check, redirect refusal, raster content-type
   allowlist, byte and timeout limits) and a "load images" action that re-renders
   the message body through it. See `docs/message-viewer.md`.
+- Message attachments: MIME parts listed under the viewer and streamed via
+  `/attachment/<part>/`; `cid:` inline images rewritten to `/inline/<part>/`.
+  See `docs/message-viewer.md`.
+- First `v0.1.0` release: `CHANGELOG.md`, tag `v0.1.0`, GHCR image, and GitHub
+  Release.
+- Message flags: mark read on open and star/unstar via
+  `POST /mail/message/<folder>/<uid>/flags/`, with out-of-band message-list row
+  refresh. See `docs/message-viewer.md`.
+- Message move: a folder selector in the viewer moves the message via
+  `POST /mail/message/<folder>/<uid>/move/` and redirects to the destination.
+  See `docs/message-viewer.md`.
+- Message delete: a native `<dialog>` confirmation (opened by
+  `static/js/confirm.js`) posts to `POST /mail/message/<folder>/<uid>/delete/`
+  and redirects to the folder. See `docs/message-viewer.md`.
+- Compose: `/compose/`, `/compose/reply/...`, `/compose/forward/...`,
+  `POST /compose/send/`, HTMX attachment upload/removal, and draft autosave.
+  `SmtpService` reuses the encrypted session credential. Attachments and
+  drafts live in the cache for `MAIL_COMPOSE_TTL_SECONDS`; Sent append and the
+  panel UI remain deferred. See `docs/compose.md`.
+- Preferences UI: `/settings/` edits language, time zone, theme, density, and
+  message page size. PostgreSQL is the source of truth, login mirrors the values
+  into the server-side session, and HTMX applies theme/density in place after a
+  save. See `docs/preferences.md`.
+- Accessibility polish: skip link and focusable main landmark, live-region
+  messages, labelled fieldsets, hidden unread text, `aria-pressed` on message
+  flags, and keyboard-readable focus styles.
+- Search: `/mail/search/` accepts `folder`, `scope`, `q`, `from`, `to`,
+  `subject`, `date_from`, `date_to`, and `unread`; it reuses the message-list
+  partial, preserves filters in pagination, retries in ASCII with a visible
+  notice when the server rejects UTF-8, and searches every selectable folder
+  when `scope=all`. Global results merge by date, show the source folder, and
+  cap each folder at `GLOBAL_SEARCH_PER_FOLDER_LIMIT`. See
+  `docs/mail-search.md`.
+- Mail interaction layer: responsive `?view=list|message`, mobile folder
+  drawer, native command palette, keyboard shortcuts, skeleton loading states,
+  and optimistic read/star with revert. Alpine CSP 3.17.5 is vendored and only
+  holds local state; HTMX still performs every mutation and returns HTML. See
+  `docs/ui-interaction.md`, `docs/security-csp.md`, and `docs/phase-4.md`.
+- Command palette: `/mail/palette/` uses global search, shows the source folder
+  on every result, and can hand its query to the main search form in global
+  scope. It also lists matching selectable folders.
+- Visual design and app shell refresh: full-viewport 100vh 3-pane layout,
+  full-width top navigation with user initials avatar, folder tree with semantic
+  IMAP icons and hero compose CTA, 2-line message rows with avatar monograms and
+  unread status dots, and polished empty states. See `docs/ui-interaction.md`.
+- Rich-text compose, `Reply all`, hover quick actions, batch selection (`POST /mail/folder/<folder>/batch/`),
+  per-account `remote_images` and `signature_html` preferences, automatic `Sent`
+  folder copy on send (`append_to_sent()`), and localized standard folder labels.
+  See `docs/compose.md`, `docs/message-viewer.md`, and `docs/preferences.md`.
+- Production deployment guide (`docs/deployment.md`): reverse-proxy TLS
+  termination, required environment variables, Docker Compose production
+  stack, healthcheck, and upgrade workflow.
 
-Next:
-
-1. First `v0.1.0` release when the folder tree, message list, and viewer work
-   end to end.
-
-Do not start a new phase without closing the previous one with tests and a
-merged PR.
+Next: Phase 4 and the deployment guide are complete. Ready for the `v0.2.0`
+release. Do not open new protocol areas without a new phase document.
 
 ## 12. Anti-patterns
 

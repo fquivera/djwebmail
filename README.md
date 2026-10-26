@@ -174,7 +174,9 @@ server can be replaced later. Details and the staging stack are in
 | `config.settings.production` | `wsgi.py` / `asgi.py`, Gunicorn, containers |
 
 `DJANGO_SETTINGS_MODULE` selects the module; environment variables are read
-from `.env` when present and always win over the file.
+from `.env` when present and always win over the file. For reverse-proxy TLS
+termination, required secrets, and a production Docker Compose configuration,
+see [`docs/deployment.md`](docs/deployment.md).
 
 ### Common commands
 
@@ -249,15 +251,21 @@ tag, publishes a container image to GHCR, and creates a GitHub Release.
 MIT — see the LICENSE file for details.
 
 ## Roadmap (high level)
-☑ IMAP login and session management  
+☑ IMAP login and session management<br>
 ☑ Local development/staging mail stack and functional tests<br>
 ☑ Folder tree and message list with HTMX pagination<br>
-□ Message viewer with safe HTML rendering and remote-content blocking  
-□ Compose, reply, forward, send via SMTP  
-□ Per-user UI preferences (theme, density, signature)  
-□ Search across folders  
-□ Accessibility pass and keyboard shortcuts  
-□ Docker image publishing and deployment guide  
+☑ Message viewer with safe HTML rendering and remote-content blocking<br>
+☑ Compose, reply, forward, send via SMTP<br>
+☑ Per-user UI preferences (theme, density, signature)<br>
+☑ Search within a folder<br>
+☑ Search across all folders<br>
+☑ Accessibility pass<br>
+☑ Keyboard shortcuts and command palette<br>
+☑ Responsive single-panel navigation and optimistic flags<br>
+☑ Batch message selection and actions (read/unread, star, move, delete)<br>
+☑ Sent folder copy on send and per-account HTML signature<br>
+☑ Docker image publishing<br>
+☑ Deployment guide<br>
 
 ## Acknowledgements
 Built with Django, HTMX,

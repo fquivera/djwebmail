@@ -1,30 +1,208 @@
 {% load i18n %}
-<li data-uid="{{ message.uid }}">
+<li
+  id="msg-{{ message.uid }}"
+  class="group relative flex items-stretch border-b border-base-200/80 transition-colors hover:bg-primary/5 focus-within:bg-primary/5"
+  data-uid="{{ message.uid }}"
+  data-unread="{% if message.is_seen %}false{% else %}true{% endif %}"
+  {% if oob %}hx-swap-oob="outerHTML"{% endif %}
+>
+  {% with message_folder=message.folder|default:folder_name %}
+  {% if not show_folder %}
+    <div class="flex items-start pl-3 pr-1 pt-3 shrink-0">
+      <input
+        type="checkbox"
+        name="uids"
+        value="{{ message.uid }}"
+        form="batch-actions-form"
+        data-batch-uid="{{ message.uid }}"
+        @change="syncSelection()"
+        class="checkbox checkbox-xs rounded border-base-300"
+        aria-label="{% translate 'Select message' %}"
+      >
+    </div>
+  {% endif %}
   <a
-    class="grid gap-1 px-1 py-3 transition-colors hover:bg-base-200 sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
-    href="{% url 'mail:message' folder_name message.uid %}"
-    hx-get="{% url 'mail:message' folder_name message.uid %}"
+    class="mail-row min-w-0 flex-1 flex items-start gap-2.5 {% if show_folder %}px-3{% else %}pl-1.5 pr-3{% endif %} py-2"
+    href="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
+    hx-get="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
     hx-target="#message-viewer"
     hx-swap="innerHTML"
     hx-push-url="true"
     hx-indicator="#list-spinner"
+    data-mail-row
+    data-uid="{{ message.uid }}"
   >
-    <div class="truncate text-sm{% if not message.is_seen %} font-semibold{% endif %}">
-      {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
-    </div>
-    <div class="min-w-0">
-      <span class="block truncate text-sm{% if not message.is_seen %} font-semibold{% endif %}">
-        {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
-      </span>
-    </div>
-    <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/60 sm:justify-end">
-      {% if message.is_flagged %}
-        <span class="badge badge-warning badge-sm" role="img" aria-label="{% translate 'Flagged' %}">★</span>
+    <div class="flex items-center gap-1.5 shrink-0 pt-0.5">
+      {% if not message.is_seen %}
+        <span class="size-2 rounded-full bg-primary shrink-0" aria-hidden="true"></span>
+      {% else %}
+        <span class="size-2 shrink-0"></span>
       {% endif %}
-      <span>{{ message.size|filesizeformat }}</span>
-      {% if message.date %}
-        <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
-      {% endif %}
+      <div class="avatar placeholder">
+        <div class="size-7 rounded-full bg-base-200 text-base-content/80 border border-base-300 font-semibold text-xs flex items-center justify-center">
+          <span>{{ message.sender|default:"?"|slice:":1"|upper }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-2">
+        <div
+          class="mail-sender truncate text-xs font-medium text-base-content"
+          title="{% if message.sender %}{{ message.sender }}{% else %}{% translate 'Unknown sender' %}{% endif %}"
+        >
+          {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-base-content/60 group-hover:opacity-0 group-focus-within:opacity-0 transition-opacity">
+          {% if message.is_flagged %}
+            <span class="text-warning" role="img" aria-label="{% translate 'Flagged' %}">★</span>
+          {% endif %}
+          {% if message.date %}
+            <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATE_FORMAT" }}</time>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-2 mt-0.5">
+        <div class="min-w-0 flex-1">
+          <span
+            class="mail-subject block truncate text-xs text-base-content/75"
+            title="{% if message.subject %}{{ message.subject }}{% else %}{% translate '(No subject)' %}{% endif %}"
+          >
+            {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+          </span>
+          {% if not message.is_seen %}
+            <span class="mail-unread sr-only">{% translate "Unread" %}</span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-1 shrink-0 text-[11px] text-base-content/50">
+          {% if show_folder and message.folder %}
+            <span class="badge badge-xs badge-neutral truncate max-w-24">{{ message.folder }}</span>
+          {% endif %}
+          <span>{{ message.size|filesizeformat }}</span>
+        </div>
+      </div>
     </div>
   </a>
+
+  <div
+    class="hidden group-hover:flex group-focus-within:flex items-center gap-0.5 absolute right-2 top-1.5 z-10 rounded-md bg-base-100/95 px-1 py-0.5 shadow-xs border border-base-300/80"
+    role="toolbar"
+    aria-label="{% translate 'Message actions' %}"
+  >
+    <a
+      href="{% url 'compose:reply' message_folder message.uid %}"
+      class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+      title="{% translate 'Reply' %}"
+      aria-label="{% translate 'Reply' %}"
+    >
+      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="9 17 4 12 9 7"></polyline>
+        <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+      </svg>
+    </a>
+
+    <a
+      href="{% url 'compose:reply_all' message_folder message.uid %}"
+      class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+      title="{% translate 'Reply all' %}"
+      aria-label="{% translate 'Reply all' %}"
+    >
+      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="7 17 2 12 7 7"></polyline>
+        <polyline points="12 17 7 12 12 7"></polyline>
+        <path d="M22 18v-2a4 4 0 0 0-4-4H7"></path>
+      </svg>
+    </a>
+
+    <a
+      href="{% url 'compose:forward' message_folder message.uid %}"
+      class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+      title="{% translate 'Forward' %}"
+      aria-label="{% translate 'Forward' %}"
+    >
+      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="15 17 20 12 15 7"></polyline>
+        <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
+      </svg>
+    </a>
+
+    <form
+      method="post"
+      action="{% url 'mail:message_delete' message_folder message.uid %}"
+      hx-post="{% url 'mail:message_delete' message_folder message.uid %}"
+      hx-target="body"
+      hx-swap="none"
+      class="inline-flex"
+    >
+      {% csrf_token %}
+      <button
+        type="submit"
+        class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-error"
+        title="{% translate 'Delete' %}"
+        aria-label="{% translate 'Delete' %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 6h18"></path>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+        </svg>
+      </button>
+    </form>
+
+    <form
+      method="post"
+      action="{% url 'mail:message_flags' message_folder message.uid %}"
+      hx-post="{% url 'mail:message_flags' message_folder message.uid %}"
+      hx-swap="none"
+      class="inline-flex"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="action" value="{% if message.is_seen %}unread{% else %}read{% endif %}">
+      {% if show_folder %}<input type="hidden" name="scope" value="{{ search_scope_all }}">{% endif %}
+      <button
+        type="submit"
+        class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+        title="{% if message.is_seen %}{% translate 'Mark as unread' %}{% else %}{% translate 'Mark as read' %}{% endif %}"
+        aria-label="{% if message.is_seen %}{% translate 'Mark as unread' %}{% else %}{% translate 'Mark as read' %}{% endif %}"
+      >
+        {% if message.is_seen %}
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+          </svg>
+        {% else %}
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"></path>
+            <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"></path>
+          </svg>
+        {% endif %}
+      </button>
+    </form>
+
+    <form
+      method="post"
+      action="{% url 'mail:message_flags' message_folder message.uid %}"
+      hx-post="{% url 'mail:message_flags' message_folder message.uid %}"
+      hx-swap="none"
+      class="inline-flex"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="action" value="{% if message.is_flagged %}unstar{% else %}star{% endif %}">
+      {% if show_folder %}<input type="hidden" name="scope" value="{{ search_scope_all }}">{% endif %}
+      <button
+        type="submit"
+        class="btn btn-ghost btn-xs btn-square {% if message.is_flagged %}text-warning{% else %}text-base-content/70 hover:text-warning{% endif %}"
+        title="{% translate 'Flag message' %}"
+        aria-label="{% translate 'Flag message' %}"
+        aria-pressed="{% if message.is_flagged %}true{% else %}false{% endif %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="{% if message.is_flagged %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+          <line x1="4" x2="4" y1="22" y2="15"></line>
+        </svg>
+      </button>
+    </form>
+  </div>
+  {% endwith %}
 </li>

@@ -1,0 +1,87 @@
+{% load i18n %}
+<form
+  id="search-form"
+  class="mb-2 shrink-0 space-y-2 pb-1 border-b border-base-200/80"
+  method="get"
+  action="{% url 'mail:search' %}"
+  hx-get="{% url 'mail:search' %}"
+  hx-trigger="input changed delay:400ms, change, search, submit"
+  hx-target="#message-list-results"
+  hx-swap="innerHTML"
+  hx-push-url="true"
+  hx-sync="this:replace"
+  hx-indicator="#list-spinner"
+  role="search"
+>
+  {{ search_form.folder }}
+  <div class="flex items-center gap-1.5">
+    <label class="sr-only" for="{{ search_form.q.id_for_label }}">{{ search_form.q.label }}</label>
+    <div class="relative flex-1 min-w-0">
+      {{ search_form.q }}
+    </div>
+    <label class="sr-only" for="{{ search_form.scope.id_for_label }}">{{ search_form.scope.label }}</label>
+    {{ search_form.scope }}
+    <button class="btn btn-ghost btn-sm px-2" type="submit" title="{% translate 'Search' %}">
+      <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <span class="sr-only">{% translate "Search" %}</span>
+    </button>
+    <a
+      class="btn btn-ghost btn-sm px-2 text-base-content/60 hover:text-base-content"
+      href="{% url 'mail:folder' folder_name %}"
+      hx-get="{% url 'mail:folder' folder_name %}"
+      hx-target="#message-list"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      hx-indicator="#list-spinner"
+      title="{% translate 'Clear' %}"
+    >
+      <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      <span class="sr-only">{% translate "Clear" %}</span>
+    </a>
+  </div>
+
+  <details class="rounded-lg border border-base-300/80 bg-base-200/30 px-3 py-1.5 text-xs"{% if search_active %} open{% endif %}>
+    <summary class="cursor-pointer text-xs font-medium text-base-content/70 hover:text-base-content select-none">
+      {% translate "Filters" %}
+    </summary>
+    <div class="mt-2.5 grid gap-2.5 sm:grid-cols-2 pb-1">
+      <div>
+        <label class="mb-1 block text-xs font-medium text-base-content/70" for="{{ search_form.from_.id_for_label }}">{{ search_form.from_.label }}</label>
+        {{ search_form.from_ }}
+        {{ search_form.from_.errors }}
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-base-content/70" for="{{ search_form.to.id_for_label }}">{{ search_form.to.label }}</label>
+        {{ search_form.to }}
+        {{ search_form.to.errors }}
+      </div>
+      <div class="sm:col-span-2">
+        <label class="mb-1 block text-xs font-medium text-base-content/70" for="{{ search_form.subject.id_for_label }}">{{ search_form.subject.label }}</label>
+        {{ search_form.subject }}
+        {{ search_form.subject.errors }}
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-base-content/70" for="{{ search_form.date_from.id_for_label }}">{{ search_form.date_from.label }}</label>
+        {{ search_form.date_from }}
+        {{ search_form.date_from.errors }}
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-base-content/70" for="{{ search_form.date_to.id_for_label }}">{{ search_form.date_to.label }}</label>
+        {{ search_form.date_to }}
+        {{ search_form.date_to.errors }}
+      </div>
+      <div class="flex items-center gap-2 sm:col-span-2 pt-1">
+        {{ search_form.unread }}
+        <label class="text-xs font-medium cursor-pointer" for="{{ search_form.unread.id_for_label }}">{{ search_form.unread.label }}</label>
+        {{ search_form.unread.errors }}
+      </div>
+    </div>
+    {{ search_form.non_field_errors }}
+  </details>
+</form>

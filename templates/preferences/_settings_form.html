@@ -1,0 +1,112 @@
+{% load i18n %}
+<form
+  id="settings-form"
+  method="post"
+  action="{% url 'preferences:index' %}"
+  hx-post="{% url 'preferences:index' %}"
+  hx-target="#settings-form"
+  hx-swap="outerHTML"
+  class="space-y-4"
+>
+  {% csrf_token %}
+
+  <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 px-4 py-3 shadow-xs">
+    <div class="avatar placeholder shrink-0">
+      <div class="size-10 rounded-full bg-primary/15 text-primary border border-primary/25 font-bold text-sm flex items-center justify-center">
+        <span>{{ email|default:"?"|slice:":1"|upper }}</span>
+      </div>
+    </div>
+    <div class="min-w-0 flex-1">
+      <p class="text-sm font-medium text-base-content truncate">
+        {% blocktranslate with address=email %}Signed in as {{ address }}.{% endblocktranslate %}
+      </p>
+      <p class="text-xs text-base-content/60">
+        {% translate "Preferences are stored per account and applied immediately." %}
+      </p>
+    </div>
+  </div>
+
+  {% if saved %}
+    <div class="alert alert-success text-sm py-2.5" role="status">
+      {% translate "Preferences saved." %}
+    </div>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-error text-sm py-2.5" role="alert">
+      {% for error in form.non_field_errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <fieldset class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+    <legend class="flex items-center gap-2 px-1 text-sm font-semibold text-base-content">
+      <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" x2="22" y1="12" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+      <span>{% translate "Language and time" %}</span>
+    </legend>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "preferences/_field.html" with field=form.language %}
+      {% include "preferences/_field.html" with field=form.timezone %}
+    </div>
+  </fieldset>
+
+  <fieldset class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+    <legend class="flex items-center gap-2 px-1 text-sm font-semibold text-base-content">
+      <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+      </svg>
+      <span>{% translate "Appearance" %}</span>
+    </legend>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "preferences/_field.html" with field=form.theme %}
+      {% include "preferences/_field.html" with field=form.density %}
+    </div>
+  </fieldset>
+
+  <fieldset class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+    <legend class="flex items-center gap-2 px-1 text-sm font-semibold text-base-content">
+      <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8" x2="21" y1="6" y2="6"></line>
+        <line x1="8" x2="21" y1="12" y2="12"></line>
+        <line x1="8" x2="21" y1="18" y2="18"></line>
+        <line x1="3" x2="3.01" y1="6" y2="6"></line>
+        <line x1="3" x2="3.01" y1="12" y2="12"></line>
+        <line x1="3" x2="3.01" y1="18" y2="18"></line>
+      </svg>
+      <span>{% translate "Reading" %}</span>
+    </legend>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "preferences/_field.html" with field=form.page_size %}
+      {% include "preferences/_field.html" with field=form.remote_images %}
+    </div>
+  </fieldset>
+
+  <fieldset class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+    <legend class="flex items-center gap-2 px-1 text-sm font-semibold text-base-content">
+      <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+      </svg>
+      <span>{% translate "Composing" %}</span>
+    </legend>
+    <div>
+      {% include "preferences/_field.html" with field=form.signature_html %}
+    </div>
+  </fieldset>
+
+  <div class="flex justify-end pt-1">
+    <button type="submit" class="btn btn-primary btn-sm gap-2 px-5" hx-disabled-elt="this">
+      <span class="loading loading-spinner loading-xs htmx-indicator" aria-hidden="true"></span>
+      <span>{% translate "Save preferences" %}</span>
+    </button>
+  </div>
+</form>

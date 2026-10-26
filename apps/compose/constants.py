@@ -1,0 +1,10 @@
+"""Stable domain values for the compose UI."""
+
+MAX_RECIPIENTS = 50
+SUBJECT_REPLY_PREFIX = "Re:"
+SUBJECT_FORWARD_PREFIX = "Fwd:"
+MAX_SUBJECT_LENGTH = 998
+MAX_ADDRESS_FIELD_CHARS = 4096
+MAX_DRAFT_BODY_CHARS = 200_000
+ATTACHMENT_CACHE_PREFIX = "mail:compose:attachment:"
+DRAFT_CACHE_PREFIX = "mail:compose:draft:"

@@ -1,0 +1,19 @@
+{% load i18n %}
+<div>
+  <label class="mb-1 block text-sm font-medium" for="{{ field.id_for_label }}">
+    {{ field.label }}
+  </label>
+  {{ field }}
+  {% if field.help_text %}
+    <p id="{{ field.auto_id }}_help" class="mt-1 text-xs text-base-content/60">
+      {{ field.help_text }}
+    </p>
+  {% endif %}
+  {% if field.errors %}
+    <div id="{{ field.auto_id }}_errors" class="mt-1 text-sm text-error" role="alert">
+      {% for error in field.errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

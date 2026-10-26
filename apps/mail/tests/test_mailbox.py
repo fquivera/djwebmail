@@ -5,9 +5,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import cast
 
+from django.utils import translation
+
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
-from apps.mail.constants import FOLDER_FLAG_NOSELECT, IMAP_INBOX
-from apps.mail.services.mailbox import build_folder_tree, list_messages
+from apps.mail.constants import FOLDER_FLAG_NOSELECT, IMAP_INBOX, MESSAGE_FLAG_SEEN
+from apps.mail.services.mailbox import (
+    build_folder_tree,
+    delete_message,
+    list_messages,
+    move_message,
+    set_message_flags,
+)
 
 
 class FakeImap:
@@ -17,6 +25,9 @@ class FakeImap:
         self.uids = uids
         self.summaries = summaries
         self.selected: tuple[str, bool] | None = None
+        self.stored_flags: list[tuple[list[int], tuple[str, ...], tuple[str, ...]]] = []
+        self.deleted: list[tuple[list[int], bool]] = []
+        self.moved: list[tuple[list[int], str]] = []
 
     def select(self, folder: str, *, readonly: bool = False) -> None:
         self.selected = (folder, readonly)
@@ -26,6 +37,21 @@ class FakeImap:
 
     def fetch_summaries(self, uids: list[int], **kwargs: object) -> list[FetchedSummary]:
         return [self.summaries[uid] for uid in uids]
+
+    def store_flags(
+        self,
+        uids: list[int],
+        *,
+        add: tuple[str, ...] = (),
+        remove: tuple[str, ...] = (),
+    ) -> None:
+        self.stored_flags.append((list(uids), add, remove))
+
+    def delete(self, uids: list[int], *, expunge: bool = False) -> None:
+        self.deleted.append((list(uids), expunge))
+
+    def move(self, uids: list[int], destination: str) -> None:
+        self.moved.append((list(uids), destination))
 
 
 def make_summary(uid: int, subject: str | None = None, **overrides: object) -> FetchedSummary:
@@ -161,3 +187,51 @@ def test_list_messages_falls_back_to_internal_date() -> None:
     page = list_messages(cast(ImapService, imap), "INBOX", page=1, page_size=50)
 
     assert page.messages[0].date == internaldate
+
+
+def test_set_message_flags_stores_flags_and_returns_summary() -> None:
+    summary = make_summary(5, flags=("\\Flagged",))
+    imap = FakeImap([5], {5: summary})
+
+    updated = set_message_flags(
+        cast(ImapService, imap),
+        "INBOX",
+        5,
+        add=(MESSAGE_FLAG_SEEN,),
+    )
+
+    assert imap.selected == ("INBOX", False)
+    assert imap.stored_flags == [([5], (MESSAGE_FLAG_SEEN,), ())]
+    assert updated is not None
+    assert updated.uid == 5
+
+
+def test_delete_message_deletes_and_expunges() -> None:
+    imap = FakeImap([5], {5: make_summary(5)})
+
+    delete_message(cast(ImapService, imap), "INBOX", 5)
+
+    assert imap.selected == ("INBOX", False)
+    assert imap.deleted == [([5], True)]
+
+
+def test_move_message_moves_to_destination() -> None:
+    imap = FakeImap([5], {5: make_summary(5)})
+
+    move_message(cast(ImapService, imap), "INBOX", 5, "Archive")
+
+    assert imap.selected == ("INBOX", False)
+    assert imap.moved == [([5], "Archive")]
+
+
+def test_build_folder_tree_translates_standard_folders_in_spanish() -> None:
+    folders = [
+        Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",)),
+        Folder(name="Sent", delimiter="/", flags=("\\HasNoChildren",)),
+    ]
+
+    with translation.override("es"):
+        tree = build_folder_tree(folders)
+
+    assert [node.name for node in tree] == ["INBOX", "Sent"]
+    assert [node.label for node in tree] == ["Bandeja de entrada", "Enviados"]

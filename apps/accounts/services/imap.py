@@ -197,7 +197,12 @@ class ImapService:
             read_only=not bool(status.get(b"READ-WRITE", False)),
         )
 
-    def search(self, criteria: Sequence[str] | str, *, charset: str = "UTF-8") -> list[int]:
+    def search(
+        self,
+        criteria: Sequence[object] | str,
+        *,
+        charset: str | None = "UTF-8",
+    ) -> list[int]:
         """Search the selected folder and return UIDs."""
         return self._run(lambda: self._require_client().search(criteria, charset=charset))
 
@@ -321,6 +326,10 @@ class ImapService:
                 msg_time=when,
             )
         )
+
+    def create_folder(self, folder: str) -> None:
+        """Create an IMAP folder when it does not exist yet."""
+        self._run(lambda: self._require_client().create_folder(folder))
 
     def _require_client(self) -> Any:
         if self._client is None:

@@ -4,9 +4,9 @@
     {% if page.has_previous %}
       <a
         class="btn btn-outline btn-sm"
-        href="{% url 'mail:folder' folder_name %}?page={{ page.previous_page }}"
-        hx-get="{% url 'mail:folder' folder_name %}?page={{ page.previous_page }}"
-        hx-target="#message-list"
+        href="{{ pagination_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page }}"
+        hx-get="{{ pagination_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page }}"
+        hx-target="#message-list-results"
         hx-swap="innerHTML"
         hx-push-url="true"
         hx-indicator="#list-spinner"
@@ -20,9 +20,9 @@
     {% if page.has_next %}
       <a
         class="btn btn-outline btn-sm"
-        href="{% url 'mail:folder' folder_name %}?page={{ page.next_page }}"
-        hx-get="{% url 'mail:folder' folder_name %}?page={{ page.next_page }}"
-        hx-target="#message-list"
+        href="{{ pagination_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page }}"
+        hx-get="{{ pagination_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page }}"
+        hx-target="#message-list-results"
         hx-swap="innerHTML"
         hx-push-url="true"
         hx-indicator="#list-spinner"

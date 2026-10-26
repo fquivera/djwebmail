@@ -1,43 +1,100 @@
 {% extends "base.html" %}
-{% load i18n static %}
+{% load i18n %}
 
-{% block title %}{% blocktranslate with folder=folder_name %}Mail — {{ folder }}{% endblocktranslate %}{% endblock %}
+{% block title %}{% blocktranslate with folder=folder_label|default:folder_name %}Mail — {{ folder }}{% endblocktranslate %}{% endblock %}
+
+{% block body_class %}h-screen overflow-hidden{% endblock %}
+{% block main_class %}w-full flex-1 min-h-0 overflow-hidden p-0{% endblock %}
 
 {% block scripts %}
-  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
-  <script defer src="{% static 'js/htmx-config.js' %}"></script>
+  {% include "mail/_scripts.html" %}
 {% endblock %}
 
 {% block content %}
-  <div class="grid gap-6 lg:grid-cols-[minmax(12rem,15rem)_minmax(0,1fr)] lg:items-start xl:grid-cols-[16rem_minmax(0,1.4fr)_minmax(0,2fr)]">
+  <div
+    class="mail-shell flex flex-col lg:flex-row h-full w-full min-h-0 overflow-hidden lg:divide-x lg:divide-base-300"
+    data-mail-shell
+    data-view="{{ view|default:'list' }}"
+    data-folders-open="false"
+    data-compose-url="{% url 'compose:new' %}"
+    x-data="mailShell"
+    x-bind:data-folders-open="foldersOpen ? 'true' : 'false'"
+    @keydown.escape.window="closeFolders()"
+  >
+    <div
+      class="mail-folder-backdrop fixed inset-0 z-30 bg-neutral/40 lg:hidden"
+      aria-hidden="true"
+      @click="closeFolders()"
+    ></div>
+
     {% include "mail/_folder_nav.html" %}
 
     <section
-      class="min-w-0 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
+      class="mail-list-panel flex-1 lg:flex-none lg:w-96 xl:w-[28rem] min-w-0 bg-base-100 flex flex-col h-full overflow-hidden shrink-0"
       aria-labelledby="folder-heading"
     >
-      <div class="flex items-center gap-3 border-b border-base-300 px-4 py-3">
-        <h1 id="folder-heading" class="min-w-0 flex-1 truncate text-xl font-semibold">
-          {{ folder_name }}
-        </h1>
+      <div class="flex items-center gap-2 border-b border-base-300 px-3 py-2.5 shrink-0 bg-base-100">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm lg:hidden"
+          aria-controls="folder-tree"
+          aria-expanded="false"
+          x-bind:aria-expanded="foldersOpen"
+          @click="toggleFolders()"
+        >
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+          <span class="sr-only sm:not-sr-only">{% translate "Folders" %}</span>
+        </button>
+        {% include "mail/_folder_heading.html" %}
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs sm:btn-sm gap-1"
+          data-dialog-open="command-palette"
+          aria-haspopup="dialog"
+          title="{% translate 'Open command palette' %} (⌘K)"
+        >
+          <span aria-hidden="true" class="badge badge-xs badge-neutral font-mono">⌘K</span>
+          <span class="sr-only">{% translate "Open command palette" %}</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs sm:btn-sm"
+          data-dialog-open="shortcuts-dialog"
+          aria-haspopup="dialog"
+          aria-label="{% translate 'Keyboard shortcuts' %}"
+          title="{% translate 'Keyboard shortcuts' %}"
+        >?</button>
+        <a class="btn btn-primary btn-sm lg:hidden" href="{% url 'compose:new' %}" data-shortcut="compose">
+          {% translate "Compose" %}
+        </a>
         <span
           id="list-spinner"
-          class="loading loading-spinner loading-sm htmx-indicator text-primary"
+          class="loading loading-spinner loading-sm htmx-indicator text-primary shrink-0"
           aria-hidden="true"
         ></span>
       </div>
-      <div id="message-list" class="px-4 py-2" aria-live="polite">
-        {% include "mail/_message_list.html" %}
+      <div id="message-list" class="flex-1 min-h-0 flex flex-col overflow-hidden px-3 py-2">
+        {% include "mail/_search_form.html" %}
+        <div id="message-list-results" class="flex-1 min-h-0 overflow-y-auto" aria-live="polite">
+          {% include "mail/_message_list.html" %}
+        </div>
       </div>
     </section>
 
     <section
-      class="min-w-0 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm lg:col-span-2 xl:col-span-1"
+      class="mail-message-panel flex-1 min-w-0 bg-base-100 flex flex-col h-full min-h-0 overflow-y-auto"
       aria-label="{% translate 'Message' %}"
     >
-      <div id="message-viewer" class="px-4 py-3" aria-live="polite">
+      <div id="message-viewer" class="h-full p-4 md:p-6 overflow-y-auto" aria-live="polite">
         {% include "mail/_empty_state.html" %}
       </div>
     </section>
   </div>
+
+  {% include "mail/_command_palette.html" %}
+  {% include "mail/_shortcuts_dialog.html" %}
 {% endblock %}

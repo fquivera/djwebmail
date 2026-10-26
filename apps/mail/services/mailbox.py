@@ -10,6 +10,8 @@ from email.parser import BytesHeaderParser
 from email.utils import parsedate_to_datetime
 from math import ceil
 
+from django.utils.translation import gettext as _
+
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import (
     FOLDER_FLAG_NOSELECT,
@@ -42,6 +44,7 @@ class MessageSummary:
     size: int
     is_seen: bool
     is_flagged: bool
+    folder: str = ""
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,7 @@ class MessagePage:
     has_next: bool
     previous_page: int | None
     next_page: int | None
+    query_string: str = ""
 
 
 @dataclass
@@ -102,13 +106,16 @@ def list_messages(
     *,
     page: int,
     page_size: int,
+    criteria: Sequence[object] | str = "ALL",
+    charset: str | None = "UTF-8",
+    query_string: str = "",
 ) -> MessagePage:
     """Select one folder and return the requested page, newest messages first."""
     if page_size < 1:
         raise ValueError("page_size must be positive")
 
     imap.select(folder, readonly=True)
-    uids = sorted(imap.search("ALL") or [])
+    uids = sorted(imap.search(criteria, charset=charset) or [])
     total = len(uids)
     page_count = max(1, ceil(total / page_size))
     current_page = min(max(1, page), page_count)
@@ -125,12 +132,13 @@ def list_messages(
             has_next=False,
             previous_page=None,
             next_page=None,
+            query_string=query_string,
         )
 
     end = total - (current_page - 1) * page_size
     start = max(0, end - page_size)
     summaries = imap.fetch_summaries(uids[start:end])
-    messages = tuple(_parse_summary(summary) for summary in reversed(summaries))
+    messages = tuple(parse_summary(summary, folder) for summary in reversed(summaries))
 
     return MessagePage(
         folder=folder,
@@ -143,7 +151,93 @@ def list_messages(
         has_next=current_page < page_count,
         previous_page=current_page - 1 if current_page > 1 else None,
         next_page=current_page + 1 if current_page < page_count else None,
+        query_string=query_string,
     )
+
+
+def set_message_flags(
+    imap: ImapService,
+    folder: str,
+    uid: int,
+    *,
+    add: Sequence[str] = (),
+    remove: Sequence[str] = (),
+) -> MessageSummary | None:
+    """Add/remove flags on one message and return its refreshed summary."""
+    imap.select(folder, readonly=False)
+    imap.store_flags([uid], add=add, remove=remove)
+    summaries = imap.fetch_summaries([uid])
+    return parse_summary(summaries[0], folder) if summaries else None
+
+
+def delete_message(imap: ImapService, folder: str, uid: int) -> None:
+    """Mark one message deleted and expunge it."""
+    imap.select(folder, readonly=False)
+    imap.delete([uid], expunge=True)
+
+
+def move_message(imap: ImapService, folder: str, uid: int, destination: str) -> None:
+    """Move one message to another folder."""
+    imap.select(folder, readonly=False)
+    imap.move([uid], destination)
+
+
+def batch_set_flags(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+    *,
+    add: Sequence[str] = (),
+    remove: Sequence[str] = (),
+) -> None:
+    """Add/remove flags on a batch of messages in ``folder``."""
+    if not uids:
+        return
+    imap.select(folder, readonly=False)
+    imap.store_flags(uids, add=add, remove=remove)
+
+
+def batch_delete_messages(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+) -> None:
+    """Mark a batch of messages deleted and expunge them."""
+    if not uids:
+        return
+    imap.select(folder, readonly=False)
+    imap.delete(uids, expunge=True)
+
+
+def batch_move_messages(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+    destination: str,
+) -> None:
+    """Move a batch of messages to ``destination``."""
+    if not uids:
+        return
+    imap.select(folder, readonly=False)
+    imap.move(uids, destination)
+
+
+def translate_folder_label(name: str) -> str:
+    """Return a localized display label for standard IMAP folder names."""
+    normalized = name.strip().casefold()
+    if normalized == "inbox":
+        return _("INBOX")
+    if normalized in {"sent", "sent messages", "sent items"}:
+        return _("Sent")
+    if normalized in {"drafts", "draft"}:
+        return _("Drafts")
+    if normalized in {"trash", "deleted items", "deleted messages", "bin"}:
+        return _("Trash")
+    if normalized in {"spam", "junk", "junk e-mail"}:
+        return _("Spam")
+    if normalized in {"archive", "archives"}:
+        return _("Archive")
+    return name
 
 
 def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
@@ -154,7 +248,7 @@ def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     return tuple(
         FolderNode(
             name=child.name,
-            label=child.label,
+            label=translate_folder_label(child.label),
             selectable=child.selectable,
             children=_freeze_children(child),
         )
@@ -162,7 +256,8 @@ def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     )
 
 
-def _parse_summary(summary: FetchedSummary) -> MessageSummary:
+def parse_summary(summary: FetchedSummary, folder: str = "") -> MessageSummary:
+    """Turn one IMAP fetch result into the row read model."""
     try:
         headers = BytesHeaderParser(policy=policy.default).parsebytes(summary.headers)
     except Exception:
@@ -185,6 +280,7 @@ def _parse_summary(summary: FetchedSummary) -> MessageSummary:
         size=summary.size,
         is_seen=_has_flag(summary.flags, MESSAGE_FLAG_SEEN),
         is_flagged=_has_flag(summary.flags, MESSAGE_FLAG_FLAGGED),
+        folder=folder,
     )
 
 

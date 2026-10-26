@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import smtplib
 import time
+from email import message_from_bytes
 from email.message import EmailMessage
 from typing import Any, cast
 from uuid import uuid4
@@ -16,10 +17,12 @@ from uuid import uuid4
 import pytest
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.accounts.services.account import MailAccount, resolve_mail_account
 from apps.accounts.services.imap import ImapService
+from apps.compose.attachments import list_attachments
 from apps.preferences.models import MailPreference
 
 pytestmark = [pytest.mark.functional, pytest.mark.django_db]
@@ -152,6 +155,56 @@ def test_mail_view_lists_real_inbox_message(client, account, password):
     assert b"hx-swap-oob" in fragment.content
 
 
+def test_search_finds_real_message_by_subject(client, account, password):
+    subject = f"djwebmail-search-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message discovered by the search functional test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            if imap.search(["SUBJECT", subject]):
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become searchable over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "subject": subject},
+    )
+
+    assert response.status_code == 200
+    assert subject.encode() in response.content
+    assert b'name="subject" value="' in response.content
+
+    fragment = client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "subject": subject},
+        HTTP_HX_REQUEST="true",
+    )
+    assert fragment.status_code == 200
+    assert subject.encode() in fragment.content
+    assert b"<html" not in fragment.content
+
+
 def test_message_viewer_sanitizes_html_and_blocks_remote_content(client, account, password):
     subject = f"djwebmail-viewer-{uuid4().hex}"
     message = EmailMessage()
@@ -199,9 +252,227 @@ def test_message_viewer_sanitizes_html_and_blocks_remote_content(client, account
     assert response.status_code == 200
     assert subject.encode() in response.content
     assert b"<b>bold</b>" in response.content
-    assert b"<script" not in response.content
+    assert b"alert(1)" not in response.content
     assert b"<img" not in response.content
     assert b"Remote content was blocked" in response.content
+
+
+def test_message_viewer_lists_and_streams_attachment(client, account, password):
+    subject = f"djwebmail-attachment-{uuid4().hex}"
+    payload = b"\x00\x01\x02\x03\x04"
+
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.make_mixed()
+
+    body = EmailMessage()
+    body.set_content("Body with an attachment.")
+    message.attach(body)
+
+    attachment = EmailMessage()
+    attachment.set_content(payload, maintype="application", subtype="octet-stream")
+    attachment["Content-Disposition"] = 'attachment; filename="data.bin"'
+    message.attach(attachment)
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    viewer = client.get(reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": uid}))
+    assert viewer.status_code == 200
+    assert b"data.bin" in viewer.content
+    assert f"/mail/message/INBOX/{uid}/attachment/2/".encode() in viewer.content
+
+    download = client.get(
+        reverse("mail:attachment", kwargs={"folder_name": "INBOX", "uid": uid, "part": "2"})
+    )
+    assert download.status_code == 200
+    assert download.content == payload
+    assert "data.bin" in download["Content-Disposition"]
+
+
+def test_message_flags_marks_read_over_imap(client, account, password):
+    subject = f"djwebmail-flags-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message for the flags test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": uid}),
+        {"action": "read"},
+    )
+    assert response.status_code == 200
+    assert b'hx-swap-oob="outerHTML"' in response.content
+
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        fetched = imap.fetch_message(uid)
+    assert "\\Seen" in fetched.flags
+
+
+def test_message_move_moves_to_folder(client, account, password):
+    from imapclient import IMAPClient
+
+    destination = f"Archive-{uuid4().hex[:8]}"
+    with IMAPClient(
+        settings.MAIL_IMAP_HOST,
+        port=settings.MAIL_IMAP_PORT,
+        ssl=settings.MAIL_IMAP_SECURITY == "ssl",
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as raw:
+        raw.login(account.email, password)
+        raw.create_folder(destination)
+
+    subject = f"djwebmail-move-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message for the move test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.post(
+        reverse("mail:message_move", kwargs={"folder_name": "INBOX", "uid": uid}),
+        {"dest": destination},
+        HTTP_HX_REQUEST="true",
+    )
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == f"/mail/folder/{destination}/"
+
+    with ImapService(account, account.email, password) as imap:
+        imap.select(destination, readonly=True)
+        assert any(subject.encode() in imap.fetch_message(c).raw for c in imap.search("ALL"))
+
+
+def test_message_delete_removes_from_inbox(client, account, password):
+    subject = f"djwebmail-delete-{uuid4().hex}"
+    message = EmailMessage()
+    message["From"] = account.email
+    message["To"] = account.email
+    message["Subject"] = subject
+    message.set_content("Message for the delete test.")
+
+    with smtplib.SMTP(
+        settings.MAIL_SMTP_HOST,
+        settings.MAIL_SMTP_PORT,
+        timeout=settings.MAIL_TIMEOUT_SECONDS,
+    ) as smtp:
+        smtp.send_message(message)
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    uid: int | None = None
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                if subject.encode() in imap.fetch_message(candidate).raw:
+                    uid = candidate
+                    break
+            if uid is not None:
+                break
+            if time.monotonic() >= deadline:
+                pytest.fail("SMTP message did not become visible over IMAP")
+            time.sleep(0.2)
+
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    response = client.post(
+        reverse("mail:message_delete", kwargs={"folder_name": "INBOX", "uid": uid}),
+        HTTP_HX_REQUEST="true",
+    )
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == "/mail/folder/INBOX/"
+
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        assert not any(subject.encode() in imap.fetch_message(c).raw for c in imap.search("ALL"))
 
 
 def test_logout_clears_real_mail_session(client, account, password):
@@ -216,3 +487,94 @@ def test_logout_clears_real_mail_session(client, account, password):
     assert response.status_code == 302
     assert response["Location"] == reverse("accounts:login")
     assert client.session.get("mail_email") is None
+
+
+def test_compose_send_delivers_over_smtp(client, account, password):
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    subject = f"djwebmail-compose-{uuid4().hex}"
+    body = f"Body sent by the compose test {uuid4().hex}"
+    response = client.post(
+        reverse("compose:send"),
+        {
+            "to": account.email,
+            "cc": "",
+            "subject": subject,
+            "body": body,
+        },
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse("mail:index")
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                raw = imap.fetch_message(candidate).raw
+                if subject.encode() in raw and body.encode() in raw:
+                    return
+            if time.monotonic() >= deadline:
+                pytest.fail("Composed message did not arrive over SMTP")
+            time.sleep(0.2)
+
+
+def test_compose_attachment_is_delivered_over_smtp(client, account, password):
+    login = client.post(
+        reverse("accounts:login"),
+        {"email": account.email, "password": password},
+    )
+    assert login.status_code == 302
+
+    payload = b"attachment payload from the functional suite"
+    upload = client.post(
+        reverse("compose:attachments"),
+        {
+            "attachments": SimpleUploadedFile(
+                "functional-note.txt",
+                payload,
+                content_type="text/plain",
+            )
+        },
+    )
+    assert upload.status_code == 200
+    session_key = client.session.session_key
+    assert session_key
+    refs = list_attachments(session_key)
+    assert len(refs) == 1
+
+    subject = f"djwebmail-compose-attachment-{uuid4().hex}"
+    response = client.post(
+        reverse("compose:send"),
+        {
+            "to": account.email,
+            "cc": "",
+            "subject": subject,
+            "body": "Body with an attachment.",
+            "attachment_ids": [refs[0].id],
+        },
+    )
+    assert response.status_code == 302
+
+    deadline = time.monotonic() + settings.MAIL_TIMEOUT_SECONDS
+    with ImapService(account, account.email, password) as imap:
+        imap.select("INBOX", readonly=True)
+        while True:
+            for candidate in reversed(imap.search("ALL")):
+                fetched = imap.fetch_message(candidate)
+                if subject.encode() not in fetched.raw:
+                    continue
+                message = message_from_bytes(fetched.raw)
+                for part in message.walk():
+                    if part.get_filename() == "functional-note.txt":
+                        assert part.get_payload(decode=True) == payload
+                        return
+                pytest.fail("The delivered message has no expected attachment")
+            if time.monotonic() >= deadline:
+                pytest.fail("Composed attachment did not arrive over SMTP")
+            time.sleep(0.2)
