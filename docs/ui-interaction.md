@@ -11,7 +11,18 @@ CSP build; it never calls the network directly.
 ## Responsive mail shell
 
 - Desktop (`>= lg`) shows the folder tree, the message list, and the viewer at
-  the same time.
+  the same time in a full-viewport (`100vh`) continuous application shell with
+  independent vertical scrolling per panel, eliminating outer viewport scrollbars.
+- The top header spans the full width of the screen, providing quick access to
+  account identity (initials avatar), settings, and sign-out.
+- The folder panel features a hero "Compose" CTA button at the top (bound to the
+  `c` keyboard shortcut), followed by standard IMAP folders styled with semantic
+  SVG iconography (Inbox, Sent, Drafts, Trash, Spam, Archive) and active state pills.
+- The message list features a compact search bar with expandable filters and
+  two-line message rows displaying the sender's monogram avatar, unread status dot,
+  date, star, subject, and size.
+- An empty state in the reading pane provides a distraction-free visual anchor with
+  keyboard navigation hints (`j`/`k`).
 - Below `lg`, the shell shows one panel. `/mail/` defaults to `view=list`;
   message links add `?view=message`, and a message deep link renders the message
   panel.
