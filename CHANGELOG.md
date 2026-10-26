@@ -1,3 +1,13 @@
+## 0.2.1 (2026-10-26)
+
+### Fix
+
+- **preferences**: use `gettext_lazy` on `MailPreference.Meta` so non-English `DJANGO_LANGUAGE_CODE` does not report unmigrated model changes
+
+### Docs
+
+- **deployment**: include `127.0.0.1,localhost` in `DJANGO_ALLOWED_HOSTS` for container healthchecks
+
 ## 0.2.0 (2026-10-26)
 
 ### Feat
