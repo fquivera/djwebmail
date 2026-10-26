@@ -6,15 +6,12 @@
 {% block scripts %}
   <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
   <script defer src="{% static 'js/htmx-config.js' %}"></script>
+  <script defer src="{% static 'vendor/alpine-csp.min.js' %}"></script>
+  <script defer src="{% static 'js/compose.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-  <div class="mx-auto max-w-2xl">
-    <div class="mb-4 flex items-center justify-between gap-2">
-      <h1 class="text-xl font-semibold">{% translate "Compose" %}</h1>
-      <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
-    </div>
-
+  <div class="mx-auto max-w-4xl py-2 sm:py-4 px-2 sm:px-4">
     {% if draft_autosave %}
       <div
         hx-post="{% url 'compose:draft' %}"
@@ -29,60 +26,227 @@
       id="compose-form"
       method="post"
       action="{% url 'compose:send' %}"
-      class="space-y-4 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
+      class="rounded-2xl border border-base-300 bg-base-100 shadow-sm overflow-hidden flex flex-col"
+      x-data="composer"
     >
       {% csrf_token %}
+      <div class="flex items-center justify-between border-b border-base-300 bg-base-100 px-4 py-2.5 shrink-0">
+        <div class="flex items-center gap-3">
+          <a class="btn btn-ghost btn-sm gap-1.5 text-base-content/70 hover:text-base-content" href="{% url 'mail:index' %}">
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            <span class="hidden sm:inline">{% translate "Back to mail" %}</span>
+          </a>
+          <h1 class="text-base font-semibold">{% translate "Compose" %}</h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-square"
+            title="{% translate 'Attachments' %}"
+            aria-label="{% translate 'Attachments' %}"
+            @click="$refs.fileInput.click()"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm text-xs gap-1 font-medium"
+            @click="toggleMode()"
+            title="{% translate 'Toggle formatting' %}"
+          >
+            <span x-show="richText">{% translate "Plain text" %}</span>
+            <span x-show="!richText">{% translate "Rich text" %}</span>
+          </button>
+
+          <button type="submit" class="btn btn-primary btn-sm gap-1.5 font-semibold">
+            <span>{% translate "Send" %}</span>
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {% if form.non_field_errors %}
-        <div class="alert alert-error text-sm" role="alert">
+        <div class="alert alert-error text-sm m-4" role="alert">
           {% for error in form.non_field_errors %}
             <p>{{ error }}</p>
           {% endfor %}
         </div>
       {% endif %}
 
-      {% for field in form %}
-        <div>
-          <label class="mb-1 block text-sm font-medium" for="{{ field.id_for_label }}">
-            {{ field.label }}
-          </label>
-          {{ field }}
-          {% if field.errors %}
-            <div class="mt-1 text-sm text-error" role="alert">
-              {% for error in field.errors %}
-                <p>{{ error }}</p>
-              {% endfor %}
-            </div>
+      <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
+        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.to.id_for_label }}">
+          {{ form.to.label }}
+        </label>
+        <div class="flex-1 min-w-0">
+          {{ form.to }}
+          {% if form.to.errors %}
+            <div class="text-xs text-error mt-0.5" role="alert">{{ form.to.errors }}</div>
           {% endif %}
         </div>
-      {% endfor %}
+        <div class="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs text-xs font-medium"
+            x-bind:class="{ 'btn-active': showCc }"
+            @click="toggleCc()"
+          >CC</button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs text-xs font-medium"
+            x-bind:class="{ 'btn-active': showBcc }"
+            @click="toggleBcc()"
+          >CCO</button>
+        </div>
+      </div>
 
-      <div class="space-y-2">
-        <label class="block text-sm font-medium" for="compose-attachments">
-          {% translate "Attachments" %}
+      <div
+        class="border-b border-base-200 px-4 py-2 flex items-center gap-3"
+        x-show="showCc"
+      >
+        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.cc.id_for_label }}">
+          {{ form.cc.label }}
         </label>
+        <div class="flex-1 min-w-0">
+          <input
+            type="text"
+            name="cc"
+            id="{{ form.cc.id_for_label }}"
+            x-ref="ccInput"
+            value="{{ form.cc.value|default:'' }}"
+            autocomplete="off"
+            class="input w-full"
+            placeholder="{{ form.cc.field.widget.attrs.placeholder|default:'' }}"
+          >
+          {% if form.cc.errors %}
+            <div class="text-xs text-error mt-0.5" role="alert">{{ form.cc.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div
+        class="border-b border-base-200 px-4 py-2 flex items-center gap-3"
+        x-show="showBcc"
+      >
+        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.bcc.id_for_label }}">
+          {{ form.bcc.label }}
+        </label>
+        <div class="flex-1 min-w-0">
+          <input
+            type="text"
+            name="bcc"
+            id="{{ form.bcc.id_for_label }}"
+            x-ref="bccInput"
+            value="{{ form.bcc.value|default:'' }}"
+            autocomplete="off"
+            class="input w-full"
+            placeholder="{{ form.bcc.field.widget.attrs.placeholder|default:'' }}"
+          >
+          {% if form.bcc.errors %}
+            <div class="text-xs text-error mt-0.5" role="alert">{{ form.bcc.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
+        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.subject.id_for_label }}">
+          {{ form.subject.label }}
+        </label>
+        <div class="flex-1 min-w-0">
+          {{ form.subject }}
+          {% if form.subject.errors %}
+            <div class="text-xs text-error mt-0.5" role="alert">{{ form.subject.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div
+        class="border-b border-base-200 bg-base-200/40 px-3 py-1.5 flex flex-wrap items-center gap-1 select-none"
+        x-show="richText"
+      >
+        <div class="join">
+          <button type="button" class="join-item btn btn-ghost btn-xs font-bold" title="{% translate 'Bold' %}" @click="format('bold')">B</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs italic font-serif" title="{% translate 'Italic' %}" @click="format('italic')">I</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs underline" title="{% translate 'Underline' %}" @click="format('underline')">U</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs line-through" title="{% translate 'Strikethrough' %}" @click="format('strikeThrough')">S</button>
+        </div>
+        <div class="divider divider-horizontal my-0.5 mx-1"></div>
+        <div class="join">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Bullet list' %}" @click="format('insertUnorderedList')">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Numbered list' %}" @click="format('insertOrderedList')">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+          </button>
+        </div>
+        <div class="divider divider-horizontal my-0.5 mx-1"></div>
+        <div class="join">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align left' %}" @click="format('justifyLeft')">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+          </button>
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align center' %}" @click="format('justifyCenter')">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
+          </button>
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align right' %}" @click="format('justifyRight')">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="divider divider-horizontal my-0.5 mx-1"></div>
+        <button type="button" class="btn btn-ghost btn-xs" title="{% translate 'Clear formatting' %}" @click="format('removeFormat')">
+          <span class="text-xs font-mono">T<sub class="text-[9px]">x</sub></span>
+        </button>
+      </div>
+
+      <div class="relative p-4 flex-1 flex flex-col min-h-80">
+        <div
+          x-ref="editor"
+          x-show="richText"
+          contenteditable="true"
+          class="flex-1 min-h-72 focus:outline-none text-sm text-base-content leading-relaxed"
+          @input="syncToTextarea()"
+        ></div>
+
+        <textarea
+          name="body"
+          id="{{ form.body.id_for_label }}"
+          x-ref="bodyInput"
+          x-show="!richText"
+          class="textarea w-full flex-1 min-h-72 text-sm leading-relaxed"
+          rows="14"
+          placeholder="{{ form.body.field.widget.attrs.placeholder|default:'' }}"
+        >{{ form.body.value|default:'' }}</textarea>
+
+        {% if form.body.errors %}
+          <div class="text-xs text-error mt-1" role="alert">{{ form.body.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div class="border-t border-base-200 px-4 py-3 bg-base-100">
         <input
           id="compose-attachments"
+          x-ref="fileInput"
           type="file"
           name="attachments"
           multiple
-          class="file-input w-full"
+          class="sr-only"
           hx-post="{% url 'compose:attachments' %}"
           hx-encoding="multipart/form-data"
           hx-trigger="change"
           hx-target="#attachment-list"
           hx-swap="innerHTML"
         >
-        <p class="text-xs text-base-content/60">
-          {% blocktranslate with maximum=max_attachment_bytes|filesizeformat %}Each file up to {{ maximum }}.{% endblocktranslate %}
-        </p>
-        <div id="attachment-list" class="space-y-1" aria-live="polite">
+        <div id="attachment-list" aria-live="polite">
           {% include "compose/_attachment_list.html" %}
         </div>
-      </div>
-
-      <div class="flex justify-end gap-2">
-        <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Cancel" %}</a>
-        <button type="submit" class="btn btn-primary btn-sm">{% translate "Send" %}</button>
       </div>
     </form>
   </div>

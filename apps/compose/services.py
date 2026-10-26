@@ -27,6 +27,10 @@ from apps.mail.services.message import MessageDetail
 
 _TAG_PATTERN = re.compile(r"<[^>]+>")
 _SPACE_PATTERN = re.compile(r"[ \t\u00a0]+")
+_HTML_TAGS_PATTERN = re.compile(
+    r"<(p|div|br|b|i|u|s|ul|ol|li|h[1-6]|span|a|strong|em)\b",
+    re.IGNORECASE,
+)
 
 
 def build_message(
@@ -34,11 +38,12 @@ def build_message(
     sender: str,
     to: Sequence[str],
     cc: Sequence[str],
+    bcc: Sequence[str] = (),
     subject: str,
     body: str,
     attachments: Sequence[Attachment] = (),
 ) -> EmailMessage:
-    """Assemble a plain-text RFC 5322 message with a stable Message-ID."""
+    """Assemble an RFC 5322 message with plain-text or HTML alternative and stable Message-ID."""
     message = EmailMessage()
     message["From"] = sender
     message["To"] = ", ".join(to)
@@ -47,7 +52,15 @@ def build_message(
     message["Subject"] = subject[:MAX_SUBJECT_LENGTH]
     message["Date"] = formatdate(localtime=True)
     message["Message-ID"] = make_msgid(domain=sender.rsplit("@", 1)[-1])
-    message.set_content(body)
+
+    # If body contains rich HTML markup, assemble multipart/alternative
+    if "<" in body and ">" in body and _HTML_TAGS_PATTERN.search(body):
+        plain_text = html_to_text(body)
+        message.set_content(plain_text)
+        message.add_alternative(body, subtype="html")
+    else:
+        message.set_content(body)
+
     for attachment in attachments:
         _add_attachment(message, attachment)
     return message
@@ -59,6 +72,7 @@ def send_message(
     sender: str,
     to: Sequence[str],
     cc: Sequence[str],
+    bcc: Sequence[str] = (),
     subject: str,
     body: str,
     attachments: Sequence[Attachment] = (),
@@ -68,11 +82,12 @@ def send_message(
         sender=sender,
         to=to,
         cc=cc,
+        bcc=bcc,
         subject=subject,
         body=body,
         attachments=attachments,
     )
-    smtp.send(sender, [*to, *cc], message.as_bytes())
+    smtp.send(sender, [*to, *cc, *bcc], message.as_bytes())
 
 
 def _add_attachment(message: EmailMessage, attachment: Attachment) -> None:

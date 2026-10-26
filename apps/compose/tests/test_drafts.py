@@ -23,6 +23,7 @@ def test_save_and_load_draft_round_trips() -> None:
         SESSION,
         to="alice@example.com",
         cc="carol@example.com",
+        bcc="bob@example.com",
         subject="Hello",
         body="Body text",
     )
@@ -33,6 +34,7 @@ def test_save_and_load_draft_round_trips() -> None:
     assert draft.as_initial() == {
         "to": "alice@example.com",
         "cc": "carol@example.com",
+        "bcc": "bob@example.com",
         "subject": "Hello",
         "body": "Body text",
     }

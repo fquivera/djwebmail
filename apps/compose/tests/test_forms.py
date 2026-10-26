@@ -13,6 +13,7 @@ def test_valid_form_normalizes_recipients() -> None:
         data={
             "to": "Alice <alice@example.com>, bob@example.com",
             "cc": "carol@example.com",
+            "bcc": "dave@example.com",
             "subject": "Hello",
             "body": "Body text",
         }
@@ -21,6 +22,14 @@ def test_valid_form_normalizes_recipients() -> None:
     assert form.is_valid()
     assert form.cleaned_data["to"] == ["alice@example.com", "bob@example.com"]
     assert form.cleaned_data["cc"] == ["carol@example.com"]
+    assert form.cleaned_data["bcc"] == ["dave@example.com"]
+
+
+def test_bcc_is_optional() -> None:
+    form = ComposeForm(data={"to": "alice@example.com"})
+
+    assert form.is_valid()
+    assert form.cleaned_data["bcc"] == []
 
 
 def test_to_is_required() -> None:
