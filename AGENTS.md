@@ -465,10 +465,16 @@ Done:
   full-width top navigation with user initials avatar, folder tree with semantic
   IMAP icons and hero compose CTA, 2-line message rows with avatar monograms and
   unread status dots, and polished empty states. See `docs/ui-interaction.md`.
+- Rich-text compose, `Reply all`, hover quick actions, batch selection (`POST /mail/folder/<folder>/batch/`),
+  per-account `remote_images` and `signature_html` preferences, automatic `Sent`
+  folder copy on send (`append_to_sent()`), and localized standard folder labels.
+  See `docs/compose.md`, `docs/message-viewer.md`, and `docs/preferences.md`.
+- Production deployment guide (`docs/deployment.md`): reverse-proxy TLS
+  termination, required environment variables, Docker Compose production
+  stack, healthcheck, and upgrade workflow.
 
-Next: Phase 4 is complete. The next planned work is the deployment guide and
-the `v0.2.0` release. Do not open new protocol areas without a new phase
-document.
+Next: Phase 4 and the deployment guide are complete. Ready for the `v0.2.0`
+release. Do not open new protocol areas without a new phase document.
 
 ## 12. Anti-patterns
 

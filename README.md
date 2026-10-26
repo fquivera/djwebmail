@@ -174,7 +174,9 @@ server can be replaced later. Details and the staging stack are in
 | `config.settings.production` | `wsgi.py` / `asgi.py`, Gunicorn, containers |
 
 `DJANGO_SETTINGS_MODULE` selects the module; environment variables are read
-from `.env` when present and always win over the file.
+from `.env` when present and always win over the file. For reverse-proxy TLS
+termination, required secrets, and a production Docker Compose configuration,
+see [`docs/deployment.md`](docs/deployment.md).
 
 ### Common commands
 
@@ -260,8 +262,10 @@ MIT — see the LICENSE file for details.
 ☑ Accessibility pass<br>
 ☑ Keyboard shortcuts and command palette<br>
 ☑ Responsive single-panel navigation and optimistic flags<br>
+☑ Batch message selection and actions (read/unread, star, move, delete)<br>
+☑ Sent folder copy on send and per-account HTML signature<br>
 ☑ Docker image publishing<br>
-□ Deployment guide<br>
+☑ Deployment guide<br>
 
 ## Acknowledgements
 Built with Django, HTMX,
