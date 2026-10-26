@@ -6,8 +6,8 @@
 {% block scripts %}
   <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
   <script defer src="{% static 'js/htmx-config.js' %}"></script>
-  <script defer src="{% static 'vendor/alpine-csp.min.js' %}"></script>
   <script defer src="{% static 'js/compose.js' %}"></script>
+  <script defer src="{% static 'vendor/alpine-csp.min.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -28,6 +28,7 @@
       action="{% url 'compose:send' %}"
       class="rounded-2xl border border-base-300 bg-base-100 shadow-sm overflow-hidden flex flex-col"
       x-data="composer"
+      @submit="syncToTextarea()"
     >
       {% csrf_token %}
       <div class="flex items-center justify-between border-b border-base-300 bg-base-100 px-4 py-2.5 shrink-0">
@@ -48,7 +49,7 @@
             class="btn btn-ghost btn-sm btn-square"
             title="{% translate 'Attachments' %}"
             aria-label="{% translate 'Attachments' %}"
-            @click="$refs.fileInput.click()"
+            @click="attachFile()"
           >
             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
@@ -62,7 +63,7 @@
             title="{% translate 'Toggle formatting' %}"
           >
             <span x-show="richText">{% translate "Plain text" %}</span>
-            <span x-show="!richText">{% translate "Rich text" %}</span>
+            <span x-show="isPlain">{% translate "Rich text" %}</span>
           </button>
 
           <button type="submit" class="btn btn-primary btn-sm gap-1.5 font-semibold">
@@ -97,13 +98,13 @@
           <button
             type="button"
             class="btn btn-ghost btn-xs text-xs font-medium"
-            x-bind:class="{ 'btn-active': showCc }"
+            x-bind:class="showCc ? 'btn-active' : ''"
             @click="toggleCc()"
           >CC</button>
           <button
             type="button"
             class="btn btn-ghost btn-xs text-xs font-medium"
-            x-bind:class="{ 'btn-active': showBcc }"
+            x-bind:class="showBcc ? 'btn-active' : ''"
             @click="toggleBcc()"
           >CCO</button>
         </div>
@@ -174,34 +175,34 @@
         x-show="richText"
       >
         <div class="join">
-          <button type="button" class="join-item btn btn-ghost btn-xs font-bold" title="{% translate 'Bold' %}" @click="format('bold')">B</button>
-          <button type="button" class="join-item btn btn-ghost btn-xs italic font-serif" title="{% translate 'Italic' %}" @click="format('italic')">I</button>
-          <button type="button" class="join-item btn btn-ghost btn-xs underline" title="{% translate 'Underline' %}" @click="format('underline')">U</button>
-          <button type="button" class="join-item btn btn-ghost btn-xs line-through" title="{% translate 'Strikethrough' %}" @click="format('strikeThrough')">S</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs font-bold" title="{% translate 'Bold' %}" @mousedown.prevent @click="bold()">B</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs italic font-serif" title="{% translate 'Italic' %}" @mousedown.prevent @click="italic()">I</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs underline" title="{% translate 'Underline' %}" @mousedown.prevent @click="underline()">U</button>
+          <button type="button" class="join-item btn btn-ghost btn-xs line-through" title="{% translate 'Strikethrough' %}" @mousedown.prevent @click="strikeThrough()">S</button>
         </div>
         <div class="divider divider-horizontal my-0.5 mx-1"></div>
         <div class="join">
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Bullet list' %}" @click="format('insertUnorderedList')">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Bullet list' %}" @mousedown.prevent @click="bulletList()">
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Numbered list' %}" @click="format('insertOrderedList')">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Numbered list' %}" @mousedown.prevent @click="numberedList()">
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
           </button>
         </div>
         <div class="divider divider-horizontal my-0.5 mx-1"></div>
         <div class="join">
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align left' %}" @click="format('justifyLeft')">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align left' %}" @mousedown.prevent @click="alignLeft()">
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
           </button>
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align center' %}" @click="format('justifyCenter')">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align center' %}" @mousedown.prevent @click="alignCenter()">
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
           </button>
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align right' %}" @click="format('justifyRight')">
+          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align right' %}" @mousedown.prevent @click="alignRight()">
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
           </button>
         </div>
         <div class="divider divider-horizontal my-0.5 mx-1"></div>
-        <button type="button" class="btn btn-ghost btn-xs" title="{% translate 'Clear formatting' %}" @click="format('removeFormat')">
+        <button type="button" class="btn btn-ghost btn-xs" title="{% translate 'Clear formatting' %}" @mousedown.prevent @click="clearFormat()">
           <span class="text-xs font-mono">T<sub class="text-[9px]">x</sub></span>
         </button>
       </div>
@@ -219,7 +220,7 @@
           name="body"
           id="{{ form.body.id_for_label }}"
           x-ref="bodyInput"
-          x-show="!richText"
+          x-show="isPlain"
           class="textarea w-full flex-1 min-h-72 text-sm leading-relaxed"
           rows="14"
           placeholder="{{ form.body.field.widget.attrs.placeholder|default:'' }}"

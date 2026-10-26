@@ -17,6 +17,9 @@
         showCc: false,
         showBcc: false,
         richText: true,
+        get isPlain() {
+          return !this.richText;
+        },
         init() {
           var ccInput = this.$refs.ccInput;
           if (ccInput && ccInput.value && ccInput.value.trim().length > 0) {
@@ -46,6 +49,11 @@
             }, 50);
           }
         },
+        attachFile() {
+          if (this.$refs.fileInput) {
+            this.$refs.fileInput.click();
+          }
+        },
         toggleMode() {
           if (this.richText) {
             var text = this.getTextContent();
@@ -70,7 +78,43 @@
           }
           this.triggerDraftAutosave();
         },
+        bold() {
+          this.format("bold");
+        },
+        italic() {
+          this.format("italic");
+        },
+        underline() {
+          this.format("underline");
+        },
+        strikeThrough() {
+          this.format("strikeThrough");
+        },
+        bulletList() {
+          this.format("insertUnorderedList");
+        },
+        numberedList() {
+          this.format("insertOrderedList");
+        },
+        alignLeft() {
+          this.format("justifyLeft");
+        },
+        alignCenter() {
+          this.format("justifyCenter");
+        },
+        alignRight() {
+          this.format("justifyRight");
+        },
+        clearFormat() {
+          this.format("removeFormat");
+        },
         format(command, value) {
+          if (!this.richText) {
+            return;
+          }
+          if (this.$refs.editor) {
+            this.$refs.editor.focus();
+          }
           document.execCommand(command, false, value || null);
           this.syncToTextarea();
         },
