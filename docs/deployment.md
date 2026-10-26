@@ -44,7 +44,7 @@ variables are missing or invalid:
 |---|---|---|
 | `DJANGO_SETTINGS_MODULE` | Must be `config.settings.production` | `config.settings.production` |
 | `DJANGO_SECRET_KEY` | High-entropy secret for CSRF and signing | *(50+ random chars)* |
-| `DJANGO_ALLOWED_HOSTS` | Comma-separated public hostnames | `mail.example.com` |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated public hostnames plus loopback for container healthcheck | `mail.example.com,127.0.0.1,localhost` |
 | `CSRF_TRUSTED_ORIGINS` | Comma-separated HTTPS origins | `https://mail.example.com` |
 | `DATABASE_URL` | PostgreSQL connection URL | `postgres://djwebmail:secret@db:5432/djwebmail` |
 | `REDIS_URL` | Redis connection URL | `redis://redis:6379/0` |
@@ -114,7 +114,7 @@ Create a `.env.prod` file (mode `0600`, never committed to Git):
 ```dotenv
 DJANGO_SETTINGS_MODULE=config.settings.production
 DJANGO_SECRET_KEY=replace-with-generated-secret-key
-DJANGO_ALLOWED_HOSTS=mail.example.com
+DJANGO_ALLOWED_HOSTS=mail.example.com,127.0.0.1,localhost
 CSRF_TRUSTED_ORIGINS=https://mail.example.com
 FERNET_KEY=replace-with-generated-fernet-key
 
@@ -165,7 +165,7 @@ services:
       retries: 5
 
   web:
-    image: ghcr.io/fquivera/djwebmail:0.2.0
+    image: ghcr.io/fquivera/djwebmail:0.2.1
     restart: unless-stopped
     env_file: .env.prod
     command:

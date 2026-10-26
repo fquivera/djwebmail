@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from apps.accounts.constants import ACCOUNT_KEY_MAX_LENGTH
 from apps.preferences.constants import (
@@ -86,8 +87,8 @@ class MailPreference(models.Model):
 
     class Meta:
         ordering = ["email"]
-        verbose_name = _("mail preference")
-        verbose_name_plural = _("mail preferences")
+        verbose_name = gettext_lazy("mail preference")
+        verbose_name_plural = gettext_lazy("mail preferences")
 
     def __str__(self) -> str:
         return self.email
