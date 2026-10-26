@@ -90,6 +90,11 @@ The two header controls are HTMX forms with a hidden `action` field:
 4. On a non-2xx response the component reverts the local state and shows a
    visible error alert in the viewer.
 
+The alert lives inside a `when-flag-error` wrapper, and the wrapper owns the
+hidden/visible state driven by `data-flag-error`. The daisyUI `.alert` element
+inside keeps its own display rule, so a component class cannot override the
+hidden state; only a failed flag request reveals the alert.
+
 The flag endpoint returns `503` for mail failures instead of the normal `200`
 error partial. A `2xx` error fragment would look successful to the optimistic
 component and prevent the revert. The standalone full-page route adds a hidden

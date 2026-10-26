@@ -525,6 +525,11 @@ def test_message_view_renders_full_page(
     assert b'data-shortcut="reply"' in response.content
     assert b"alpine-csp.min.js" in response.content
     assert b'name="standalone" value="1"' in response.content
+    # The alert wrapper owns visibility so daisyUI's .alert display rule cannot
+    # keep a successful auto-read request showing the error.
+    assert b'<div class="when-flag-error">' in response.content
+    assert b'class="alert alert-error text-sm"' in response.content
+    assert b"alert alert-error when-flag-error" not in response.content
 
 
 def test_message_view_returns_fragment_for_htmx(

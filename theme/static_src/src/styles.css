@@ -102,9 +102,19 @@
   }
 
   .when-seen,
-  .when-flagged,
+  .when-flagged {
+    display: none;
+  }
+
+  /* The error alert wrapper, not the daisyUI .alert itself, owns visibility:
+   * daisyUI sets display on .alert, so hiding that element directly loses the
+   * cascade. The wrapper is hidden until a flag request actually fails. */
   .when-flag-error {
     display: none;
+  }
+
+  [data-flag-error="true"] .when-flag-error {
+    display: block;
   }
 
   [data-seen="true"] .when-seen,
@@ -117,10 +127,6 @@
   [data-seen="true"] .when-unseen,
   [data-flagged="true"] .when-unflagged {
     display: none;
-  }
-
-  [data-flag-error="true"] .when-flag-error {
-    display: flex;
   }
 
   .mail-folder-backdrop {
