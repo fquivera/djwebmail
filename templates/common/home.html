@@ -1,19 +1,87 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% blocktranslate %}DjWebmail — early development{% endblocktranslate %}{% endblock %}
+{% block title %}{% blocktranslate %}DjWebmail — Modern Webmail{% endblocktranslate %}{% endblock %}
 
 {% block content %}
-  <section class="hero min-h-[60vh]">
-    <div class="hero-content text-center">
-      <div class="max-w-2xl">
-        <h1 class="text-4xl font-bold tracking-tight">DjWebmail</h1>
-        <p class="py-4 text-lg text-base-content/80">
+  <section class="flex flex-1 flex-col items-center justify-center px-4 py-12 overflow-y-auto">
+    <div class="mx-auto max-w-3xl text-center space-y-6">
+      <div class="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/15 text-primary border border-primary/20 shadow-xs">
+        <svg class="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+        </svg>
+      </div>
+
+      <div class="space-y-3">
+        <h1 class="text-4xl font-bold tracking-tight text-base-content sm:text-5xl">DjWebmail</h1>
+        <p class="mx-auto max-w-xl text-base text-base-content/75 sm:text-lg">
           {% translate "A modern, HTMX-driven webmail client built with Django." %}
         </p>
-        <p class="text-base-content/60">
-          {% translate "The mail interface is under construction. See the project README for the roadmap." %}
-        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+        {% if request.mail_account %}
+          <a href="{% url 'mail:index' %}" class="btn btn-primary gap-2 px-6">
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+              <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+            </svg>
+            <span>{% translate "Open inbox" %}</span>
+          </a>
+          <a href="{% url 'compose:new' %}" class="btn btn-outline gap-2">
+            <span>{% translate "Compose" %}</span>
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-primary gap-2 px-6">
+            <span>{% translate "Sign in" %}</span>
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="m12 5 7 7-7 7"></path>
+            </svg>
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="grid gap-4 pt-8 text-left sm:grid-cols-3">
+        <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-xs space-y-1.5">
+          <div class="flex items-center gap-2 font-semibold text-sm text-base-content">
+            <svg class="size-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>{% translate "Security by default" %}</span>
+          </div>
+          <p class="text-xs text-base-content/70 leading-relaxed">
+            {% translate "Strict CSP, server-side HTML sanitization, remote-image proxy, and encrypted session credentials." %}
+          </p>
+        </div>
+
+        <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-xs space-y-1.5">
+          <div class="flex items-center gap-2 font-semibold text-sm text-base-content">
+            <svg class="size-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+              <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+              <line x1="6" x2="6.01" y1="6" y2="6"></line>
+              <line x1="6" x2="6.01" y1="18" y2="18"></line>
+            </svg>
+            <span>{% translate "IMAP source of truth" %}</span>
+          </div>
+          <p class="text-xs text-base-content/70 leading-relaxed">
+            {% translate "Direct IMAP and SMTP communication without storing messages or passwords in the database." %}
+          </p>
+        </div>
+
+        <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-xs space-y-1.5">
+          <div class="flex items-center gap-2 font-semibold text-sm text-base-content">
+            <svg class="size-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>{% translate "Fast & keyboard-ready" %}</span>
+          </div>
+          <p class="text-xs text-base-content/70 leading-relaxed">
+            {% translate "3-pane workspace with HTMX partial updates, global command palette, and keyboard navigation." %}
+          </p>
+        </div>
       </div>
     </div>
   </section>
