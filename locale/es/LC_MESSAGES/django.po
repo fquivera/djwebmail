@@ -732,4 +732,20 @@ msgstr "Personaliza el idioma, la apariencia y la lectura de tu correo web."
 msgid "Preferences are stored per account and applied immediately."
 msgstr "Las preferencias se guardan por cuenta y se aplican de inmediato."
 
+msgid "Remote images"
+msgstr "Imágenes remotas"
+
+msgid "Signature"
+msgstr "Firma"
+
+msgid "Controls whether external images are loaded through the proxy."
+msgstr "Controla si las imágenes externas se cargan automáticamente a través del proxy."
+
+msgid "Appended automatically when composing a new message or reply."
+msgstr "Se añade automáticamente al redactar un mensaje nuevo o responder."
+
+msgid "Composing"
+msgstr "Redacción"
+
+
 

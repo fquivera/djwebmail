@@ -13,11 +13,16 @@ the credentials already stored for the IMAP session.
   subject with `Re:`.
 - `GET /compose/forward/<folder>/<uid>/` prefixes the subject with `Fwd:` and
   quotes the original body as plain text.
-- `POST /compose/send/` validates the form and hands the message to SMTP.
+- `POST /compose/send/` validates the form, hands the message to SMTP, and
+  appends a `\Seen` copy to the account's `Sent` folder over IMAP when present.
 - `POST /compose/attachments/` stores uploaded files for the session and
   returns the attachment-list partial.
 - `POST /compose/attachments/<id>/delete/` removes one stored attachment.
 - `POST /compose/draft/` autosaves the form text and returns HTTP 204.
+
+When the account has a configured signature (`signature_html` in `/settings/`),
+`GET /compose/`, `reply`, `reply-all`, and `forward` prefill the signature block
+automatically.
 
 A successful send redirects to `/mail/`. Validation errors re-render the form
 with HTTP 422; SMTP failures use 503.

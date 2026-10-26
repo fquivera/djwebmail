@@ -5,9 +5,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, cast
 
+from apps.accounts.services.imap import Folder, ImapService
 from apps.accounts.services.smtp import SmtpService
 from apps.compose.attachments import Attachment
 from apps.compose.services import (
+    append_to_sent,
+    apply_signature,
     build_message,
     forward_initial,
     html_to_text,
@@ -193,3 +196,31 @@ def test_send_message_uses_all_recipients() -> None:
     assert recipients == ["alice@example.com", "carol@example.com", "dave@example.com"]
     assert b"Subject: Hello" in raw
     assert b"Bcc:" not in raw
+
+
+def test_apply_signature_adds_signature_block() -> None:
+    initial = apply_signature({"to": "alice@example.com"}, "Best regards,\nUser")
+
+    assert initial["to"] == "alice@example.com"
+    assert "-- \nBest regards,\nUser" in initial["body"]
+
+
+def test_append_to_sent_writes_to_sent_folder() -> None:
+    class FakeImap:
+        def __init__(self) -> None:
+            self.appended: tuple[str, bytes, tuple[str, ...]] | None = None
+
+        def list_folders(self) -> list[Folder]:
+            return [
+                Folder(name="INBOX", delimiter="/", flags=()),
+                Folder(name="Sent", delimiter="/", flags=("\\Sent",)),
+            ]
+
+        def append(self, folder: str, raw: bytes, *, flags: tuple[str, ...] = ()) -> None:
+            self.appended = (folder, raw, tuple(flags))
+
+    imap = FakeImap()
+    result = append_to_sent(cast(ImapService, imap), b"Subject: Test\r\n\r\nBody")
+
+    assert result is True
+    assert imap.appended == ("Sent", b"Subject: Test\r\n\r\nBody", ("\\Seen",))

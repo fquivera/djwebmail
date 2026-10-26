@@ -17,6 +17,8 @@ from apps.accounts.constants import (
     SESSION_EXPIRES_AT_KEY,
     SESSION_LANGUAGE_KEY,
     SESSION_PAGE_SIZE_KEY,
+    SESSION_REMOTE_IMAGES_KEY,
+    SESSION_SIGNATURE_KEY,
     SESSION_THEME_KEY,
     SESSION_TIMEZONE_KEY,
 )
@@ -25,6 +27,7 @@ from apps.accounts.services.account import MailAccount, resolve_mail_account
 from apps.accounts.services.credentials import CredentialStore
 from apps.accounts.services.imap import ImapService
 from apps.accounts.services.smtp import SmtpService
+from apps.preferences.constants import RemoteImages
 from apps.preferences.models import MailPreference
 
 
@@ -67,6 +70,8 @@ def start_mail_session(request: HttpRequest, account: MailAccount, password: str
     session[SESSION_DENSITY_KEY] = preference.density
     session[SESSION_TIMEZONE_KEY] = preference.timezone
     session[SESSION_PAGE_SIZE_KEY] = preference.page_size
+    session[SESSION_REMOTE_IMAGES_KEY] = preference.remote_images
+    session[SESSION_SIGNATURE_KEY] = preference.signature_html
     setattr(request, "mail_account", account)  # noqa: B010
     translation.activate(language)
     return preference
@@ -132,6 +137,20 @@ def get_mail_page_size(request: HttpRequest) -> int:
     if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
         return min(value, maximum)
     return default
+
+
+def get_mail_remote_images(request: HttpRequest) -> str:
+    """Return the account's remote-image policy from the session."""
+    value = _session(request).get(SESSION_REMOTE_IMAGES_KEY)
+    if isinstance(value, str) and value in RemoteImages.values:
+        return value
+    return RemoteImages.ASK
+
+
+def get_mail_signature(request: HttpRequest) -> str:
+    """Return the account's signature text from the session."""
+    value = _session(request).get(SESSION_SIGNATURE_KEY)
+    return value.strip() if isinstance(value, str) else ""
 
 
 def get_mail_imap_service(request: HttpRequest) -> ImapService:

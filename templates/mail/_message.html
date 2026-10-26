@@ -286,19 +286,21 @@
   </dialog>
 
   <div id="message-body" class="message-body break-words text-sm leading-relaxed">
-    {% if message.remote_content_blocked %}
+    {% if message.remote_content_blocked and not remote_images_loaded %}
       <div class="alert alert-warning mb-3 text-sm" role="status">
         <span>{% translate "Remote content was blocked to protect your privacy." %}</span>
-        <button
-          class="btn btn-outline btn-sm"
-          type="button"
-          hx-post="{% url 'mail:message_remote_images' folder_name message.uid %}"
-          hx-target="#message-body"
-          hx-swap="innerHTML"
-          hx-disabled-elt="this"
-        >
-          {% translate "Load images" %}
-        </button>
+        {% if not remote_images_never %}
+          <button
+            class="btn btn-outline btn-sm"
+            type="button"
+            hx-post="{% url 'mail:message_remote_images' folder_name message.uid %}"
+            hx-target="#message-body"
+            hx-swap="innerHTML"
+            hx-disabled-elt="this"
+          >
+            {% translate "Load images" %}
+          </button>
+        {% endif %}
       </div>
     {% endif %}
 

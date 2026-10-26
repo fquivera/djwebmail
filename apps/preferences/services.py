@@ -11,6 +11,8 @@ from apps.accounts.constants import (
     SESSION_DENSITY_KEY,
     SESSION_LANGUAGE_KEY,
     SESSION_PAGE_SIZE_KEY,
+    SESSION_REMOTE_IMAGES_KEY,
+    SESSION_SIGNATURE_KEY,
     SESSION_THEME_KEY,
     SESSION_TIMEZONE_KEY,
 )
@@ -38,6 +40,8 @@ def apply_mail_preference(request: HttpRequest, preference: MailPreference) -> N
     session[SESSION_DENSITY_KEY] = preference.density
     session[SESSION_TIMEZONE_KEY] = preference.timezone
     session[SESSION_PAGE_SIZE_KEY] = preference.page_size
+    session[SESSION_REMOTE_IMAGES_KEY] = preference.remote_images
+    session[SESSION_SIGNATURE_KEY] = preference.signature_html
     translation.activate(preference.language)
     setattr(request, "LANGUAGE_CODE", preference.language)  # noqa: B010
     try:

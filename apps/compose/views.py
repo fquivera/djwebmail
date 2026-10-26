@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Any, cast
 
 from django.conf import settings
@@ -24,6 +25,7 @@ from apps.accounts.exceptions import (
 from apps.accounts.services.session import (
     end_mail_session,
     get_mail_imap_service,
+    get_mail_signature,
     get_mail_smtp_service,
 )
 from apps.compose.attachments import (
@@ -41,6 +43,8 @@ from apps.compose.exceptions import (
 )
 from apps.compose.forms import ComposeForm
 from apps.compose.services import (
+    append_to_sent,
+    apply_signature,
     forward_initial,
     reply_all_initial,
     reply_initial,
@@ -56,7 +60,13 @@ def compose_new(request: HttpRequest) -> HttpResponse:
     """Render the compose form, restoring an autosaved draft when present."""
     session_key = _session_key(request)
     draft = load_draft(session_key)
-    initial = draft.as_initial() if draft else None
+    signature = get_mail_signature(request)
+    if draft:
+        initial: dict[str, str] | None = draft.as_initial()
+    elif signature:
+        initial = apply_signature({}, signature)
+    else:
+        initial = None
     return _render_compose(
         request,
         session_key,
@@ -72,10 +82,11 @@ def compose_reply(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
     message = _fetch_message(request, folder_name, uid)
     if isinstance(message, HttpResponse):
         return message
+    initial = apply_signature(reply_initial(message), get_mail_signature(request))
     return _render_compose(
         request,
         _session_key(request),
-        ComposeForm(initial=reply_initial(message)),
+        ComposeForm(initial=initial),
     )
 
 
@@ -88,10 +99,14 @@ def compose_reply_all(request: HttpRequest, folder_name: str, uid: int) -> HttpR
         return message
     account = getattr(request, "mail_account", None)
     account_email = account.email if account is not None else ""
+    initial = apply_signature(
+        reply_all_initial(message, account_email),
+        get_mail_signature(request),
+    )
     return _render_compose(
         request,
         _session_key(request),
-        ComposeForm(initial=reply_all_initial(message, account_email)),
+        ComposeForm(initial=initial),
     )
 
 
@@ -102,10 +117,11 @@ def compose_forward(request: HttpRequest, folder_name: str, uid: int) -> HttpRes
     message = _fetch_message(request, folder_name, uid)
     if isinstance(message, HttpResponse):
         return message
+    initial = apply_signature(forward_initial(message), get_mail_signature(request))
     return _render_compose(
         request,
         _session_key(request),
-        ComposeForm(initial=forward_initial(message)),
+        ComposeForm(initial=initial),
     )
 
 
@@ -126,7 +142,7 @@ def compose_send(request: HttpRequest) -> HttpResponse:
     attachments = load_attachments(session_key, _attachment_ids(request))
     try:
         with get_mail_smtp_service(request) as smtp:
-            send_message(
+            raw = send_message(
                 smtp,
                 sender=account.email,
                 to=form.cleaned_data["to"],
@@ -153,6 +169,10 @@ def compose_send(request: HttpRequest) -> HttpResponse:
             _("The message could not be sent. Check the recipients and try again."),
         )
         return _render_compose(request, session_key, form, status=422)
+
+    with suppress(MailError):
+        with get_mail_imap_service(request) as imap:
+            append_to_sent(imap, raw)
 
     clear_draft(session_key)
     clear_attachments(session_key)
