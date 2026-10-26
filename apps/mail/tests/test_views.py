@@ -245,6 +245,35 @@ def _search_page(*, total: int = 1, next_page: int | None = None) -> MessagePage
     )
 
 
+def _global_search_page(*, next_page: int | None = None) -> MessagePage:
+    return MessagePage(
+        folder="INBOX",
+        page=1,
+        page_size=50,
+        total=2,
+        page_count=2 if next_page else 1,
+        messages=(
+            MessageSummary(
+                uid=7,
+                subject="Hello from global search",
+                sender="Alice <alice@example.com>",
+                recipients="Bob <bob@example.com>",
+                date=datetime(2026, 10, 22, 10, 0, tzinfo=UTC),
+                flags=(),
+                size=1024,
+                is_seen=False,
+                is_flagged=False,
+                folder="Sent",
+            ),
+        ),
+        has_previous=False,
+        has_next=next_page is not None,
+        previous_page=None,
+        next_page=next_page,
+        query_string="folder=INBOX&scope=all&q=hello",
+    )
+
+
 @pytest.fixture
 def search_data(monkeypatch: pytest.MonkeyPatch) -> MessagePage:
     page = _search_page()
@@ -408,6 +437,108 @@ def test_search_rejects_reversed_dates_for_htmx(
     assert b"Check the search filters." in response.content
 
 
+def test_search_global_scope_passes_global_filters(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture_search(imap: Any, filters: Any, **kwargs: Any) -> SearchResult:
+        captured["filters"] = filters
+        return SearchResult(page=_global_search_page())
+
+    monkeypatch.setattr("apps.mail.views.search_messages", capture_search)
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "scope": "all", "q": "hello"},
+    )
+
+    assert response.status_code == 200
+    filters = captured["filters"]
+    assert filters.is_global is True
+    assert filters.scope == "all"
+
+
+def test_search_global_scope_shows_folder_and_global_pagination(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(page=_global_search_page(next_page=2)),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "scope": "all", "q": "hello"},
+    )
+
+    assert response.status_code == 200
+    assert b"Hello from global search" in response.content
+    assert b"Sent</span>" in response.content
+    assert b"folder=INBOX&amp;scope=all&amp;q=hello&amp;page=2" in response.content
+    assert b"All folders" in response.content
+
+
+def test_search_global_scope_htmx_updates_heading(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(page=_global_search_page()),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "scope": "all", "q": "hello"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    assert "mail/_search_response.html" in [item.name for item in response.templates]
+    assert b'hx-swap-oob="outerHTML"' in response.content
+    assert b"All folders" in response.content
+    assert b"<html" not in response.content
+
+
+def test_search_global_scope_shows_truncation_notice(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.search_messages",
+        lambda imap, filters, **kwargs: SearchResult(
+            page=_global_search_page(),
+            truncated=True,
+        ),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse("mail:search"),
+        {"folder": "INBOX", "scope": "all", "q": "hello"},
+    )
+
+    assert response.status_code == 200
+    assert b"Results are limited to the newest" in response.content
+
+
+def test_search_form_exposes_scope_selector(
+    logged_in_client: Client,
+    search_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(reverse("mail:search"), {"folder": "INBOX"})
+
+    assert response.status_code == 200
+    assert b'name="scope"' in response.content
+    assert b"All folders" in response.content
+
+
 def test_palette_requires_login(client: Client) -> None:
     response: Any = client.get(reverse("mail:palette"))
 
@@ -429,7 +560,7 @@ def test_palette_empty_query_does_not_search(
     assert response.status_code == 200
     template_names = [template.name for template in response.templates]
     assert "mail/_palette_results.html" in template_names
-    assert b"Type to search this folder." in response.content
+    assert b"Type to search all folders." in response.content
 
 
 def test_palette_rejects_long_query(logged_in_client: Client) -> None:
@@ -440,6 +571,31 @@ def test_palette_rejects_long_query(logged_in_client: Client) -> None:
 
     assert response.status_code == 200
     assert b"Check the search filters." in response.content
+
+
+def test_palette_uses_global_search(
+    logged_in_client: Client,
+    search_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture_search(imap: Any, filters: Any, **kwargs: Any) -> SearchResult:
+        captured["filters"] = filters
+        return SearchResult(page=_global_search_page())
+
+    monkeypatch.setattr("apps.mail.views.search_messages", capture_search)
+
+    response: Any = logged_in_client.get(
+        reverse("mail:palette"),
+        {"folder": "INBOX", "q": "hello"},
+    )
+
+    assert response.status_code == 200
+    assert captured["filters"].is_global is True
+    assert b"Hello from global search" in response.content
+    assert b"Sent" in response.content
+    assert b"scope=all" in response.content
 
 
 def test_palette_renders_current_folder_results(
@@ -530,6 +686,19 @@ def test_message_view_renders_full_page(
     assert b'<div class="when-flag-error">' in response.content
     assert b'class="alert alert-error text-sm"' in response.content
     assert b"alert alert-error when-flag-error" not in response.content
+
+
+def test_message_view_keeps_global_scope_for_flags(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"scope": "all", "view": "message"},
+    )
+
+    assert response.status_code == 200
+    assert b'name="scope" value="all"' in response.content
 
 
 def test_message_view_returns_fragment_for_htmx(
@@ -783,6 +952,7 @@ def _flags_double(
         size=1,
         is_seen="\\Seen" in flags,
         is_flagged="\\Flagged" in flags,
+        folder="INBOX",
     )
     detail = MessageDetail(
         uid=7,
@@ -859,6 +1029,22 @@ def test_message_flags_star_returns_only_oob_row(
     assert b'hx-swap-oob="outerHTML"' in response.content
     assert b'id="msg-7"' in response.content
     assert b"<article" not in response.content
+
+
+def test_message_flags_global_scope_keeps_folder_badge(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _flags_double(monkeypatch, flags=("\\Seen",))
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}),
+        {"action": "read", "scope": "all"},
+    )
+
+    assert response.status_code == 200
+    assert b"INBOX</span>" in response.content
+    assert b"scope=all" in response.content
 
 
 def test_message_flags_standalone_page_returns_no_content(

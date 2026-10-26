@@ -11,6 +11,14 @@ SEARCH_QUERY_MAX_LENGTH = 200
 SEARCH_ADDRESS_MAX_LENGTH = 320
 SEARCH_SUBJECT_MAX_LENGTH = 500
 
+# Search scope values are part of the query-string contract.
+SEARCH_SCOPE_FOLDER = "folder"
+SEARCH_SCOPE_ALL = "all"
+
+# A global search cannot scan an unbounded mailbox in one request. Keep at most
+# this many newest matches per folder; the UI reports when a folder was capped.
+GLOBAL_SEARCH_PER_FOLDER_LIMIT = 100
+
 # The command palette is an incremental search affordance, not a full result
 # page. Keep its response short enough to stay useful above the fold.
 PALETTE_MESSAGE_LIMIT = 8

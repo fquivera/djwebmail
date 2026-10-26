@@ -446,22 +446,25 @@ Done:
 - Accessibility polish: skip link and focusable main landmark, live-region
   messages, labelled fieldsets, hidden unread text, `aria-pressed` on message
   flags, and keyboard-readable focus styles.
-- Folder-scoped search: `/mail/search/` accepts `folder`, `q`, `from`, `to`,
+- Search: `/mail/search/` accepts `folder`, `scope`, `q`, `from`, `to`,
   `subject`, `date_from`, `date_to`, and `unread`; it reuses the message-list
-  partial, preserves filters in pagination, and retries in ASCII with a visible
-  notice when the server rejects UTF-8. See `docs/mail-search.md`.
+  partial, preserves filters in pagination, retries in ASCII with a visible
+  notice when the server rejects UTF-8, and searches every selectable folder
+  when `scope=all`. Global results merge by date, show the source folder, and
+  cap each folder at `GLOBAL_SEARCH_PER_FOLDER_LIMIT`. See
+  `docs/mail-search.md`.
 - Mail interaction layer: responsive `?view=list|message`, mobile folder
   drawer, native command palette, keyboard shortcuts, skeleton loading states,
   and optimistic read/star with revert. Alpine CSP 3.17.5 is vendored and only
   holds local state; HTMX still performs every mutation and returns HTML. See
   `docs/ui-interaction.md`, `docs/security-csp.md`, and `docs/phase-4.md`.
-- Command palette: `/mail/palette/` reuses folder-scoped search and lists
-  matching folders for the current folder. Global all-folder search remains
-  pending.
+- Command palette: `/mail/palette/` uses global search, shows the source folder
+  on every result, and can hand its query to the main search form in global
+  scope. It also lists matching selectable folders.
 
-Next: Phase 4 is defined in `docs/phase-4.md`. The only remaining deliverable
-is all-folder search; do not open new protocol areas before it closes with
-tests and a merged PR.
+Next: Phase 4 is complete. The next planned work is the deployment guide and
+the `v0.2.0` release. Do not open new protocol areas without a new phase
+document.
 
 ## 12. Anti-patterns
 

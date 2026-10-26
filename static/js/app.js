@@ -270,9 +270,22 @@
     var paletteSearch = event.target.closest("[data-palette-search]");
     if (paletteSearch) {
       event.preventDefault();
+      var paletteQuery = document.getElementById("palette-query");
       closeDialog(document.getElementById("command-palette"));
       showListView();
-      var search = document.querySelector('#search-form input[name="q"]');
+      var searchForm = document.getElementById("search-form");
+      var search = searchForm
+        ? searchForm.querySelector('input[name="q"]')
+        : null;
+      if (searchForm && search && paletteQuery && paletteQuery.value.trim()) {
+        search.value = paletteQuery.value;
+        var scope = searchForm.querySelector('select[name="scope"]');
+        if (scope && paletteSearch.getAttribute("data-palette-scope")) {
+          scope.value = paletteSearch.getAttribute("data-palette-scope");
+        }
+        searchForm.requestSubmit();
+        return;
+      }
       if (search) {
         search.focus();
         if (typeof search.select === "function") {

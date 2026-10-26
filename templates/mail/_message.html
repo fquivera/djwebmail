@@ -80,6 +80,7 @@
           value="{% if message.is_seen %}unread{% else %}read{% endif %}"
         >
         {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+        {% if search_scope == search_scope_all %}<input type="hidden" name="scope" value="{{ search_scope_all }}">{% endif %}
         <button
           type="button"
           class="btn btn-ghost btn-sm"
@@ -106,6 +107,7 @@
           value="{% if message.is_flagged %}unstar{% else %}star{% endif %}"
         >
         {% if standalone %}<input type="hidden" name="standalone" value="1">{% endif %}
+        {% if search_scope == search_scope_all %}<input type="hidden" name="scope" value="{{ search_scope_all }}">{% endif %}
         <button
           type="button"
           class="btn btn-ghost btn-sm"
