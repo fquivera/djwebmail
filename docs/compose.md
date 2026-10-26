@@ -8,6 +8,9 @@ the credentials already stored for the IMAP session.
 - `GET /compose/` renders an empty form.
 - `GET /compose/reply/<folder>/<uid>/` prefills `To` with the original sender
   and prefixes the subject with `Re:`.
+- `GET /compose/reply-all/<folder>/<uid>/` prefills `To` and `Cc` with all
+  original participants (excluding the active account address) and prefixes the
+  subject with `Re:`.
 - `GET /compose/forward/<folder>/<uid>/` prefixes the subject with `Fwd:` and
   quotes the original body as plain text.
 - `POST /compose/send/` validates the form and hands the message to SMTP.

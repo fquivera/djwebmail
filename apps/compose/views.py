@@ -40,7 +40,12 @@ from apps.compose.exceptions import (
     EmptyAttachmentError,
 )
 from apps.compose.forms import ComposeForm
-from apps.compose.services import forward_initial, reply_initial, send_message
+from apps.compose.services import (
+    forward_initial,
+    reply_all_initial,
+    reply_initial,
+    send_message,
+)
 from apps.mail.constants import IMAP_INBOX
 from apps.mail.services.message import MessageDetail, get_message
 
@@ -71,6 +76,22 @@ def compose_reply(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
         request,
         _session_key(request),
         ComposeForm(initial=reply_initial(message)),
+    )
+
+
+@never_cache
+@mail_login_required
+def compose_reply_all(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Render a compose form prefilled as a reply to all participants."""
+    message = _fetch_message(request, folder_name, uid)
+    if isinstance(message, HttpResponse):
+        return message
+    account = getattr(request, "mail_account", None)
+    account_email = account.email if account is not None else ""
+    return _render_compose(
+        request,
+        _session_key(request),
+        ComposeForm(initial=reply_all_initial(message, account_email)),
     )
 
 

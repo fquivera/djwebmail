@@ -20,7 +20,14 @@ CSP build; it never calls the network directly.
   SVG iconography (Inbox, Sent, Drafts, Trash, Spam, Archive) and active state pills.
 - The message list features a compact search bar with expandable filters and
   two-line message rows displaying the sender's monogram avatar, unread status dot,
-  date, star, subject, and size.
+  date, star, subject, and size. On hover or keyboard focus (`group-hover` /
+  `group-focus-within`), each row reveals a floating quick-action toolbar for
+  Reply, Reply All, Forward, Delete, Mark Read/Unread, and Flag/Star.
+- The message viewer displays a top subject bar with a back action, a sender
+  card with avatar monogram, expandable recipient details (`<details>`), a
+  right-aligned icon toolbar (Reply, Reply All, Forward, Delete, Mark
+  Read/Unread, Flag/Star, and Move to folder), and Carbonio-style attachment
+  cards above the message body.
 - An empty state in the reading pane provides a distraction-free visual anchor with
   keyboard navigation hints (`j`/`k`).
 - Below `lg`, the shell shows one panel. `/mail/` defaults to `view=list`;

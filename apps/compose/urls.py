@@ -9,6 +9,7 @@ from apps.compose.views import (
     compose_forward,
     compose_new,
     compose_reply,
+    compose_reply_all,
     compose_send,
 )
 
@@ -25,5 +26,6 @@ urlpatterns = [
         name="attachment_delete",
     ),
     path("reply/<path:folder_name>/<int:uid>/", compose_reply, name="reply"),
+    path("reply-all/<path:folder_name>/<int:uid>/", compose_reply_all, name="reply_all"),
     path("forward/<path:folder_name>/<int:uid>/", compose_forward, name="forward"),
 ]

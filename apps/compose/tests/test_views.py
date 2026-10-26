@@ -224,6 +224,43 @@ def test_compose_reply_prefills_sender(
     assert b'value="Re: Original subject"' in response.content
 
 
+def test_compose_reply_all_prefills_recipients_and_cc(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    group_detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Group thread",
+        sender="Alice <alice@example.com>",
+        recipients="user@example.com, Bob <bob@example.com>",
+        cc="Carol <carol@example.com>",
+        date=datetime(2026, 10, 22, 10, 0, tzinfo=UTC),
+        flags=(),
+        is_seen=False,
+        is_flagged=False,
+        body_kind="plain",
+        body_html="<p>Original body</p>",
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=False,
+    )
+    monkeypatch.setattr(
+        "apps.compose.views.get_mail_imap_service",
+        lambda request: FakeImapContext(),
+    )
+    monkeypatch.setattr("apps.compose.views.get_message", lambda imap, folder, uid: group_detail)
+
+    response: Any = logged_in_client.get(
+        reverse("compose:reply_all", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b'value="alice@example.com, bob@example.com"' in response.content
+    assert b'value="carol@example.com"' in response.content
+    assert b'value="Re: Group thread"' in response.content
+
+
 def test_compose_forward_prefills_quoted_body(
     logged_in_client: Client,
     monkeypatch: pytest.MonkeyPatch,

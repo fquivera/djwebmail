@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from email.message import EmailMessage
-from email.utils import formatdate, make_msgid, parseaddr
+from email.utils import formatdate, getaddresses, make_msgid, parseaddr
 from html import unescape
 
 from django.utils import formats
@@ -106,6 +106,42 @@ def reply_initial(message: MessageDetail) -> dict[str, str]:
     """Prefill the form for replying to ``message``."""
     return {
         "to": parseaddr(message.sender)[1],
+        "subject": _with_prefix(SUBJECT_REPLY_PREFIX, message.subject),
+    }
+
+
+def reply_all_initial(
+    message: MessageDetail,
+    account_email: str = "",
+) -> dict[str, str]:
+    """Prefill the form for replying to all participants of ``message``."""
+    own = account_email.strip().casefold()
+    sender_addr = parseaddr(message.sender)[1].strip()
+    to_list: list[str] = []
+    seen: set[str] = set()
+
+    if sender_addr:
+        to_list.append(sender_addr)
+        seen.add(sender_addr.casefold())
+
+    for _name, addr in getaddresses([message.recipients]):
+        clean = addr.strip()
+        lowered = clean.casefold()
+        if clean and lowered != own and lowered not in seen:
+            to_list.append(clean)
+            seen.add(lowered)
+
+    cc_list: list[str] = []
+    for _name, addr in getaddresses([message.cc]):
+        clean = addr.strip()
+        lowered = clean.casefold()
+        if clean and lowered != own and lowered not in seen:
+            cc_list.append(clean)
+            seen.add(lowered)
+
+    return {
+        "to": ", ".join(to_list),
+        "cc": ", ".join(cc_list),
         "subject": _with_prefix(SUBJECT_REPLY_PREFIX, message.subject),
     }
 
