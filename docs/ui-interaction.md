@@ -59,17 +59,20 @@ plain mouse click in the list does not steal focus.
 fragment for `#palette-results`.
 
 - An empty query returns a hint and does not contact IMAP.
-- A non-empty query reuses `search_messages` with `SearchFilters(folder, q)`.
-  Results are limited to the current folder by `PALETTE_MESSAGE_LIMIT`; global
-  search across every folder remains Phase 4 work.
+- A non-empty query reuses `search_messages` with
+  `SearchFilters(folder, scope=all, q)`. Results come from every selectable
+  folder, are merged by date, and are limited by `PALETTE_MESSAGE_LIMIT`.
+- Each result shows its folder badge, and its link carries `scope=all` into the
+  viewer so later flag updates keep the badge.
 - Selectable folder names that contain the query are listed separately and
   limited by `PALETTE_FOLDER_LIMIT`.
 - Message links target `#message-viewer` and push `?view=message`; folder links
   target `#message-list` and push `?view=list`.
-- The form reads the current folder from the search form with `hx-include`, so a
-  palette opened after folder navigation searches the new folder.
-- Choosing "Search this folder" closes the palette, switches the mobile shell to
-  the list, and focuses the search field.
+- The form still reads the current folder from the search form with
+  `hx-include`; global search ignores it as a search target but keeps it as the
+  folder-tree context.
+- Choosing "Search all folders" copies the palette query into the main search
+  form, selects the global scope, and submits it.
 - Invalid filters return `200` with the same alert convention as the search
   form, so HTMX swaps the error instead of silently ignoring a 4xx.
 - The palette is available in the `/mail/` shell. The full-page message route
@@ -108,9 +111,9 @@ the request fails.
 
 ## Tests
 
-- `apps/mail/tests/test_views.py` covers the palette branches, mobile `view`
-  selection, optimistic-form markers, the OOB-only flag response, and failure
-  status.
+- `apps/mail/tests/test_views.py` covers the palette branches, global palette
+  results and folder badges, mobile `view` selection, optimistic-form markers,
+  the OOB-only flag response, and failure status.
 - `tests/test_templates.py` continues to reject inline scripts, inline styles,
   `hx-on`, and `hx-vals="js:"`.
 - `tests/test_csp.py` keeps `unsafe-eval` and `unsafe-inline` out of the policy.
@@ -120,5 +123,7 @@ the request fails.
 - `docs/upstream/migracion-django-fase3.md` §4.4 (responsive panel selection
   and folder dialog), §5.3 (OOB swaps and `hx-swap="none"`), §7.4 (shortcuts
   dialog), and §8.4 (keyboard map).
-- `docs/upstream/migracion-django-fase3.md` §6.3 (folder-scoped search reused by
-  the palette).
+- `docs/upstream/migracion-django-fase3.md` §6.3 (search parameters and the
+  same-partial rule reused by the palette).
+- `docs/phase-4.md` (global scope, bounded per-folder query, deterministic
+  merge and pagination).

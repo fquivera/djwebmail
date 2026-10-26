@@ -16,10 +16,15 @@ areas.
    - ASCII retry and a visible notice when the IMAP server rejects `CHARSET
      UTF-8`.
    - See `docs/mail-search.md`.
-2. **Search across all selectable folders** — pending
-   - Reuse the folder-scoped service, query each selectable folder, merge by
-     date, and show the folder on every row.
-   - Requires a bounded per-folder query and a deterministic total/page model.
+2. **Search across all selectable folders** — done
+   - Reuses the folder-scoped service, queries each selectable `LIST` folder,
+     and merges by message date with folder-name/UID tie-breaks.
+   - Bounded to the newest `GLOBAL_SEARCH_PER_FOLDER_LIMIT` matches per folder;
+     the UI reports when a folder was capped.
+   - Every global row shows its folder and carries `scope=all` into the viewer.
+   - The command palette is global and its "Search all folders" action submits
+     the main search form in global scope.
+   - See `docs/mail-search.md`.
 3. **Keyboard shortcuts** — done
    - `c`, `/`, `j`/`k`, `Enter`, `r`, `e`, `m`, `u`, `?`, and `Escape` as
      specified in `docs/upstream/migracion-django-fase3.md` §8.4, plus the
@@ -34,10 +39,15 @@ areas.
    - Alpine CSP build for local state only; HTMX remains the only network path.
    - Optimistic read/star with revert and a visible alert on failure.
    - See `docs/ui-interaction.md` and `docs/security-csp.md`.
-5. **Close-out**
-   - Regression tests for both response branches, pagination, fallback, and
-     no-JavaScript behavior.
-   - Update this document and the affected skill when the contracts change.
+5. **Close-out** — done
+   - Regression tests for both response branches, pagination, fallback,
+     global merging/capping, viewer scope propagation, and no-JavaScript
+     behavior.
+   - This document, `docs/mail-search.md`, and `docs/ui-interaction.md` reflect
+     the final contracts.
+
+Phase 4 is complete. The next planned work is the deployment guide and the
+`v0.2.0` release; new protocol areas remain out of scope.
 
 ## Non-goals
 

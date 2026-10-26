@@ -5,7 +5,7 @@
   method="get"
   action="{% url 'mail:search' %}"
   hx-get="{% url 'mail:search' %}"
-  hx-trigger="input changed delay:400ms, search, submit"
+  hx-trigger="input changed delay:400ms, change, search, submit"
   hx-target="#message-list-results"
   hx-swap="innerHTML"
   hx-push-url="true"
@@ -19,6 +19,8 @@
     <div class="min-w-40 flex-1">
       {{ search_form.q }}
     </div>
+    <label class="sr-only" for="{{ search_form.scope.id_for_label }}">{{ search_form.scope.label }}</label>
+    {{ search_form.scope }}
     <button class="btn btn-sm" type="submit">{% translate "Search" %}</button>
     <a
       class="btn btn-ghost btn-sm"

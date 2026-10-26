@@ -1,18 +1,25 @@
-"""Folder-scoped IMAP search with validated filters and ASCII fallback."""
+"""Folder-scoped and global IMAP search with validated filters."""
 
 from __future__ import annotations
 
 import unicodedata
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
+from math import ceil
 from typing import Any
 from urllib.parse import urlencode
 
 from apps.accounts.exceptions import ImapProtocolError
-from apps.accounts.services.imap import ImapService
-from apps.mail.constants import IMAP_INBOX
-from apps.mail.services.mailbox import MessagePage, list_messages
+from apps.accounts.services.imap import Folder, ImapService
+from apps.mail.constants import (
+    FOLDER_FLAG_NOSELECT,
+    GLOBAL_SEARCH_PER_FOLDER_LIMIT,
+    IMAP_INBOX,
+    SEARCH_SCOPE_ALL,
+    SEARCH_SCOPE_FOLDER,
+)
+from apps.mail.services.mailbox import MessagePage, MessageSummary, list_messages, parse_summary
 
 
 @dataclass(frozen=True)
@@ -20,6 +27,7 @@ class SearchFilters:
     """The validated filters sent by the search form."""
 
     folder: str = IMAP_INBOX
+    scope: str = SEARCH_SCOPE_FOLDER
     q: str = ""
     from_address: str = ""
     to: str = ""
@@ -31,8 +39,12 @@ class SearchFilters:
     @classmethod
     def from_cleaned_data(cls, data: Mapping[str, Any]) -> SearchFilters:
         folder = data.get("folder") or IMAP_INBOX
+        scope = str(data.get("scope") or SEARCH_SCOPE_FOLDER)
+        if scope not in (SEARCH_SCOPE_FOLDER, SEARCH_SCOPE_ALL):
+            scope = SEARCH_SCOPE_FOLDER
         return cls(
             folder=str(folder),
+            scope=scope,
             q=str(data.get("q") or ""),
             from_address=str(data.get("from_") or ""),
             to=str(data.get("to") or ""),
@@ -41,6 +53,11 @@ class SearchFilters:
             date_to=data.get("date_to"),
             unread=bool(data.get("unread")),
         )
+
+    @property
+    def is_global(self) -> bool:
+        """Whether the search spans every selectable folder."""
+        return self.scope == SEARCH_SCOPE_ALL
 
     @property
     def is_active(self) -> bool:
@@ -88,6 +105,8 @@ class SearchFilters:
     def query_string(self) -> str:
         """Serialize the filters for pagination links."""
         params: dict[str, str] = {"folder": self.folder}
+        if self.is_global:
+            params["scope"] = SEARCH_SCOPE_ALL
         if self.q:
             params["q"] = self.q
         if self.from_address:
@@ -111,6 +130,7 @@ class SearchResult:
 
     page: MessagePage
     used_ascii_fallback: bool = False
+    truncated: bool = False
 
 
 def search_messages(
@@ -120,7 +140,10 @@ def search_messages(
     page: int,
     page_size: int,
 ) -> SearchResult:
-    """Search the selected folder, retrying without UTF-8 when required."""
+    """Search one folder or every selectable folder, retrying without UTF-8."""
+    if filters.is_global:
+        return _search_all_folders(imap, filters, page=page, page_size=page_size)
+
     try:
         result = list_messages(
             imap,
@@ -143,6 +166,111 @@ def search_messages(
         )
         return SearchResult(page=result, used_ascii_fallback=True)
     return SearchResult(page=result)
+
+
+def _search_all_folders(
+    imap: ImapService,
+    filters: SearchFilters,
+    *,
+    page: int,
+    page_size: int,
+) -> SearchResult:
+    """Search every selectable folder and merge the newest matches by date.
+
+    IMAP has no cross-folder search. Each folder is queried independently and
+    capped to its newest ``GLOBAL_SEARCH_PER_FOLDER_LIMIT`` matches, so one
+    large folder cannot make the request unbounded. The merged page is stable
+    because it is ordered by message date, then folder name, then UID.
+    """
+    if page_size < 1:
+        raise ValueError("page_size must be positive")
+
+    folders = _selectable_folder_names(imap)
+    try:
+        messages, truncated = _collect_global_messages(
+            imap,
+            folders,
+            criteria=filters.criteria(),
+            charset="UTF-8",
+        )
+    except ImapProtocolError:
+        messages, truncated = _collect_global_messages(
+            imap,
+            folders,
+            criteria=filters.ascii_fallback().criteria(),
+            charset=None,
+        )
+        used_ascii_fallback = True
+    else:
+        used_ascii_fallback = False
+
+    ordered = sorted(messages, key=_newest_first)
+    total = len(ordered)
+    page_count = max(1, ceil(total / page_size))
+    current_page = min(max(1, page), page_count)
+    start = (current_page - 1) * page_size
+    selected = tuple(ordered[start : start + page_size])
+
+    result = MessagePage(
+        folder=filters.folder,
+        page=current_page,
+        page_size=page_size,
+        total=total,
+        page_count=page_count,
+        messages=selected,
+        has_previous=current_page > 1,
+        has_next=current_page < page_count,
+        previous_page=current_page - 1 if current_page > 1 else None,
+        next_page=current_page + 1 if current_page < page_count else None,
+        query_string=filters.query_string(),
+    )
+    return SearchResult(
+        page=result,
+        used_ascii_fallback=used_ascii_fallback,
+        truncated=truncated,
+    )
+
+
+def _selectable_folder_names(imap: ImapService) -> tuple[str, ...]:
+    """Return stable, unique names for folders that can be selected."""
+    names: list[str] = []
+    for folder in imap.list_folders():
+        if not folder.name or not _is_selectable(folder):
+            continue
+        if folder.name not in names:
+            names.append(folder.name)
+    return tuple(sorted(names))
+
+
+def _is_selectable(folder: Folder) -> bool:
+    return not any(flag.casefold() == FOLDER_FLAG_NOSELECT.casefold() for flag in folder.flags)
+
+
+def _collect_global_messages(
+    imap: ImapService,
+    folders: Sequence[str],
+    *,
+    criteria: Sequence[object],
+    charset: str | None,
+) -> tuple[list[MessageSummary], bool]:
+    messages: list[MessageSummary] = []
+    truncated = False
+    for folder in folders:
+        imap.select(folder, readonly=True)
+        uids = sorted(imap.search(criteria, charset=charset) or [])
+        if len(uids) > GLOBAL_SEARCH_PER_FOLDER_LIMIT:
+            uids = uids[-GLOBAL_SEARCH_PER_FOLDER_LIMIT:]
+            truncated = True
+        if not uids:
+            continue
+        messages.extend(parse_summary(summary, folder) for summary in imap.fetch_summaries(uids))
+    return messages, truncated
+
+
+def _newest_first(message: MessageSummary) -> tuple[float, str, int]:
+    """Sort newest first, then by folder and UID for a deterministic page."""
+    timestamp = message.date.timestamp() if message.date else float("-inf")
+    return (-timestamp, message.folder, message.uid)
 
 
 def _ascii(value: str) -> str:

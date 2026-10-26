@@ -42,6 +42,7 @@ class MessageSummary:
     size: int
     is_seen: bool
     is_flagged: bool
+    folder: str = ""
 
 
 @dataclass(frozen=True)
@@ -135,7 +136,7 @@ def list_messages(
     end = total - (current_page - 1) * page_size
     start = max(0, end - page_size)
     summaries = imap.fetch_summaries(uids[start:end])
-    messages = tuple(_parse_summary(summary) for summary in reversed(summaries))
+    messages = tuple(parse_summary(summary, folder) for summary in reversed(summaries))
 
     return MessagePage(
         folder=folder,
@@ -164,7 +165,7 @@ def set_message_flags(
     imap.select(folder, readonly=False)
     imap.store_flags([uid], add=add, remove=remove)
     summaries = imap.fetch_summaries([uid])
-    return _parse_summary(summaries[0]) if summaries else None
+    return parse_summary(summaries[0], folder) if summaries else None
 
 
 def delete_message(imap: ImapService, folder: str, uid: int) -> None:
@@ -195,7 +196,8 @@ def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     )
 
 
-def _parse_summary(summary: FetchedSummary) -> MessageSummary:
+def parse_summary(summary: FetchedSummary, folder: str = "") -> MessageSummary:
+    """Turn one IMAP fetch result into the row read model."""
     try:
         headers = BytesHeaderParser(policy=policy.default).parsebytes(summary.headers)
     except Exception:
@@ -218,6 +220,7 @@ def _parse_summary(summary: FetchedSummary) -> MessageSummary:
         size=summary.size,
         is_seen=_has_flag(summary.flags, MESSAGE_FLAG_SEEN),
         is_flagged=_has_flag(summary.flags, MESSAGE_FLAG_FLAGGED),
+        folder=folder,
     )
 
 

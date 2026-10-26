@@ -3,12 +3,18 @@
   <div class="alert alert-error m-2 text-sm" role="alert">{{ palette_error }}</div>
 {% elif not q %}
   <p class="px-2 py-6 text-center text-sm text-base-content/60">
-    {% translate "Type to search this folder." %}
+    {% translate "Type to search all folders." %}
   </p>
 {% else %}
   {% if used_ascii_fallback %}
     <div class="alert alert-warning m-2 text-sm" role="status">
       {% translate "The server does not support UTF-8 search; results use an ASCII approximation." %}
+    </div>
+  {% endif %}
+
+  {% if truncated %}
+    <div class="alert alert-info m-2 text-sm" role="status">
+      {% blocktranslate with limit=global_search_limit %}Results are limited to the newest {{ limit }} matches per folder.{% endblocktranslate %}
     </div>
   {% endif %}
 
@@ -44,11 +50,12 @@
       </p>
       <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
         {% for message in page.messages %}
+          {% with message_folder=message.folder|default:folder_name %}
           <li>
             <a
               class="flex flex-col gap-1 rounded-md px-2 py-2 text-sm hover:bg-base-200"
-              href="{% url 'mail:message' folder_name message.uid %}?view=message"
-              hx-get="{% url 'mail:message' folder_name message.uid %}?view=message"
+              href="{% url 'mail:message' message_folder message.uid %}?view=message&amp;scope={{ search_scope_all }}"
+              hx-get="{% url 'mail:message' message_folder message.uid %}?view=message&amp;scope={{ search_scope_all }}"
               hx-target="#message-viewer"
               hx-swap="innerHTML"
               hx-push-url="true"
@@ -64,6 +71,9 @@
                 {% endif %}
               </span>
               <span class="flex items-center gap-2 text-xs text-base-content/60">
+                {% if message.folder %}
+                  <span class="badge badge-ghost badge-sm">{{ message.folder }}</span>
+                {% endif %}
                 <span class="min-w-0 flex-1 truncate">
                   {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
                 </span>
@@ -73,6 +83,7 @@
               </span>
             </a>
           </li>
+          {% endwith %}
         {% endfor %}
       </ul>
     </div>
@@ -80,7 +91,7 @@
 
   {% if not folders and not page.messages %}
     <p class="px-2 py-6 text-center text-sm text-base-content/60">
-      {% translate "No matching messages or folders in this folder." %}
+      {% translate "No matching messages or folders." %}
     </p>
   {% endif %}
 {% endif %}

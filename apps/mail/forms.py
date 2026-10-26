@@ -10,6 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from apps.mail.constants import (
     SEARCH_ADDRESS_MAX_LENGTH,
     SEARCH_QUERY_MAX_LENGTH,
+    SEARCH_SCOPE_ALL,
+    SEARCH_SCOPE_FOLDER,
     SEARCH_SUBJECT_MAX_LENGTH,
 )
 
@@ -44,8 +46,22 @@ class MailSearchForm(forms.Form):
         required=False,
         widget=forms.HiddenInput(attrs={"id": "current-folder"}),
     )
+    scope = forms.ChoiceField(
+        label=_("Search scope"),
+        required=False,
+        choices=(
+            (SEARCH_SCOPE_FOLDER, _("This folder")),
+            (SEARCH_SCOPE_ALL, _("All folders")),
+        ),
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered select-sm",
+                "aria-label": _("Search scope"),
+            }
+        ),
+    )
     q = forms.CharField(
-        label=_("Search this folder"),
+        label=_("Search messages"),
         required=False,
         max_length=SEARCH_QUERY_MAX_LENGTH,
         strip=True,
@@ -114,6 +130,8 @@ class MailSearchForm(forms.Form):
 
     def clean(self) -> dict[str, Any]:
         cleaned = super().clean()
+        if not cleaned.get("scope"):
+            cleaned["scope"] = SEARCH_SCOPE_FOLDER
         date_from = cleaned.get("date_from")
         date_to = cleaned.get("date_to")
         if date_from and date_to and date_from > date_to:

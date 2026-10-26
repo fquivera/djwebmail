@@ -5,10 +5,11 @@
   data-unread="{% if message.is_seen %}false{% else %}true{% endif %}"
   {% if oob %}hx-swap-oob="outerHTML"{% endif %}
 >
+  {% with message_folder=message.folder|default:folder_name %}
   <a
     class="mail-row grid gap-1 px-1 transition-colors hover:bg-base-200 sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
-    href="{% url 'mail:message' folder_name message.uid %}?view=message"
-    hx-get="{% url 'mail:message' folder_name message.uid %}?view=message"
+    href="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
+    hx-get="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
     hx-target="#message-viewer"
     hx-swap="innerHTML"
     hx-push-url="true"
@@ -32,6 +33,9 @@
       {% if not message.is_seen %}
         <span class="mail-unread sr-only">{% translate "Unread" %}</span>
       {% endif %}
+      {% if show_folder and message.folder %}
+        <span class="text-xs text-base-content/60">{{ message.folder }}</span>
+      {% endif %}
     </div>
     <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/60 sm:justify-end">
       {% if message.is_flagged %}
@@ -43,4 +47,5 @@
       {% endif %}
     </div>
   </a>
+  {% endwith %}
 </li>

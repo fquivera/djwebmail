@@ -21,12 +21,15 @@ from apps.accounts.services.session import (
     get_mail_page_size,
 )
 from apps.mail.constants import (
+    GLOBAL_SEARCH_PER_FOLDER_LIMIT,
     IMAGE_PROXY_ALLOWED_CONTENT_TYPES,
     IMAP_INBOX,
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
     PALETTE_FOLDER_LIMIT,
     PALETTE_MESSAGE_LIMIT,
+    SEARCH_SCOPE_ALL,
+    SEARCH_SCOPE_FOLDER,
 )
 from apps.mail.forms import MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
@@ -71,6 +74,10 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
         "search_form": MailSearchForm(initial={"folder": folder}),
         "search_active": False,
         "search_error": "",
+        "search_scope": SEARCH_SCOPE_FOLDER,
+        "search_scope_all": SEARCH_SCOPE_ALL,
+        "show_folder": False,
+        "truncated": False,
         "used_ascii_fallback": False,
         "pagination_url": reverse("mail:folder", kwargs={"folder_name": folder}),
         "query_string": "",
@@ -123,13 +130,18 @@ def search(request: HttpRequest) -> HttpResponse:
         "search_form": form,
         "search_active": filters.is_active,
         "search_error": "",
+        "search_scope": filters.scope,
+        "search_scope_all": SEARCH_SCOPE_ALL,
+        "show_folder": filters.is_global,
+        "truncated": result.truncated,
+        "global_search_limit": GLOBAL_SEARCH_PER_FOLDER_LIMIT,
         "used_ascii_fallback": result.used_ascii_fallback,
         "pagination_url": reverse("mail:search"),
         "query_string": filters.query_string(),
         "view": "list",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
-        return render(request, "mail/_message_list.html", context)
+        return render(request, "mail/_search_response.html", context)
     return render(request, "mail/index.html", context)
 
 
@@ -137,12 +149,10 @@ def search(request: HttpRequest) -> HttpResponse:
 @mail_login_required
 @require_GET
 def palette(request: HttpRequest) -> HttpResponse:
-    """Return the command-palette fragment for the current folder.
+    """Return the command-palette fragment for every selectable folder.
 
-    The palette is deliberately folder-scoped. Global search across every
-    selectable folder is still Phase 4 work, so this endpoint reuses
-    ``search_messages`` with a single folder instead of inventing a second
-    search model.
+    The palette uses the same global search service as the full search page, so
+    it never invents a second search model or pagination contract.
     """
     form = MailSearchForm(request.GET)
     folder_value = request.GET.get("folder")
@@ -153,7 +163,9 @@ def palette(request: HttpRequest) -> HttpResponse:
         "folders": (),
         "page": None,
         "palette_error": "",
+        "search_scope_all": SEARCH_SCOPE_ALL,
         "used_ascii_fallback": False,
+        "truncated": False,
     }
 
     if not form.is_valid():
@@ -171,7 +183,7 @@ def palette(request: HttpRequest) -> HttpResponse:
             folder_nodes = list_folders(imap)
             result = search_messages(
                 imap,
-                SearchFilters(folder=folder, q=query),
+                SearchFilters(folder=folder, scope=SEARCH_SCOPE_ALL, q=query),
                 page=1,
                 page_size=PALETTE_MESSAGE_LIMIT,
             )
@@ -188,6 +200,8 @@ def palette(request: HttpRequest) -> HttpResponse:
             "folders": _matching_folders(folder_nodes, query),
             "page": result.page,
             "used_ascii_fallback": result.used_ascii_fallback,
+            "truncated": result.truncated,
+            "global_search_limit": GLOBAL_SEARCH_PER_FOLDER_LIMIT,
         }
     )
     return render(request, "mail/_palette_results.html", context)
@@ -216,6 +230,8 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
         "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=False),
+        "search_scope": _search_scope(request),
+        "search_scope_all": SEARCH_SCOPE_ALL,
         "view": "message",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
@@ -306,7 +322,13 @@ def message_flags(request: HttpRequest, folder_name: str, uid: int) -> HttpRespo
     return render(
         request,
         "mail/_message_row.html",
-        {"message": summary, "folder_name": folder, "oob": True},
+        {
+            "message": summary,
+            "folder_name": folder,
+            "show_folder": request.POST.get("scope") == SEARCH_SCOPE_ALL,
+            "search_scope_all": SEARCH_SCOPE_ALL,
+            "oob": True,
+        },
     )
 
 
@@ -476,6 +498,11 @@ def _parse_page(value: str | None) -> int:
     return max(1, page)
 
 
+def _search_scope(request: HttpRequest) -> str:
+    """Return the validated search scope from the query string."""
+    return SEARCH_SCOPE_ALL if request.GET.get("scope") == SEARCH_SCOPE_ALL else SEARCH_SCOPE_FOLDER
+
+
 def _search_filter_error(
     request: HttpRequest,
     form: MailSearchForm,
@@ -489,13 +516,17 @@ def _search_filter_error(
         "search_form": form,
         "search_active": True,
         "search_error": _("Check the search filters."),
+        "search_scope": _search_scope(request),
+        "search_scope_all": SEARCH_SCOPE_ALL,
+        "show_folder": _search_scope(request) == SEARCH_SCOPE_ALL,
+        "truncated": False,
         "used_ascii_fallback": False,
         "pagination_url": reverse("mail:search"),
         "query_string": "",
         "view": "list",
     }
     if request.META.get("HTTP_HX_REQUEST") == "true":
-        return render(request, "mail/_message_list.html", context)
+        return render(request, "mail/_search_response.html", context)
     return render(request, "mail/index.html", context)
 
 

@@ -256,7 +256,7 @@ MIT — see the LICENSE file for details.
 ☑ Compose, reply, forward, send via SMTP<br>
 ☑ Per-user UI preferences (theme, density, signature)<br>
 ☑ Search within a folder<br>
-□ Search across all folders<br>
+☑ Search across all folders<br>
 ☑ Accessibility pass<br>
 ☑ Keyboard shortcuts and command palette<br>
 ☑ Responsive single-panel navigation and optimistic flags<br>

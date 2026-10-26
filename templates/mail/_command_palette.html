@@ -24,7 +24,7 @@
         name="q"
         type="search"
         class="input input-ghost input-lg w-full"
-        placeholder="{% translate 'Search this folder…' %}"
+        placeholder="{% translate 'Search all folders…' %}"
         autocomplete="off"
         data-dialog-autofocus
       >
@@ -36,15 +36,20 @@
     </form>
     <div id="palette-results" class="max-h-96 overflow-y-auto p-2" aria-live="polite">
       <p class="px-2 py-6 text-center text-sm text-base-content/60">
-        {% translate "Type to search this folder." %}
+        {% translate "Type to search all folders." %}
       </p>
     </div>
     <div class="flex flex-wrap items-center gap-2 border-t border-base-300 px-4 py-3 text-sm">
       <a class="btn btn-ghost btn-sm" href="{% url 'compose:new' %}" data-palette-close>
         {% translate "Compose" %}
       </a>
-      <button type="button" class="btn btn-ghost btn-sm" data-palette-search>
-        {% translate "Search this folder" %}
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        data-palette-search
+        data-palette-scope="{{ search_scope_all }}"
+      >
+        {% translate "Search all folders" %}
       </button>
       <button
         type="button"

@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: DjWebmail\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-25 00:14+0000\n"
-"PO-Revision-Date: 2026-10-25 01:55+0000\n"
+"PO-Revision-Date: 2026-10-26 12:25+0000\n"
 "Last-Translator: DjWebmail contributors\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -148,10 +148,6 @@ msgstr "Ha alcanzado el límite de adjuntos."
 #: apps/compose/views.py:270
 msgid "Unable to load the message. Try again later."
 msgstr "No se pudo cargar el mensaje. Inténtelo de nuevo más tarde."
-
-#: apps/mail/forms.py:39
-msgid "Search this folder"
-msgstr "Buscar en esta carpeta"
 
 #: apps/mail/forms.py:52 templates/mail/_message.html:9
 msgid "From"
@@ -570,9 +566,6 @@ msgstr "Paleta de comandos"
 msgid "Search messages and folders"
 msgstr "Buscar mensajes y carpetas"
 
-msgid "Type to search this folder."
-msgstr "Escriba para buscar en esta carpeta."
-
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
 
@@ -584,9 +577,6 @@ msgstr "Marcar como no leído"
 
 msgid "Mark as read"
 msgstr "Marcar como leído"
-
-msgid "No matching messages or folders in this folder."
-msgstr "No hay mensajes ni carpetas coincidentes en esta carpeta."
 
 msgid "Shortcuts do not fire while you are typing in a field."
 msgstr "Los atajos no se activan mientras escribe en un campo."
@@ -618,5 +608,42 @@ msgstr "Cerrar un diálogo o panel"
 msgid "Open command palette"
 msgstr "Abrir la paleta de comandos"
 
-msgid "Search this folder…"
-msgstr "Buscar en esta carpeta…"
+#: apps/mail/forms.py:50 apps/mail/forms.py:59
+msgid "Search scope"
+msgstr "Ámbito de búsqueda"
+
+#: apps/mail/forms.py:53
+msgid "This folder"
+msgstr "Esta carpeta"
+
+#: apps/mail/forms.py:54 templates/mail/_folder_heading.html:8
+msgid "All folders"
+msgstr "Todas las carpetas"
+
+#: apps/mail/forms.py:64
+msgid "Search messages"
+msgstr "Buscar mensajes"
+
+#: templates/mail/_command_palette.html:27
+msgid "Search all folders…"
+msgstr "Buscar en todas las carpetas…"
+
+#: templates/mail/_command_palette.html:39
+#: templates/mail/_palette_results.html:6
+msgid "Type to search all folders."
+msgstr "Escriba para buscar en todas las carpetas."
+
+#: templates/mail/_command_palette.html:52
+msgid "Search all folders"
+msgstr "Buscar en todas las carpetas"
+
+#: templates/mail/_message_list.html:13
+#: templates/mail/_palette_results.html:17
+msgid "Results are limited to the newest %(limit)s matches per folder."
+msgstr ""
+"Los resultados se limitan a las %(limit)s coincidencias más recientes por "
+"carpeta."
+
+#: templates/mail/_palette_results.html:94
+msgid "No matching messages or folders."
+msgstr "No hay mensajes ni carpetas coincidentes."
