@@ -110,6 +110,7 @@ def compose_send(request: HttpRequest) -> HttpResponse:
                 sender=account.email,
                 to=form.cleaned_data["to"],
                 cc=form.cleaned_data["cc"],
+                bcc=form.cleaned_data.get("bcc", []),
                 subject=form.cleaned_data["subject"],
                 body=form.cleaned_data["body"],
                 attachments=attachments,
@@ -179,6 +180,7 @@ def compose_draft(request: HttpRequest) -> HttpResponse:
         session_key,
         to=_post_text(request, "to"),
         cc=_post_text(request, "cc"),
+        bcc=_post_text(request, "bcc"),
         subject=_post_text(request, "subject"),
         body=_post_text(request, "body"),
     )

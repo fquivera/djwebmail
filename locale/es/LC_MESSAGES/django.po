@@ -647,3 +647,45 @@ msgstr ""
 #: templates/mail/_palette_results.html:94
 msgid "No matching messages or folders."
 msgstr "No hay mensajes ni carpetas coincidentes."
+
+msgid "Bcc"
+msgstr "CCO"
+
+msgid "Plain text"
+msgstr "Texto sin formato"
+
+msgid "Rich text"
+msgstr "Texto enriquecido"
+
+msgid "Toggle formatting"
+msgstr "Alternar formato"
+
+msgid "Bold"
+msgstr "Negrita"
+
+msgid "Italic"
+msgstr "Cursiva"
+
+msgid "Underline"
+msgstr "Subrayado"
+
+msgid "Strikethrough"
+msgstr "Tachado"
+
+msgid "Bullet list"
+msgstr "Lista con viñetas"
+
+msgid "Numbered list"
+msgstr "Lista numerada"
+
+msgid "Align left"
+msgstr "Alinear a la izquierda"
+
+msgid "Align center"
+msgstr "Centrar"
+
+msgid "Align right"
+msgstr "Alinear a la derecha"
+
+msgid "Clear formatting"
+msgstr "Limpiar formato"

@@ -36,6 +36,16 @@ class ComposeForm(forms.Form):
             }
         ),
     )
+    bcc = forms.CharField(
+        label=_("Bcc"),
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "class": "input w-full",
+            }
+        ),
+    )
     subject = forms.CharField(
         label=_("Subject"),
         max_length=MAX_SUBJECT_LENGTH,
@@ -53,6 +63,9 @@ class ComposeForm(forms.Form):
 
     def clean_cc(self) -> list[str]:
         return _clean_addresses(self.cleaned_data["cc"], required=False)
+
+    def clean_bcc(self) -> list[str]:
+        return _clean_addresses(self.cleaned_data.get("bcc", ""), required=False)
 
     def clean_subject(self) -> str:
         subject = self.cleaned_data["subject"]

@@ -137,6 +137,28 @@ def test_build_message_falls_back_for_invalid_content_type() -> None:
     assert part.get_content_type() == "application/octet-stream"
 
 
+def test_build_message_assembles_html_alternative_when_html_is_present() -> None:
+    message = build_message(
+        sender="user@example.com",
+        to=["alice@example.com"],
+        cc=[],
+        bcc=["blind@example.com"],
+        subject="HTML Test",
+        body="<p>Hello <b>world</b></p>",
+    )
+
+    assert message.is_multipart()
+    assert message.get_content_type() == "multipart/alternative"
+    parts = list(message.iter_parts())
+    assert len(parts) == 2
+    assert parts[0].get_content_type() == "text/plain"
+    assert "Hello world" in str(parts[0].get_content())
+    assert parts[1].get_content_type() == "text/html"
+    assert "<p>Hello <b>world</b></p>" in str(parts[1].get_content())
+    # Bcc header must NOT appear in the message headers
+    assert "Bcc" not in message
+
+
 def test_send_message_uses_all_recipients() -> None:
     smtp = FakeSmtp()
 
@@ -145,6 +167,7 @@ def test_send_message_uses_all_recipients() -> None:
         sender="user@example.com",
         to=["alice@example.com"],
         cc=["carol@example.com"],
+        bcc=["dave@example.com"],
         subject="Hello",
         body="Body",
     )
@@ -152,5 +175,6 @@ def test_send_message_uses_all_recipients() -> None:
     assert smtp.sent is not None
     sender, recipients, raw = smtp.sent
     assert sender == "user@example.com"
-    assert recipients == ["alice@example.com", "carol@example.com"]
+    assert recipients == ["alice@example.com", "carol@example.com", "dave@example.com"]
     assert b"Subject: Hello" in raw
+    assert b"Bcc:" not in raw

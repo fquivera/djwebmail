@@ -1,28 +1,33 @@
 {% load i18n %}
 {% if attachment_error %}
-  <div class="alert alert-error text-sm" role="alert">{{ attachment_error }}</div>
+  <div class="alert alert-error text-xs mb-2" role="alert">{{ attachment_error }}</div>
 {% endif %}
 {% if attachments %}
-  <ul class="space-y-1">
+  <div class="flex flex-wrap gap-2 pt-1" aria-label="{% translate 'Attachments' %}">
     {% for attachment in attachments %}
-      <li class="flex items-center justify-between gap-2 text-sm">
-        <span class="min-w-0 truncate">
-          {{ attachment.name }}
-          <span class="text-base-content/60">({{ attachment.size|filesizeformat }})</span>
-        </span>
+      <div class="badge badge-lg gap-2 py-3 px-3 rounded-lg border border-base-300 bg-base-200/60 shadow-2xs text-xs font-normal max-w-full">
+        <svg class="size-3.5 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span class="truncate max-w-48 font-medium text-base-content">{{ attachment.name }}</span>
+        <span class="text-[11px] text-base-content/60 shrink-0">({{ attachment.size|filesizeformat }})</span>
         <button
           type="button"
-          class="btn btn-ghost btn-xs"
+          class="btn btn-ghost btn-circle btn-xs size-4 min-h-0 text-base-content/50 hover:text-error"
           hx-post="{% url 'compose:attachment_delete' attachment.id %}"
           hx-target="#attachment-list"
           hx-swap="innerHTML"
+          title="{% translate 'Remove' %}"
+          aria-label="{% translate 'Remove' %}"
         >
-          {% translate "Remove" %}
+          <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
         <input type="hidden" name="attachment_ids" value="{{ attachment.id }}">
-      </li>
+      </div>
     {% endfor %}
-  </ul>
-{% else %}
-  <p class="text-sm text-base-content/60">{% translate "No attachments." %}</p>
+  </div>
 {% endif %}

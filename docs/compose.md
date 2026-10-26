@@ -83,10 +83,31 @@ logs.
 - CSRF protection through the Django form token.
 - Header injection is rejected before assembly: no `\r` or `\n` in recipients or
   subject.
-- The body is sent as `text/plain`; no user HTML is rendered or forwarded.
-- Recipient count is bounded by `MAX_RECIPIENTS`.
+- The body supports rich HTML with an automatic plain-text fallback assembled via
+  `multipart/alternative`. When no HTML markup is detected, messages are sent as
+  pure `text/plain`.
+- Recipient count is bounded by `MAX_RECIPIENTS` across `To`, `Cc`, and `Bcc`.
+- `Bcc` addresses are sent via SMTP envelope recipients but omitted from the
+  RFC 5322 message headers.
 - SMTP failures surface fixed translated messages, never server responses or
   credentials.
+
+## Rich text editor and compose interface
+
+- Carbonio-inspired layout with a sticky top action bar: "Back to mail", file
+  attachment trigger, formatting mode toggle ("Rich text" / "Plain text"), and
+  prominent "Send" button.
+- Progressive enhancement via Alpine CSP (`static/js/compose.js`):
+  - Inline `CC` and `CCO` (BCC) buttons in the recipient row toggle additional
+    address inputs on demand without cluttering the screen.
+  - Rich text toolbar with bold, italic, underline, strikethrough, lists,
+    alignment, and clear formatting commands.
+  - Sits on top of a `contenteditable="true"` element that synchronizes with the
+    hidden `name="body"` textarea on input, keeping HTMX draft autosave fully
+    functional.
+  - Switching to "Plain text" strips HTML and exposes the textarea directly.
+- Attachments render as compact visual chips with file icons, formatted byte sizes,
+  and removal buttons.
 
 ## Reply and forward
 

@@ -29,18 +29,22 @@ class Draft:
     cc: str
     subject: str
     body: str
+    bcc: str = ""
 
     def as_initial(self) -> dict[str, str]:
         return {
             "to": self.to,
             "cc": self.cc,
+            "bcc": self.bcc,
             "subject": self.subject,
             "body": self.body,
         }
 
     @property
     def is_empty(self) -> bool:
-        return not any(part.strip() for part in (self.to, self.cc, self.subject, self.body))
+        return not any(
+            part.strip() for part in (self.to, self.cc, self.bcc, self.subject, self.body)
+        )
 
 
 def save_draft(
@@ -48,6 +52,7 @@ def save_draft(
     *,
     to: str,
     cc: str,
+    bcc: str = "",
     subject: str,
     body: str,
 ) -> None:
@@ -55,6 +60,7 @@ def save_draft(
     draft = Draft(
         to=to[:MAX_ADDRESS_FIELD_CHARS],
         cc=cc[:MAX_ADDRESS_FIELD_CHARS],
+        bcc=bcc[:MAX_ADDRESS_FIELD_CHARS],
         subject=subject[:MAX_SUBJECT_LENGTH],
         body=body[:MAX_DRAFT_BODY_CHARS],
     )
@@ -76,6 +82,7 @@ def load_draft(session_key: str) -> Draft | None:
     return Draft(
         to=str(value.get("to", "")),
         cc=str(value.get("cc", "")),
+        bcc=str(value.get("bcc", "")),
         subject=str(value.get("subject", "")),
         body=str(value.get("body", "")),
     )
