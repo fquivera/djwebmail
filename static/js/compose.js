@@ -1,8 +1,9 @@
 /* Progressive UI behaviors for the compose editor.
  *
  * Alpine component for recipient toggles (Cc/Bcc), Rich Text / Plain Text
- * toggling, formatting commands via document.execCommand, and synchronization
- * between contenteditable and the form textarea.
+ * toggling, formatting commands via document.execCommand, active button state
+ * tracking via document.queryCommandState, and synchronization between
+ * contenteditable and the form textarea.
  */
 (function () {
   "use strict";
@@ -17,6 +18,15 @@
         showCc: false,
         showBcc: false,
         richText: true,
+        isBold: false,
+        isItalic: false,
+        isUnderline: false,
+        isStrike: false,
+        isBullet: false,
+        isNumbered: false,
+        isLeft: false,
+        isCenter: false,
+        isRight: false,
         get isPlain() {
           return !this.richText;
         },
@@ -30,6 +40,36 @@
             this.showBcc = true;
           }
           this.initEditorContent();
+
+          var self = this;
+          document.addEventListener("selectionchange", function () {
+            if (
+              self.richText &&
+              self.$refs.editor &&
+              (document.activeElement === self.$refs.editor ||
+                self.$refs.editor.contains(document.activeElement))
+            ) {
+              self.updateFormatState();
+            }
+          });
+        },
+        updateFormatState() {
+          if (!this.richText || !this.$refs.editor) {
+            return;
+          }
+          try {
+            this.isBold = document.queryCommandState("bold");
+            this.isItalic = document.queryCommandState("italic");
+            this.isUnderline = document.queryCommandState("underline");
+            this.isStrike = document.queryCommandState("strikeThrough");
+            this.isBullet = document.queryCommandState("insertUnorderedList");
+            this.isNumbered = document.queryCommandState("insertOrderedList");
+            this.isLeft = document.queryCommandState("justifyLeft");
+            this.isCenter = document.queryCommandState("justifyCenter");
+            this.isRight = document.queryCommandState("justifyRight");
+          } catch (e) {
+            // queryCommandState can throw if selection is outside
+          }
         },
         toggleCc() {
           this.showCc = !this.showCc;
@@ -73,6 +113,7 @@
             window.setTimeout(function () {
               if (self2.$refs.editor) {
                 self2.$refs.editor.focus();
+                self2.updateFormatState();
               }
             }, 50);
           }
@@ -116,6 +157,7 @@
             this.$refs.editor.focus();
           }
           document.execCommand(command, false, value || null);
+          this.updateFormatState();
           this.syncToTextarea();
         },
         initEditorContent() {
@@ -123,11 +165,25 @@
             return;
           }
           var val = this.$refs.bodyInput.value || "";
-          if (val && !val.includes("<p>") && !val.includes("<div>") && !val.includes("<br>")) {
+          if (
+            val &&
+            !val.includes("<p>") &&
+            !val.includes("<div>") &&
+            !val.includes("<br>") &&
+            !val.includes("<ul>") &&
+            !val.includes("<ol>")
+          ) {
             this.$refs.editor.innerHTML = this.escapeHtmlToParagraphs(val);
           } else {
             this.$refs.editor.innerHTML = val || "<p><br></p>";
           }
+        },
+        onEditorInput() {
+          this.updateFormatState();
+          this.syncToTextarea();
+        },
+        onEditorActivity() {
+          this.updateFormatState();
         },
         syncToTextarea() {
           if (!this.$refs.editor || !this.$refs.bodyInput) {
@@ -151,11 +207,13 @@
             return "<p><br></p>";
           }
           var lines = text.split(/\r?\n/);
-          return lines.map(function (line) {
-            var div = document.createElement("div");
-            div.textContent = line;
-            return "<p>" + (div.innerHTML || "<br>") + "</p>";
-          }).join("");
+          return lines
+            .map(function (line) {
+              var div = document.createElement("div");
+              div.textContent = line;
+              return "<p>" + (div.innerHTML || "<br>") + "</p>";
+            })
+            .join("");
         },
         triggerDraftAutosave() {
           if (this.$refs.bodyInput) {

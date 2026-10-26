@@ -175,29 +175,92 @@
         x-show="richText"
       >
         <div class="join">
-          <button type="button" class="join-item btn btn-ghost btn-xs font-bold" title="{% translate 'Bold' %}" @mousedown.prevent @click="bold()">B</button>
-          <button type="button" class="join-item btn btn-ghost btn-xs italic font-serif" title="{% translate 'Italic' %}" @mousedown.prevent @click="italic()">I</button>
-          <button type="button" class="join-item btn btn-ghost btn-xs underline" title="{% translate 'Underline' %}" @mousedown.prevent @click="underline()">U</button>
-          <button type="button" class="join-item btn btn-ghost btn-xs line-through" title="{% translate 'Strikethrough' %}" @mousedown.prevent @click="strikeThrough()">S</button>
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs font-bold"
+            x-bind:class="isBold ? 'btn-active bg-base-300 text-primary font-black' : ''"
+            title="{% translate 'Bold' %}"
+            @mousedown.prevent
+            @click="bold()"
+          >B</button>
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs italic font-serif"
+            x-bind:class="isItalic ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Italic' %}"
+            @mousedown.prevent
+            @click="italic()"
+          >I</button>
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs underline"
+            x-bind:class="isUnderline ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Underline' %}"
+            @mousedown.prevent
+            @click="underline()"
+          >U</button>
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs line-through"
+            x-bind:class="isStrike ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Strikethrough' %}"
+            @mousedown.prevent
+            @click="strikeThrough()"
+          >S</button>
         </div>
         <div class="divider divider-horizontal my-0.5 mx-1"></div>
         <div class="join">
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Bullet list' %}" @mousedown.prevent @click="bulletList()">
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs"
+            x-bind:class="isBullet ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Bullet list' %}"
+            @mousedown.prevent
+            @click="bulletList()"
+          >
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Numbered list' %}" @mousedown.prevent @click="numberedList()">
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs"
+            x-bind:class="isNumbered ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Numbered list' %}"
+            @mousedown.prevent
+            @click="numberedList()"
+          >
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
           </button>
         </div>
         <div class="divider divider-horizontal my-0.5 mx-1"></div>
         <div class="join">
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align left' %}" @mousedown.prevent @click="alignLeft()">
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs"
+            x-bind:class="isLeft ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Align left' %}"
+            @mousedown.prevent
+            @click="alignLeft()"
+          >
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
           </button>
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align center' %}" @mousedown.prevent @click="alignCenter()">
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs"
+            x-bind:class="isCenter ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Align center' %}"
+            @mousedown.prevent
+            @click="alignCenter()"
+          >
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>
           </button>
-          <button type="button" class="join-item btn btn-ghost btn-xs" title="{% translate 'Align right' %}" @mousedown.prevent @click="alignRight()">
+          <button
+            type="button"
+            class="join-item btn btn-ghost btn-xs"
+            x-bind:class="isRight ? 'btn-active bg-base-300 text-primary' : ''"
+            title="{% translate 'Align right' %}"
+            @mousedown.prevent
+            @click="alignRight()"
+          >
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
           </button>
         </div>
@@ -212,8 +275,11 @@
           x-ref="editor"
           x-show="richText"
           contenteditable="true"
-          class="flex-1 min-h-72 focus:outline-none text-sm text-base-content leading-relaxed"
-          @input="syncToTextarea()"
+          class="compose-editor flex-1 min-h-72 focus:outline-none text-sm text-base-content leading-relaxed"
+          @input="onEditorInput()"
+          @keyup="onEditorActivity()"
+          @mouseup="onEditorActivity()"
+          @focus="onEditorActivity()"
         ></div>
 
         <textarea
