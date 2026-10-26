@@ -2,8 +2,10 @@
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import override_settings
+from django.utils import translation
 
 from apps.preferences.constants import Density, Layout, RemoteImages, Theme
 from apps.preferences.models import MailPreference
@@ -88,3 +90,8 @@ def test_email_is_validated():
     with pytest.raises(ValidationError) as exc_info:
         preference.full_clean()
     assert "email" in exc_info.value.message_dict
+
+
+def test_verbose_names_are_lazy_and_migrations_match_in_spanish():
+    with translation.override("es"):
+        call_command("makemigrations", check=True, dry_run=True)
