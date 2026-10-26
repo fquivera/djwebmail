@@ -27,10 +27,12 @@ The form exposes only choices that the current application applies:
 | `theme` | `light`, `dark`, or `system`; mapped to the daisyUI themes. |
 | `density` | `compact` or `comfortable`; controls the message-row height. |
 | `page_size` | Page size for the folder message list, bounded by settings. |
+| `remote_images` | `ask`, `always`, or `never`; controls whether remote images load through `/mail/image-proxy/` automatically or on demand. |
+| `signature_html` | Account signature prefilled in compose, reply, and forward forms. |
 
-`layout`, `use_threads`, `html_allowed`, `remote_images`, and
-`signature_html` remain in the model but are deliberately not exposed yet:
-their runtime behavior is not implemented, so showing them would be misleading.
+`layout`, `use_threads`, and `html_allowed` remain in the model but are
+deliberately not exposed yet: their runtime behavior is not implemented, so
+showing them would be misleading.
 
 ## Precedence and persistence
 

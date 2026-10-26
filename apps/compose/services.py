@@ -16,6 +16,7 @@ from html import unescape
 from django.utils import formats
 from django.utils.translation import gettext as _
 
+from apps.accounts.services.imap import ImapService
 from apps.accounts.services.smtp import SmtpService
 from apps.compose.attachments import Attachment
 from apps.compose.constants import (
@@ -23,8 +24,11 @@ from apps.compose.constants import (
     SUBJECT_FORWARD_PREFIX,
     SUBJECT_REPLY_PREFIX,
 )
+from apps.mail.constants import FOLDER_FLAG_NOSELECT, MESSAGE_FLAG_SEEN
 from apps.mail.services.message import MessageDetail
 
+_SENT_FOLDER_NAMES = frozenset({"sent", "sent messages", "sent items", "enviados"})
+_SENT_FOLDER_FLAG = "\\sent"
 _TAG_PATTERN = re.compile(r"<[^>]+>")
 _SPACE_PATTERN = re.compile(r"[ \t\u00a0]+")
 _HTML_TAGS_PATTERN = re.compile(
@@ -76,8 +80,8 @@ def send_message(
     subject: str,
     body: str,
     attachments: Sequence[Attachment] = (),
-) -> None:
-    """Build the message and hand it to SMTP for every recipient."""
+) -> bytes:
+    """Build the message, hand it to SMTP for every recipient, and return raw bytes."""
     message = build_message(
         sender=sender,
         to=to,
@@ -87,7 +91,44 @@ def send_message(
         body=body,
         attachments=attachments,
     )
-    smtp.send(sender, [*to, *cc, *bcc], message.as_bytes())
+    raw = message.as_bytes()
+    smtp.send(sender, [*to, *cc, *bcc], raw)
+    return raw
+
+
+def append_to_sent(imap: ImapService, raw: bytes) -> bool:
+    """Append a sent message to the account's Sent folder when present."""
+    if not hasattr(imap, "list_folders") or not hasattr(imap, "append"):
+        return False
+    folders = imap.list_folders()
+    target = ""
+    for folder in folders:
+        if any(flag.casefold() == FOLDER_FLAG_NOSELECT.casefold() for flag in folder.flags):
+            continue
+        if any(flag.casefold() == _SENT_FOLDER_FLAG for flag in folder.flags):
+            target = folder.name
+            break
+        leaf = folder.name.rsplit(folder.delimiter, 1)[-1] if folder.delimiter else folder.name
+        if leaf.casefold() in _SENT_FOLDER_NAMES or folder.name.casefold() in _SENT_FOLDER_NAMES:
+            target = folder.name
+    if not target:
+        return False
+    imap.append(target, raw, flags=(MESSAGE_FLAG_SEEN,))
+    return True
+
+
+def apply_signature(initial: dict[str, str], signature: str) -> dict[str, str]:
+    """Attach the account signature to the initial compose fields when non-empty."""
+    clean_sig = signature.strip()
+    if not clean_sig:
+        return initial
+    updated = dict(initial)
+    existing = updated.get("body", "").strip()
+    if existing:
+        updated["body"] = f"\n\n-- \n{clean_sig}\n\n{existing}"
+    else:
+        updated["body"] = f"\n\n-- \n{clean_sig}"
+    return updated
 
 
 def _add_attachment(message: EmailMessage, attachment: Attachment) -> None:

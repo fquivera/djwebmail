@@ -10,7 +10,7 @@ from django import forms
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-from apps.preferences.constants import PAGE_SIZE_MIN
+from apps.preferences.constants import PAGE_SIZE_MIN, RemoteImages
 from apps.preferences.models import MailPreference
 
 
@@ -28,13 +28,23 @@ class MailPreferenceForm(forms.ModelForm):
 
     class Meta:
         model = MailPreference
-        fields = ("language", "timezone", "theme", "density", "page_size")
+        fields = (
+            "language",
+            "timezone",
+            "theme",
+            "density",
+            "page_size",
+            "remote_images",
+            "signature_html",
+        )
         labels = {
             "language": _("Language"),
             "timezone": _("Time zone"),
             "theme": _("Theme"),
             "density": _("Density"),
             "page_size": _("Messages per page"),
+            "remote_images": _("Remote images"),
+            "signature_html": _("Signature"),
         }
         help_texts = {
             "language": _("Applies to this account after saving."),
@@ -43,6 +53,8 @@ class MailPreferenceForm(forms.ModelForm):
             "density": _("Compact shows more messages in the list."),
             "page_size": _("Between %(minimum)s and %(maximum)s.")
             % {"minimum": PAGE_SIZE_MIN, "maximum": settings.MAIL_MAX_PAGE_SIZE},
+            "remote_images": _("Controls whether external images are loaded through the proxy."),
+            "signature_html": _("Appended automatically when composing a new message or reply."),
         }
         widgets = {
             "language": forms.Select(attrs={"class": "select w-full"}),
@@ -56,14 +68,32 @@ class MailPreferenceForm(forms.ModelForm):
                     "max": settings.MAIL_MAX_PAGE_SIZE,
                 }
             ),
+            "remote_images": forms.Select(attrs={"class": "select w-full"}),
+            "signature_html": forms.Textarea(
+                attrs={
+                    "class": "textarea w-full text-sm",
+                    "rows": 3,
+                }
+            ),
         }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.fields["language"].widget.choices = settings.LANGUAGES
         self.fields["timezone"].widget.choices = timezone_choices()
+        self.fields["remote_images"].required = False
+        self.fields["signature_html"].required = False
         auto_id = self.auto_id
         if isinstance(auto_id, str):
             for name, field in self.fields.items():
                 if field.help_text:
                     field.widget.attrs["aria-describedby"] = f"{auto_id % name}_help"
+
+    def clean_remote_images(self) -> str:
+        value = self.cleaned_data.get("remote_images")
+        if isinstance(value, str) and value in RemoteImages.values:
+            return value
+        instance_value = getattr(self.instance, "remote_images", "")
+        if isinstance(instance_value, str) and instance_value in RemoteImages.values:
+            return instance_value
+        return RemoteImages.ASK

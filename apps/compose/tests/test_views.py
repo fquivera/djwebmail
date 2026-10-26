@@ -442,3 +442,53 @@ def test_compose_invalid_send_keeps_attachments(
     assert response.status_code == 422
     assert b"report.txt" in response.content
     assert len(list_attachments(session_key(logged_in_client))) == 1
+
+
+def test_compose_new_prefills_account_signature_from_session(logged_in_client: Client) -> None:
+    session = logged_in_client.session
+    session["mail_signature"] = "Kind regards,\nAlice"
+    session.save()
+
+    response: Any = logged_in_client.get(reverse("compose:new"))
+
+    assert response.status_code == 200
+    assert b"Kind regards," in response.content
+
+
+def test_compose_send_appends_copy_to_sent_folder(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    smtp = FakeSmtp()
+    appended: list[tuple[str, bytes]] = []
+
+    class FakeSentImap:
+        def __enter__(self) -> FakeSentImap:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+        def list_folders(self) -> list[Any]:
+            from apps.accounts.services.imap import Folder
+
+            return [Folder(name="Sent", delimiter="/", flags=("\\Sent",))]
+
+        def append(self, folder: str, raw: bytes, **kwargs: object) -> None:
+            appended.append((folder, raw))
+
+    monkeypatch.setattr("apps.compose.views.get_mail_smtp_service", lambda request: smtp)
+    monkeypatch.setattr(
+        "apps.compose.views.get_mail_imap_service",
+        lambda request: FakeSentImap(),
+    )
+
+    response: Any = logged_in_client.post(
+        reverse("compose:send"),
+        {"to": "alice@example.com", "cc": "", "subject": "Saved to sent", "body": "Body"},
+    )
+
+    assert response.status_code == 302
+    assert len(appended) == 1
+    assert appended[0][0] == "Sent"
+    assert b"Subject: Saved to sent" in appended[0][1]

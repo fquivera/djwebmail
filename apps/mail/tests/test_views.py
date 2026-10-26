@@ -1216,3 +1216,40 @@ def test_message_view_renders_reply_all_and_details(
         response.content
     )
     assert b"Show details" in response.content
+
+
+@pytest.mark.django_db
+def test_message_view_auto_loads_remote_images_when_preference_is_always(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Auto remote images",
+        sender="Alice <alice@example.com>",
+        recipients="Bob <bob@example.com>",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=True,
+        is_flagged=False,
+        body_kind="html",
+        body_html='<img src="https://example.com/banner.png">',
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=True,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: ())
+    session = logged_in_client.session
+    session["mail_remote_images"] = "always"
+    session.save()
+
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b"/mail/image-proxy/?u=https%3A%2F%2Fexample.com%2Fbanner.png" in response.content
+    assert b"Remote content was blocked" not in response.content

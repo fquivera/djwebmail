@@ -19,6 +19,7 @@ from apps.accounts.services.session import (
     end_mail_session,
     get_mail_imap_service,
     get_mail_page_size,
+    get_mail_remote_images,
 )
 from apps.mail.constants import (
     GLOBAL_SEARCH_PER_FOLDER_LIMIT,
@@ -43,6 +44,7 @@ from apps.mail.services.mailbox import (
 )
 from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
 from apps.mail.services.search import SearchFilters, search_messages
+from apps.preferences.constants import RemoteImages
 
 
 @never_cache
@@ -225,11 +227,15 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     except MailError:
         return _error_response(request)
 
+    remote_policy = get_mail_remote_images(request)
+    allow_remote = remote_policy == RemoteImages.ALWAYS
     context = {
         "folder_name": folder,
         "folders": folders,
         "message": message,
-        "body_html": _render_body_html(message, folder, uid, allow_remote=False),
+        "body_html": _render_body_html(message, folder, uid, allow_remote=allow_remote),
+        "remote_images_loaded": allow_remote,
+        "remote_images_never": remote_policy == RemoteImages.NEVER,
         "search_scope": _search_scope(request),
         "search_scope_all": SEARCH_SCOPE_ALL,
         "view": "message",
