@@ -124,10 +124,9 @@ Delete opens a native `<dialog>` confirmation (no `window.confirm`, no
 `hx-confirm`) handled by `static/js/confirm.js`, which traps focus and closes on
 `Escape` for free. Confirming posts to the delete endpoint, which marks the
 message `\Deleted` and expunges it; the response redirects to the folder. The
-dialog states that the removal is permanent. A list-level batch delete that
-moves selected messages to Trash (the endpoint in
-`docs/upstream/migracion-django-fase3.md` §6.5) is deferred until selection
-checkboxes exist.
+dialog states that the removal is permanent. In the message list, checkboxes
+(`data-batch-uid`) and `POST /mail/folder/<folder>/batch/` (`messages_batch`)
+allow marking selected messages read/unread/flagged or deleting them in batch.
 
 ## Tests
 

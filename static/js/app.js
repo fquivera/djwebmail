@@ -240,6 +240,33 @@
         },
       };
     });
+
+    window.Alpine.data("batchSelection", function () {
+      return {
+        selectedCount: 0,
+        hasSelection: false,
+        allSelected: false,
+        syncSelection() {
+          var boxes = Array.prototype.slice.call(
+            this.$el.querySelectorAll("input[data-batch-uid]"),
+          );
+          var checked = boxes.filter(function (box) {
+            return box.checked;
+          });
+          this.selectedCount = checked.length;
+          this.hasSelection = checked.length > 0;
+          this.allSelected = boxes.length > 0 && checked.length === boxes.length;
+        },
+        toggleAll(event) {
+          var shouldCheck = Boolean(event.target && event.target.checked);
+          var boxes = this.$el.querySelectorAll("input[data-batch-uid]");
+          boxes.forEach(function (box) {
+            box.checked = shouldCheck;
+          });
+          this.syncSelection();
+        },
+      };
+    });
   });
 
   document.addEventListener("click", function (event) {

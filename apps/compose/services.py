@@ -27,6 +27,7 @@ from apps.compose.constants import (
 from apps.mail.constants import FOLDER_FLAG_NOSELECT, MESSAGE_FLAG_SEEN
 from apps.mail.services.message import MessageDetail
 
+_DEFAULT_SENT_FOLDER = "Sent"
 _SENT_FOLDER_NAMES = frozenset({"sent", "sent messages", "sent items", "enviados"})
 _SENT_FOLDER_FLAG = "\\sent"
 _TAG_PATTERN = re.compile(r"<[^>]+>")
@@ -112,7 +113,11 @@ def append_to_sent(imap: ImapService, raw: bytes) -> bool:
         if leaf.casefold() in _SENT_FOLDER_NAMES or folder.name.casefold() in _SENT_FOLDER_NAMES:
             target = folder.name
     if not target:
-        return False
+        if hasattr(imap, "create_folder"):
+            imap.create_folder(_DEFAULT_SENT_FOLDER)
+            target = _DEFAULT_SENT_FOLDER
+        else:
+            return False
     imap.append(target, raw, flags=(MESSAGE_FLAG_SEEN,))
     return True
 

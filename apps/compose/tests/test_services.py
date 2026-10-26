@@ -224,3 +224,26 @@ def test_append_to_sent_writes_to_sent_folder() -> None:
 
     assert result is True
     assert imap.appended == ("Sent", b"Subject: Test\r\n\r\nBody", ("\\Seen",))
+
+
+def test_append_to_sent_creates_sent_folder_when_missing() -> None:
+    class FakeImapWithoutSent:
+        def __init__(self) -> None:
+            self.created: list[str] = []
+            self.appended: tuple[str, bytes, tuple[str, ...]] | None = None
+
+        def list_folders(self) -> list[Folder]:
+            return [Folder(name="INBOX", delimiter="/", flags=())]
+
+        def create_folder(self, folder: str) -> None:
+            self.created.append(folder)
+
+        def append(self, folder: str, raw: bytes, *, flags: tuple[str, ...] = ()) -> None:
+            self.appended = (folder, raw, tuple(flags))
+
+    imap = FakeImapWithoutSent()
+    result = append_to_sent(cast(ImapService, imap), b"Subject: Created\r\n\r\nBody")
+
+    assert result is True
+    assert imap.created == ["Sent"]
+    assert imap.appended == ("Sent", b"Subject: Created\r\n\r\nBody", ("\\Seen",))

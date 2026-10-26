@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
 from urllib.parse import quote
 
 from django.conf import settings
@@ -25,6 +26,7 @@ from apps.mail.constants import (
     GLOBAL_SEARCH_PER_FOLDER_LIMIT,
     IMAGE_PROXY_ALLOWED_CONTENT_TYPES,
     IMAP_INBOX,
+    MAX_BATCH_UIDS,
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
     PALETTE_FOLDER_LIMIT,
@@ -36,11 +38,15 @@ from apps.mail.forms import MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
     FolderNode,
+    batch_delete_messages,
+    batch_move_messages,
+    batch_set_flags,
     delete_message,
     list_folders,
     list_messages,
     move_message,
     set_message_flags,
+    translate_folder_label,
 )
 from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
 from apps.mail.services.search import SearchFilters, search_messages
@@ -71,6 +77,7 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
 
     context = {
         "folder_name": folder,
+        "folder_label": translate_folder_label(folder),
         "folders": folders,
         "page": page,
         "search_form": MailSearchForm(initial={"folder": folder}),
@@ -127,6 +134,7 @@ def search(request: HttpRequest) -> HttpResponse:
 
     context = {
         "folder_name": filters.folder,
+        "folder_label": translate_folder_label(filters.folder),
         "folders": folders,
         "page": result.page,
         "search_form": form,
@@ -231,6 +239,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     allow_remote = remote_policy == RemoteImages.ALWAYS
     context = {
         "folder_name": folder,
+        "folder_label": translate_folder_label(folder),
         "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=allow_remote),
@@ -389,6 +398,68 @@ def message_delete(request: HttpRequest, folder_name: str, uid: int) -> HttpResp
 
 
 @never_cache
+@require_POST
+@mail_login_required
+def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
+    """Apply a batch flag, move, or delete action to selected messages in a folder."""
+    uids = _parse_uids(request)
+    action = request.POST.get("action")
+    if not uids or not isinstance(action, str):
+        return HttpResponse(status=400)
+
+    destination = request.POST.get("dest")
+    add, remove = _flag_action(action)
+    if action == "move":
+        if not isinstance(destination, str) or not destination:
+            return HttpResponse(status=400)
+    elif action != "delete" and not add and not remove:
+        return HttpResponse(status=400)
+
+    folder = folder_name or IMAP_INBOX
+    page_size = get_mail_page_size(request)
+    try:
+        with get_mail_imap_service(request) as imap:
+            if action == "delete":
+                batch_delete_messages(imap, folder, uids)
+            elif action == "move":
+                assert isinstance(destination, str)
+                batch_move_messages(imap, folder, uids, destination)
+            else:
+                batch_set_flags(imap, folder, uids, add=add, remove=remove)
+            if request.META.get("HTTP_HX_REQUEST") == "true":
+                page = list_messages(imap, folder, page=1, page_size=page_size)
+            else:
+                page = None
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    if request.META.get("HTTP_HX_REQUEST") == "true" and page is not None:
+        return render(
+            request,
+            "mail/_message_list.html",
+            {
+                "folder_name": folder,
+                "page": page,
+                "search_active": False,
+                "search_error": "",
+                "search_scope": SEARCH_SCOPE_FOLDER,
+                "search_scope_all": SEARCH_SCOPE_ALL,
+                "show_folder": False,
+                "truncated": False,
+                "used_ascii_fallback": False,
+                "pagination_url": reverse("mail:folder", kwargs={"folder_name": folder}),
+                "query_string": "",
+            },
+        )
+    return redirect(reverse("mail:folder", kwargs={"folder_name": folder}))
+
+
+@never_cache
 @mail_login_required
 def attachment_view(
     request: HttpRequest,
@@ -496,6 +567,30 @@ def _flag_action(action: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     return _FLAG_ACTIONS.get(action or "", ((), ()))
 
 
+def _parse_uids(request: HttpRequest) -> tuple[int, ...]:
+    """Parse and bound positive integer UIDs from a batch form submission."""
+    raw_values = cast(list[Any], request.POST.getlist("uids"))
+    result: list[int] = []
+    seen: set[int] = set()
+    for item in raw_values:
+        if not isinstance(item, str):
+            continue
+        for token in item.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            try:
+                uid = int(token)
+            except ValueError:
+                continue
+            if uid >= 1 and uid not in seen:
+                result.append(uid)
+                seen.add(uid)
+                if len(result) >= MAX_BATCH_UIDS:
+                    return tuple(result)
+    return tuple(result)
+
+
 def _parse_page(value: str | None) -> int:
     try:
         page = int(value or "1")
@@ -517,6 +612,7 @@ def _search_filter_error(
     """Render invalid filters as a 200 response so HTMX swaps the alert."""
     context = {
         "folder_name": folder,
+        "folder_label": translate_folder_label(folder),
         "folders": (),
         "page": None,
         "search_form": form,

@@ -5,5 +5,5 @@
   class="min-w-0 flex-1 truncate text-xl font-semibold"
   {% if oob %}hx-swap-oob="outerHTML"{% endif %}
 >
-  {% if search_scope == search_scope_all %}{% translate "All folders" %}{% else %}{{ folder_name }}{% endif %}
+  {% if search_scope == search_scope_all %}{% translate "All folders" %}{% else %}{{ folder_label|default:folder_name }}{% endif %}
 </h1>
