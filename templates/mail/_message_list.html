@@ -15,15 +15,101 @@
   {% endif %}
 
   {% if page.messages %}
-    <p class="py-2 text-sm text-base-content/60">
-      {% blocktranslate count counter=page.total %}{{ counter }} message{% plural %}{{ counter }} messages{% endblocktranslate %}
-    </p>
+    <div x-data="batchSelection">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 border-b border-base-200 bg-base-200/30 text-xs text-base-content/70">
+        <div class="flex items-center gap-2.5">
+          {% if not show_folder %}
+            <input
+              type="checkbox"
+              class="checkbox checkbox-xs rounded border-base-300"
+              @change="toggleAll($event)"
+              x-bind:checked="allSelected"
+              aria-label="{% translate 'Select all messages' %}"
+              title="{% translate 'Select all messages' %}"
+            >
+          {% endif %}
+          <span class="text-xs text-base-content/60">
+            {% blocktranslate count counter=page.total %}{{ counter }} message{% plural %}{{ counter }} messages{% endblocktranslate %}
+          </span>
+        </div>
 
-    <ul class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
-      {% for message in page.messages %}
-        {% include "mail/_message_row.html" with message=message folder_name=folder_name show_folder=show_folder %}
-      {% endfor %}
-    </ul>
+        {% if not show_folder %}
+          <form
+            id="batch-actions-form"
+            method="post"
+            action="{% url 'mail:messages_batch' folder_name %}"
+            hx-post="{% url 'mail:messages_batch' folder_name %}"
+            hx-include="#message-list-items"
+            hx-target="#message-list-results"
+            hx-swap="innerHTML"
+            class="flex items-center gap-0.5"
+            role="toolbar"
+            aria-label="{% translate 'Batch actions' %}"
+          >
+            {% csrf_token %}
+            <button
+              type="submit"
+              name="action"
+              value="read"
+              class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+              title="{% translate 'Mark as read' %}"
+              aria-label="{% translate 'Mark as read' %}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"></path>
+                <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"></path>
+              </svg>
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="unread"
+              class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+              title="{% translate 'Mark as unread' %}"
+              aria-label="{% translate 'Mark as unread' %}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+              </svg>
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="star"
+              class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-warning"
+              title="{% translate 'Flag message' %}"
+              aria-label="{% translate 'Flag message' %}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" x2="4" y1="22" y2="15"></line>
+              </svg>
+            </button>
+            <button
+              type="submit"
+              name="action"
+              value="delete"
+              class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-error"
+              title="{% translate 'Delete' %}"
+              aria-label="{% translate 'Delete' %}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+
+      <ul id="message-list-items" class="divide-y divide-base-300" aria-label="{% translate 'Messages' %}">
+        {% for message in page.messages %}
+          {% include "mail/_message_row.html" with message=message folder_name=folder_name show_folder=show_folder %}
+        {% endfor %}
+      </ul>
+    </div>
 
     {% include "mail/_pagination.html" with page=page folder_name=folder_name pagination_url=pagination_url query_string=query_string %}
   {% elif search_active %}

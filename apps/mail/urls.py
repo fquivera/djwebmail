@@ -12,6 +12,7 @@ from apps.mail.views import (
     message_move,
     message_remote_images,
     message_view,
+    messages_batch,
     palette,
     search,
 )
@@ -20,6 +21,7 @@ app_name = "mail"
 
 urlpatterns = [
     path("", mailbox, name="index"),
+    path("folder/<path:folder_name>/batch/", messages_batch, name="messages_batch"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),
     path("search/", search, name="search"),
     path("palette/", palette, name="palette"),

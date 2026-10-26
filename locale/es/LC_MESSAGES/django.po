@@ -747,5 +747,15 @@ msgstr "Se añade automáticamente al redactar un mensaje nuevo o responder."
 msgid "Composing"
 msgstr "Redacción"
 
+msgid "Select all messages"
+msgstr "Seleccionar todos los mensajes"
+
+msgid "Batch actions"
+msgstr "Acciones en lote"
+
+msgid "Select message"
+msgstr "Seleccionar mensaje"
+
+
 
 

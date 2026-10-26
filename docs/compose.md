@@ -57,8 +57,9 @@ draft is stored in the cache under the session scope and restored on the next
 forms do not autosave, so they cannot overwrite a new-message draft.
 
 The draft is deliberately not appended to IMAP yet: each autosave would create
-a new message and there is no draft UID tracking. Sent-folder append remains
-deferred.
+a new message and there is no draft UID tracking. Sent messages are appended to
+the account's `Sent` folder over IMAP (`append_to_sent()`), creating `"Sent"`
+automatically when the mailbox does not have one yet.
 
 ## Service boundaries
 

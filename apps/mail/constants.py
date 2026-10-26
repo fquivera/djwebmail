@@ -23,6 +23,8 @@ GLOBAL_SEARCH_PER_FOLDER_LIMIT = 100
 # page. Keep its response short enough to stay useful above the fold.
 PALETTE_MESSAGE_LIMIT = 8
 PALETTE_FOLDER_LIMIT = 6
+MAX_BATCH_UIDS = 200
+
 
 # The image proxy only forwards plain HTTP(S) and only raster formats. SVG is
 # excluded because serving it same-origin could execute script if navigated.

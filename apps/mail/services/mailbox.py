@@ -180,6 +180,46 @@ def move_message(imap: ImapService, folder: str, uid: int, destination: str) -> 
     imap.move([uid], destination)
 
 
+def batch_set_flags(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+    *,
+    add: Sequence[str] = (),
+    remove: Sequence[str] = (),
+) -> None:
+    """Add/remove flags on a batch of messages in ``folder``."""
+    if not uids:
+        return
+    imap.select(folder, readonly=False)
+    imap.store_flags(uids, add=add, remove=remove)
+
+
+def batch_delete_messages(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+) -> None:
+    """Mark a batch of messages deleted and expunge them."""
+    if not uids:
+        return
+    imap.select(folder, readonly=False)
+    imap.delete(uids, expunge=True)
+
+
+def batch_move_messages(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+    destination: str,
+) -> None:
+    """Move a batch of messages to ``destination``."""
+    if not uids:
+        return
+    imap.select(folder, readonly=False)
+    imap.move(uids, destination)
+
+
 def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     children = sorted(
         node.children.values(),

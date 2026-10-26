@@ -1,14 +1,28 @@
 {% load i18n %}
 <li
   id="msg-{{ message.uid }}"
-  class="group relative"
+  class="group relative flex items-stretch border-b border-base-200/80 transition-colors hover:bg-primary/5 focus-within:bg-primary/5"
   data-uid="{{ message.uid }}"
   data-unread="{% if message.is_seen %}false{% else %}true{% endif %}"
   {% if oob %}hx-swap-oob="outerHTML"{% endif %}
 >
   {% with message_folder=message.folder|default:folder_name %}
+  {% if not show_folder %}
+    <div class="flex items-start pl-3 pr-1 pt-3 shrink-0">
+      <input
+        type="checkbox"
+        name="uids"
+        value="{{ message.uid }}"
+        form="batch-actions-form"
+        data-batch-uid="{{ message.uid }}"
+        @change="syncSelection()"
+        class="checkbox checkbox-xs rounded border-base-300"
+        aria-label="{% translate 'Select message' %}"
+      >
+    </div>
+  {% endif %}
   <a
-    class="mail-row flex items-start gap-2.5 px-3 py-2 border-b border-base-200/80 transition-colors group-hover:bg-primary/5 focus-visible:bg-primary/10"
+    class="mail-row min-w-0 flex-1 flex items-start gap-2.5 {% if show_folder %}px-3{% else %}pl-1.5 pr-3{% endif %} py-2"
     href="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
     hx-get="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
     hx-target="#message-viewer"

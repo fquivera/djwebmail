@@ -327,6 +327,10 @@ class ImapService:
             )
         )
 
+    def create_folder(self, folder: str) -> None:
+        """Create an IMAP folder when it does not exist yet."""
+        self._run(lambda: self._require_client().create_folder(folder))
+
     def _require_client(self) -> Any:
         if self._client is None:
             self.connect()

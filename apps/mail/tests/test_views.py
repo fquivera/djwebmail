@@ -1253,3 +1253,62 @@ def test_message_view_auto_loads_remote_images_when_preference_is_always(
     assert response.status_code == 200
     assert b"/mail/image-proxy/?u=https%3A%2F%2Fexample.com%2Fbanner.png" in response.content
     assert b"Remote content was blocked" not in response.content
+
+
+def test_messages_batch_marks_selected_messages_read(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def capture_batch_flags(imap: Any, folder: str, uids: Any, **kwargs: Any) -> None:
+        captured["folder"] = folder
+        captured["uids"] = uids
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr("apps.mail.views.batch_set_flags", capture_batch_flags)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:messages_batch", kwargs={"folder_name": "INBOX"}),
+        {"uids": ["7", "8"], "action": "read"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    assert captured["folder"] == "INBOX"
+    assert captured["uids"] == (7, 8)
+    assert captured["kwargs"] == {"add": ("\\Seen",), "remove": ()}
+    assert b'id="message-list-items"' in response.content
+
+
+def test_messages_batch_deletes_selected_messages(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    deleted: dict[str, Any] = {}
+
+    def capture_batch_delete(imap: Any, folder: str, uids: Any) -> None:
+        deleted["folder"] = folder
+        deleted["uids"] = uids
+
+    monkeypatch.setattr("apps.mail.views.batch_delete_messages", capture_batch_delete)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:messages_batch", kwargs={"folder_name": "INBOX"}),
+        {"uids": "7,9", "action": "delete"},
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse("mail:folder", kwargs={"folder_name": "INBOX"})
+    assert deleted == {"folder": "INBOX", "uids": (7, 9)}
+
+
+def test_messages_batch_rejects_empty_selection(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.post(
+        reverse("mail:messages_batch", kwargs={"folder_name": "INBOX"}),
+        {"action": "read"},
+    )
+
+    assert response.status_code == 400
