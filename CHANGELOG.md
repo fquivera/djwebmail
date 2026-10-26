@@ -1,3 +1,28 @@
+## 0.2.0 (2026-10-26)
+
+### Feat
+
+- **mail**: add batch selection toolbar, auto-create Sent folder, and localize standard folder labels (#32)
+- **mail**: add account signature, remote image policy, and Sent append (#31)
+- **ui**: modernize home, login, and settings interfaces (#30)
+- **mail**: add row hover quick actions, reply all, and redesign message viewer (#29)
+- **compose**: add rich text editor, plain text toggle, and bcc support (#28)
+- **mail**: modernize visual layout with 3-pane app shell and icons (#27)
+- **mail**: add global message search (#26)
+- **mail**: add responsive shell, command palette, and optimistic flags (#25)
+- **mail**: add folder-scoped message search (#24)
+- **preferences**: add settings UI and accessibility polish (#23)
+- **compose**: add attachments and draft autosave (#22)
+- **compose**: add compose, reply, forward, and SMTP send (#21)
+- **mail**: add delete with confirmation dialog (#20)
+- **mail**: add move-to-folder action (#19)
+- **mail**: add message flags (mark read and star) (#18)
+- **mail**: add message attachments and inline images (#17)
+
+### Docs
+
+- add production deployment guide and update roadmap (#33)
+
 ## 0.1.0 (2026-10-23)
 
 ### Feat
