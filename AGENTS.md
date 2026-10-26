@@ -461,6 +461,10 @@ Done:
 - Command palette: `/mail/palette/` uses global search, shows the source folder
   on every result, and can hand its query to the main search form in global
   scope. It also lists matching selectable folders.
+- Visual design and app shell refresh: full-viewport 100vh 3-pane layout,
+  full-width top navigation with user initials avatar, folder tree with semantic
+  IMAP icons and hero compose CTA, 2-line message rows with avatar monograms and
+  unread status dots, and polished empty states. See `docs/ui-interaction.md`.
 
 Next: Phase 4 is complete. The next planned work is the deployment guide and
 the `v0.2.0` release. Do not open new protocol areas without a new phase

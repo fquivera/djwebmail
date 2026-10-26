@@ -7,7 +7,7 @@
 >
   {% with message_folder=message.folder|default:folder_name %}
   <a
-    class="mail-row grid gap-1 px-1 transition-colors hover:bg-base-200 sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
+    class="mail-row flex items-start gap-2.5 px-3 py-2 border-b border-base-200/80 transition-colors hover:bg-base-200/60 focus-visible:bg-base-200"
     href="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
     hx-get="{% url 'mail:message' message_folder message.uid %}?view=message{% if show_folder %}&amp;scope={{ search_scope_all }}{% endif %}"
     hx-target="#message-viewer"
@@ -17,34 +17,56 @@
     data-mail-row
     data-uid="{{ message.uid }}"
   >
-    <div
-      class="mail-sender truncate text-sm"
-      title="{% if message.sender %}{{ message.sender }}{% else %}{% translate 'Unknown sender' %}{% endif %}"
-    >
-      {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
-    </div>
-    <div class="min-w-0">
-      <span
-        class="mail-subject block truncate text-sm"
-        title="{% if message.subject %}{{ message.subject }}{% else %}{% translate '(No subject)' %}{% endif %}"
-      >
-        {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
-      </span>
+    <div class="flex items-center gap-1.5 shrink-0 pt-0.5">
       {% if not message.is_seen %}
-        <span class="mail-unread sr-only">{% translate "Unread" %}</span>
+        <span class="size-2 rounded-full bg-primary shrink-0" aria-hidden="true"></span>
+      {% else %}
+        <span class="size-2 shrink-0"></span>
       {% endif %}
-      {% if show_folder and message.folder %}
-        <span class="text-xs text-base-content/60">{{ message.folder }}</span>
-      {% endif %}
+      <div class="avatar placeholder">
+        <div class="size-7 rounded-full bg-base-200 text-base-content/80 border border-base-300 font-semibold text-xs flex items-center justify-center">
+          <span>{{ message.sender|default:"?"|slice:":1"|upper }}</span>
+        </div>
+      </div>
     </div>
-    <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/60 sm:justify-end">
-      {% if message.is_flagged %}
-        <span class="badge badge-warning badge-sm" role="img" aria-label="{% translate 'Flagged' %}">★</span>
-      {% endif %}
-      <span>{{ message.size|filesizeformat }}</span>
-      {% if message.date %}
-        <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATETIME_FORMAT" }}</time>
-      {% endif %}
+
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-2">
+        <div
+          class="mail-sender truncate text-xs font-medium text-base-content"
+          title="{% if message.sender %}{{ message.sender }}{% else %}{% translate 'Unknown sender' %}{% endif %}"
+        >
+          {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0 text-[11px] text-base-content/60">
+          {% if message.is_flagged %}
+            <span class="text-warning" role="img" aria-label="{% translate 'Flagged' %}">★</span>
+          {% endif %}
+          {% if message.date %}
+            <time datetime="{{ message.date|date:'c' }}">{{ message.date|date:"SHORT_DATE_FORMAT" }}</time>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-2 mt-0.5">
+        <div class="min-w-0 flex-1">
+          <span
+            class="mail-subject block truncate text-xs text-base-content/75"
+            title="{% if message.subject %}{{ message.subject }}{% else %}{% translate '(No subject)' %}{% endif %}"
+          >
+            {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
+          </span>
+          {% if not message.is_seen %}
+            <span class="mail-unread sr-only">{% translate "Unread" %}</span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-1 shrink-0 text-[11px] text-base-content/50">
+          {% if show_folder and message.folder %}
+            <span class="badge badge-xs badge-neutral truncate max-w-24">{{ message.folder }}</span>
+          {% endif %}
+          <span>{{ message.size|filesizeformat }}</span>
+        </div>
+      </div>
     </div>
   </a>
   {% endwith %}

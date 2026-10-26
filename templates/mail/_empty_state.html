@@ -1,4 +1,15 @@
 {% load i18n %}
-<div class="flex min-h-40 items-center justify-center text-base-content/50">
-  <p class="text-sm">{% translate "Select a message to read it." %}</p>
+<div class="flex h-full min-h-64 flex-col items-center justify-center text-center p-8 select-none text-base-content/60">
+  <div class="mb-4 flex size-16 items-center justify-center rounded-2xl bg-base-200/80 border border-base-300 text-base-content/40 shadow-xs">
+    <svg class="size-8 opacity-75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect width="20" height="16" x="2" y="4" rx="2"/>
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+    </svg>
+  </div>
+  <p class="text-base font-medium text-base-content/80 mb-2">{% translate "Select a message to read it." %}</p>
+  <div class="flex items-center gap-1.5 text-xs text-base-content/50">
+    <kbd class="kbd kbd-xs">j</kbd>
+    <kbd class="kbd kbd-xs">k</kbd>
+    <span>{% translate "Next or previous message" %}</span>
+  </div>
 </div>
