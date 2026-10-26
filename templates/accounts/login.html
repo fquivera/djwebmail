@@ -4,51 +4,76 @@
 {% block title %}{% translate "Sign in" %}{% endblock %}
 
 {% block content %}
-  <section class="hero min-h-[70vh]">
-    <div class="hero-content w-full">
-      <div class="card w-full max-w-md bg-base-100 shadow-xl">
-        <div class="card-body gap-4">
-          <h1 class="card-title text-2xl">{% translate "Sign in" %}</h1>
-          <p class="text-sm text-base-content/70">
+  <section class="flex flex-1 items-center justify-center px-4 py-8 overflow-y-auto">
+    <div class="w-full max-w-md">
+      <div class="rounded-2xl border border-base-300 bg-base-100 shadow-lg overflow-hidden">
+        <div class="border-b border-base-200 bg-base-200/40 px-6 py-5 text-center space-y-2">
+          <div class="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/20">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+          </div>
+          <h1 class="text-xl font-bold tracking-tight text-base-content">{% translate "Sign in" %}</h1>
+          <p class="text-xs text-base-content/70">
             {% translate "Use your email address and password to connect to the mail server." %}
           </p>
+        </div>
 
+        <div class="p-6 space-y-5">
           <form method="post" action="{% url 'accounts:login' %}" class="space-y-4">
             {% csrf_token %}
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
             {% if form.non_field_errors %}
-              <div class="alert alert-error text-sm" role="alert">
+              <div class="alert alert-error text-sm py-2.5" role="alert">
                 {{ form.non_field_errors }}
               </div>
             {% endif %}
 
-            <div class="flex w-full flex-col gap-1">
-              <label class="text-sm font-medium" for="{{ form.email.id_for_label }}">
-                {{ form.email.label }}
+            <div class="flex w-full flex-col gap-1.5">
+              <label class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-base-content/75" for="{{ form.email.id_for_label }}">
+                <svg class="size-3.5 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+                <span>{{ form.email.label }}</span>
               </label>
               {{ form.email }}
               {% if form.email.errors %}
-                <div class="mt-1 text-sm text-error" role="alert">{{ form.email.errors }}</div>
+                <div class="mt-0.5 text-xs text-error" role="alert">{{ form.email.errors }}</div>
               {% endif %}
             </div>
 
-            <div class="flex w-full flex-col gap-1">
-              <label class="text-sm font-medium" for="{{ form.password.id_for_label }}">
-                {{ form.password.label }}
+            <div class="flex w-full flex-col gap-1.5">
+              <label class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-base-content/75" for="{{ form.password.id_for_label }}">
+                <svg class="size-3.5 text-base-content/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>{{ form.password.label }}</span>
               </label>
               {{ form.password }}
               {% if form.password.errors %}
-                <div class="mt-1 text-sm text-error" role="alert">{{ form.password.errors }}</div>
+                <div class="mt-0.5 text-xs text-error" role="alert">{{ form.password.errors }}</div>
               {% endif %}
             </div>
 
-            <button class="btn btn-primary w-full" type="submit">{% translate "Sign in" %}</button>
+            <button class="btn btn-primary w-full gap-2 mt-2" type="submit">
+              <span>{% translate "Sign in" %}</span>
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" x2="3" y1="12" y2="12"></line>
+              </svg>
+            </button>
           </form>
 
-          <p class="text-center text-sm">
-            <a class="link link-hover" href="{% url 'home' %}">{% translate "Back to home" %}</a>
-          </p>
+          <div class="border-t border-base-200 pt-4 text-center">
+            <a class="link link-hover text-xs text-base-content/60 hover:text-base-content" href="{% url 'home' %}">
+              {% translate "Back to home" %}
+            </a>
+          </div>
         </div>
       </div>
     </div>

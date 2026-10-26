@@ -20,6 +20,7 @@ def test_home_page_renders(client):
 
     assert response.status_code == 200
     assert b"DjWebmail" in response.content
+    assert reverse("accounts:login").encode() in response.content
     template_names = [template.name for template in response.templates]
     assert "common/home.html" in template_names
     assert "base.html" in template_names

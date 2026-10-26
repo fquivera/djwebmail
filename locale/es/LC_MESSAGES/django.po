@@ -702,3 +702,34 @@ msgstr "Mostrar detalles"
 msgid "Download"
 msgstr "Descargar"
 
+msgid "DjWebmail — Modern Webmail"
+msgstr "DjWebmail — Correo web moderno"
+
+msgid "Open inbox"
+msgstr "Abrir bandeja de entrada"
+
+msgid "Security by default"
+msgstr "Seguridad por defecto"
+
+msgid "Strict CSP, server-side HTML sanitization, remote-image proxy, and encrypted session credentials."
+msgstr "CSP estricta, sanitización HTML en el servidor, proxy de imágenes remotas y credenciales cifradas en sesión."
+
+msgid "IMAP source of truth"
+msgstr "IMAP como fuente de verdad"
+
+msgid "Direct IMAP and SMTP communication without storing messages or passwords in the database."
+msgstr "Comunicación directa con IMAP y SMTP sin almacenar correos ni contraseñas en la base de datos."
+
+msgid "Fast & keyboard-ready"
+msgstr "Rápido y navegable con teclado"
+
+msgid "3-pane workspace with HTMX partial updates, global command palette, and keyboard navigation."
+msgstr "Espacio de trabajo de 3 paneles con actualizaciones parciales HTMX, paleta global de comandos y atajos de teclado."
+
+msgid "Customize your webmail language, appearance, and reading layout."
+msgstr "Personaliza el idioma, la apariencia y la lectura de tu correo web."
+
+msgid "Preferences are stored per account and applied immediately."
+msgstr "Las preferencias se guardan por cuenta y se aplican de inmediato."
+
+
