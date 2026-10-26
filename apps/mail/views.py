@@ -46,6 +46,7 @@ from apps.mail.services.mailbox import (
     list_messages,
     move_message,
     set_message_flags,
+    translate_folder_label,
 )
 from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
 from apps.mail.services.search import SearchFilters, search_messages
@@ -76,6 +77,7 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
 
     context = {
         "folder_name": folder,
+        "folder_label": translate_folder_label(folder),
         "folders": folders,
         "page": page,
         "search_form": MailSearchForm(initial={"folder": folder}),
@@ -132,6 +134,7 @@ def search(request: HttpRequest) -> HttpResponse:
 
     context = {
         "folder_name": filters.folder,
+        "folder_label": translate_folder_label(filters.folder),
         "folders": folders,
         "page": result.page,
         "search_form": form,
@@ -236,6 +239,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     allow_remote = remote_policy == RemoteImages.ALWAYS
     context = {
         "folder_name": folder,
+        "folder_label": translate_folder_label(folder),
         "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=allow_remote),
@@ -608,6 +612,7 @@ def _search_filter_error(
     """Render invalid filters as a 200 response so HTMX swaps the alert."""
     context = {
         "folder_name": folder,
+        "folder_label": translate_folder_label(folder),
         "folders": (),
         "page": None,
         "search_form": form,

@@ -10,6 +10,8 @@ from email.parser import BytesHeaderParser
 from email.utils import parsedate_to_datetime
 from math import ceil
 
+from django.utils.translation import gettext as _
+
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import (
     FOLDER_FLAG_NOSELECT,
@@ -220,6 +222,24 @@ def batch_move_messages(
     imap.move(uids, destination)
 
 
+def translate_folder_label(name: str) -> str:
+    """Return a localized display label for standard IMAP folder names."""
+    normalized = name.strip().casefold()
+    if normalized == "inbox":
+        return _("INBOX")
+    if normalized in {"sent", "sent messages", "sent items"}:
+        return _("Sent")
+    if normalized in {"drafts", "draft"}:
+        return _("Drafts")
+    if normalized in {"trash", "deleted items", "deleted messages", "bin"}:
+        return _("Trash")
+    if normalized in {"spam", "junk", "junk e-mail"}:
+        return _("Spam")
+    if normalized in {"archive", "archives"}:
+        return _("Archive")
+    return name
+
+
 def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     children = sorted(
         node.children.values(),
@@ -228,7 +248,7 @@ def _freeze_children(node: _MutableFolder) -> tuple[FolderNode, ...]:
     return tuple(
         FolderNode(
             name=child.name,
-            label=child.label,
+            label=translate_folder_label(child.label),
             selectable=child.selectable,
             children=_freeze_children(child),
         )

@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from django.test import Client
 from django.urls import reverse
+from django.utils import translation
 
 from apps.accounts.exceptions import ImapConnectionError
 from apps.accounts.services.account import MailAccount
@@ -1312,3 +1313,21 @@ def test_messages_batch_rejects_empty_selection(logged_in_client: Client) -> Non
     )
 
     assert response.status_code == 400
+
+
+def test_mailbox_renders_spanish_folder_labels(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with translation.override("es"):
+        folders = (
+            FolderNode(name="INBOX", label="Bandeja de entrada", selectable=True),
+            FolderNode(name="Sent", label="Enviados", selectable=True),
+        )
+        monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: folders)
+        response: Any = logged_in_client.get(reverse("mail:index"))
+
+    assert response.status_code == 200
+    assert b"Bandeja de entrada" in response.content
+    assert b"Enviados" in response.content

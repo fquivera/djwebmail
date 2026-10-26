@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import cast
 
+from django.utils import translation
+
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import FOLDER_FLAG_NOSELECT, IMAP_INBOX, MESSAGE_FLAG_SEEN
 from apps.mail.services.mailbox import (
@@ -220,3 +222,16 @@ def test_move_message_moves_to_destination() -> None:
 
     assert imap.selected == ("INBOX", False)
     assert imap.moved == [([5], "Archive")]
+
+
+def test_build_folder_tree_translates_standard_folders_in_spanish() -> None:
+    folders = [
+        Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",)),
+        Folder(name="Sent", delimiter="/", flags=("\\HasNoChildren",)),
+    ]
+
+    with translation.override("es"):
+        tree = build_folder_tree(folders)
+
+    assert [node.name for node in tree] == ["INBOX", "Sent"]
+    assert [node.label for node in tree] == ["Bandeja de entrada", "Enviados"]

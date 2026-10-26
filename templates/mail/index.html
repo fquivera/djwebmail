@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% blocktranslate with folder=folder_name %}Mail — {{ folder }}{% endblocktranslate %}{% endblock %}
+{% block title %}{% blocktranslate with folder=folder_label|default:folder_name %}Mail — {{ folder }}{% endblocktranslate %}{% endblock %}
 
 {% block body_class %}h-screen overflow-hidden{% endblock %}
 {% block main_class %}w-full flex-1 min-h-0 overflow-hidden p-0{% endblock %}

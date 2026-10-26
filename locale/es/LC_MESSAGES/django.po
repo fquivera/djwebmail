@@ -756,6 +756,21 @@ msgstr "Acciones en lote"
 msgid "Select message"
 msgstr "Seleccionar mensaje"
 
+msgid "INBOX"
+msgstr "Bandeja de entrada"
 
+msgid "Sent"
+msgstr "Enviados"
 
+msgid "Drafts"
+msgstr "Borradores"
+
+msgid "Trash"
+msgstr "Papelera"
+
+msgid "Spam"
+msgstr "Correo no deseado"
+
+msgid "Archive"
+msgstr "Archivo"
 
