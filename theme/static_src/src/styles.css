@@ -91,6 +91,113 @@
   [data-density="comfortable"] .mail-row {
     padding-block: 1rem;
   }
+
+  [data-unread="true"] .mail-sender,
+  [data-unread="true"] .mail-subject {
+    font-weight: 600;
+  }
+
+  [data-unread="false"] .mail-unread {
+    display: none;
+  }
+
+  .when-seen,
+  .when-flagged {
+    display: none;
+  }
+
+  /* The error alert wrapper, not the daisyUI .alert itself, owns visibility:
+   * daisyUI sets display on .alert, so hiding that element directly loses the
+   * cascade. The wrapper is hidden until a flag request actually fails. */
+  .when-flag-error {
+    display: none;
+  }
+
+  [data-flag-error="true"] .when-flag-error {
+    display: block;
+  }
+
+  [data-seen="true"] .when-seen,
+  [data-seen="false"] .when-unseen,
+  [data-flagged="true"] .when-flagged,
+  [data-flagged="false"] .when-unflagged {
+    display: inline;
+  }
+
+  [data-seen="true"] .when-unseen,
+  [data-flagged="true"] .when-unflagged {
+    display: none;
+  }
+
+  .mail-folder-backdrop {
+    display: none;
+  }
+
+  #message-list-results.is-loading,
+  #message-viewer.is-loading {
+    position: relative;
+    min-height: 12rem;
+  }
+
+  #message-list-results.is-loading > *,
+  #message-viewer.is-loading > * {
+    visibility: hidden;
+  }
+
+  #message-list-results.is-loading::after,
+  #message-viewer.is-loading::after {
+    animation: mail-skeleton 1.2s ease-in-out infinite;
+    background: linear-gradient(
+      90deg,
+      var(--color-base-200) 25%,
+      var(--color-base-300) 50%,
+      var(--color-base-200) 75%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--radius-box);
+    content: "";
+    inset: 0;
+    position: absolute;
+  }
+
+  @media (max-width: 1023px) {
+    [data-js="true"] .mail-shell[data-view="list"] .mail-message-panel {
+      display: none;
+    }
+
+    [data-js="true"] .mail-shell[data-view="message"] .mail-list-panel,
+    [data-js="true"] .mail-shell[data-view="message"] .mail-folder-panel {
+      display: none;
+    }
+
+    [data-js="true"] .mail-shell .mail-folder-panel {
+      display: none;
+    }
+
+    [data-js="true"] .mail-shell[data-folders-open="true"] .mail-folder-panel {
+      border-radius: 0;
+      display: block;
+      inset: 0 auto 0 0;
+      overflow-y: auto;
+      position: fixed;
+      width: min(20rem, 85vw);
+      z-index: 40;
+    }
+
+    [data-js="true"] .mail-shell[data-folders-open="true"] .mail-folder-backdrop {
+      display: block;
+    }
+  }
+}
+
+@keyframes mail-skeleton {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
 }
 
 @layer base {

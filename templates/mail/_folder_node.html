@@ -3,12 +3,13 @@
   {% if node.selectable and node.name %}
     <a
       class="flex items-center rounded-md px-2 py-1 text-sm transition-colors{% if node.name == current_folder %} bg-primary font-semibold text-primary-content{% else %} hover:bg-base-200{% endif %}"
-      href="{% url 'mail:folder' node.name %}"
-      hx-get="{% url 'mail:folder' node.name %}"
+      href="{% url 'mail:folder' node.name %}?view=list"
+      hx-get="{% url 'mail:folder' node.name %}?view=list"
       hx-target="#message-list"
       hx-swap="innerHTML"
       hx-push-url="true"
       hx-indicator="#list-spinner"
+      @click="closeFoldersAfterNavigation()"
       {% if node.name == current_folder %}aria-current="page"{% endif %}
     >{{ node.label }}</a>
   {% else %}

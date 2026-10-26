@@ -2,32 +2,35 @@
 <li
   id="msg-{{ message.uid }}"
   data-uid="{{ message.uid }}"
+  data-unread="{% if message.is_seen %}false{% else %}true{% endif %}"
   {% if oob %}hx-swap-oob="outerHTML"{% endif %}
 >
   <a
     class="mail-row grid gap-1 px-1 transition-colors hover:bg-base-200 sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
-    href="{% url 'mail:message' folder_name message.uid %}"
-    hx-get="{% url 'mail:message' folder_name message.uid %}"
+    href="{% url 'mail:message' folder_name message.uid %}?view=message"
+    hx-get="{% url 'mail:message' folder_name message.uid %}?view=message"
     hx-target="#message-viewer"
     hx-swap="innerHTML"
     hx-push-url="true"
     hx-indicator="#list-spinner"
+    data-mail-row
+    data-uid="{{ message.uid }}"
   >
     <div
-      class="truncate text-sm{% if not message.is_seen %} font-semibold{% endif %}"
+      class="mail-sender truncate text-sm"
       title="{% if message.sender %}{{ message.sender }}{% else %}{% translate 'Unknown sender' %}{% endif %}"
     >
       {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
     </div>
     <div class="min-w-0">
       <span
-        class="block truncate text-sm{% if not message.is_seen %} font-semibold{% endif %}"
+        class="mail-subject block truncate text-sm"
         title="{% if message.subject %}{{ message.subject }}{% else %}{% translate '(No subject)' %}{% endif %}"
       >
         {% if message.subject %}{{ message.subject }}{% else %}{% translate "(No subject)" %}{% endif %}
       </span>
       {% if not message.is_seen %}
-        <span class="sr-only">{% translate "Unread" %}</span>
+        <span class="mail-unread sr-only">{% translate "Unread" %}</span>
       {% endif %}
     </div>
     <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/60 sm:justify-end">

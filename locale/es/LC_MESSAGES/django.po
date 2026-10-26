@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: DjWebmail\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-10-25 00:14+0000\n"
-"PO-Revision-Date: 2026-10-25 00:15+0000\n"
+"PO-Revision-Date: 2026-10-25 01:55+0000\n"
 "Last-Translator: DjWebmail contributors\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -37,11 +37,14 @@ msgstr "Correo electrónico o contraseña incorrectos."
 
 #: apps/accounts/views.py:72 apps/compose/views.py:126
 msgid "The mail server is unavailable. Try again later."
-msgstr "El servidor de correo no está disponible. Inténtelo de nuevo más tarde."
+msgstr ""
+"El servidor de correo no está disponible. Inténtelo de nuevo más tarde."
 
 #: apps/accounts/views.py:78 apps/accounts/views.py:90
 msgid "Mail sign-in is not configured. Contact the administrator."
-msgstr "El inicio de sesión de correo no está configurado. Contacte con el administrador."
+msgstr ""
+"El inicio de sesión de correo no está configurado. Contacte con el "
+"administrador."
 
 #: apps/accounts/views.py:83
 msgid "Unable to sign in."
@@ -116,11 +119,15 @@ msgstr "Para: %(value)s"
 
 #: apps/compose/views.py:122
 msgid "The mail server rejected the stored credentials. Sign in again."
-msgstr "El servidor de correo rechazó las credenciales guardadas. Vuelva a iniciar sesión."
+msgstr ""
+"El servidor de correo rechazó las credenciales guardadas. Vuelva a iniciar "
+"sesión."
 
 #: apps/compose/views.py:131
 msgid "The message could not be sent. Check the recipients and try again."
-msgstr "No se pudo enviar el mensaje. Compruebe los destinatarios e inténtelo de nuevo."
+msgstr ""
+"No se pudo enviar el mensaje. Compruebe los destinatarios e inténtelo de "
+"nuevo."
 
 #: apps/compose/views.py:149
 msgid "Choose at least one file to attach."
@@ -295,7 +302,9 @@ msgstr "Iniciar sesión"
 
 #: templates/accounts/login.html:13
 msgid "Use your email address and password to connect to the mail server."
-msgstr "Use su dirección de correo electrónico y contraseña para conectarse al servidor de correo."
+msgstr ""
+"Use su dirección de correo electrónico y contraseña para conectarse al "
+"servidor de correo."
 
 #: templates/accounts/login.html:50
 msgid "Back to home"
@@ -327,8 +336,12 @@ msgid "A modern, HTMX-driven webmail client built with Django."
 msgstr "Un cliente de correo web moderno basado en HTMX y creado con Django."
 
 #: templates/common/home.html:15
-msgid "The mail interface is under construction. See the project README for the roadmap."
-msgstr "La interfaz de correo está en construcción. Consulte el README del proyecto para ver la hoja de ruta."
+msgid ""
+"The mail interface is under construction. See the project README for the "
+"roadmap."
+msgstr ""
+"La interfaz de correo está en construcción. Consulte el README del proyecto "
+"para ver la hoja de ruta."
 
 #: templates/compose/_attachment_list.html:20
 msgid "Remove"
@@ -428,8 +441,10 @@ msgid "Delete this message?"
 msgstr "¿Eliminar este mensaje?"
 
 #: templates/mail/_message.html:92
-msgid "This permanently removes the message from the server and cannot be undone."
-msgstr "Esto elimina permanentemente el mensaje del servidor y no se puede deshacer."
+msgid ""
+"This permanently removes the message from the server and cannot be undone."
+msgstr ""
+"Esto elimina permanentemente el mensaje del servidor y no se puede deshacer."
 
 #: templates/mail/_message.html:111
 msgid "Close"
@@ -448,8 +463,12 @@ msgid "This message has no content."
 msgstr "Este mensaje no tiene contenido."
 
 #: templates/mail/_message_list.html:7
-msgid "The server does not support UTF-8 search; results use an ASCII approximation."
-msgstr "El servidor no admite búsquedas UTF-8; los resultados usan una aproximación ASCII."
+msgid ""
+"The server does not support UTF-8 search; results use an ASCII "
+"approximation."
+msgstr ""
+"El servidor no admite búsquedas UTF-8; los resultados usan una aproximación "
+"ASCII."
 
 #: templates/mail/_message_list.html:13
 #, python-format
@@ -544,3 +563,60 @@ msgstr "Lectura"
 #: templates/preferences/_settings_form.html:51
 msgid "Save preferences"
 msgstr "Guardar preferencias"
+
+msgid "Command palette"
+msgstr "Paleta de comandos"
+
+msgid "Search messages and folders"
+msgstr "Buscar mensajes y carpetas"
+
+msgid "Type to search this folder."
+msgstr "Escriba para buscar en esta carpeta."
+
+msgid "Keyboard shortcuts"
+msgstr "Atajos de teclado"
+
+msgid "Could not update the message. Try again."
+msgstr "No se pudo actualizar el mensaje. Inténtelo de nuevo."
+
+msgid "Mark as unread"
+msgstr "Marcar como no leído"
+
+msgid "Mark as read"
+msgstr "Marcar como leído"
+
+msgid "No matching messages or folders in this folder."
+msgstr "No hay mensajes ni carpetas coincidentes en esta carpeta."
+
+msgid "Shortcuts do not fire while you are typing in a field."
+msgstr "Los atajos no se activan mientras escribe en un campo."
+
+msgid "Focus search"
+msgstr "Ir al buscador"
+
+msgid "Next or previous message"
+msgstr "Mensaje siguiente o anterior"
+
+msgid "Open focused message"
+msgstr "Abrir el mensaje enfocado"
+
+msgid "Toggle read and unread"
+msgstr "Alternar leído y no leído"
+
+msgid "Move message"
+msgstr "Mover mensaje"
+
+msgid "Back to the message list"
+msgstr "Volver a la lista de mensajes"
+
+msgid "This dialog"
+msgstr "Este diálogo"
+
+msgid "Close a dialog or panel"
+msgstr "Cerrar un diálogo o panel"
+
+msgid "Open command palette"
+msgstr "Abrir la paleta de comandos"
+
+msgid "Search this folder…"
+msgstr "Buscar en esta carpeta…"

@@ -80,6 +80,19 @@ Before writing code that matches these patterns, STOP and reconsider.
 | No ARIA live region for dynamic content | Add `aria-live="polite"` to update containers |
 | Modal without focus trap | Implement focus trapping or use library |
 
+## DjWebmail specifics
+
+- Use the vendored Alpine CSP build (`static/vendor/alpine-csp.min.js`). Load
+  `static/js/app.js` before it: Alpine starts in a microtask and emits
+  `alpine:init` immediately, so components must be registered first.
+- Components hold local state only. Server mutations are HTMX forms that return
+  HTML; never call `fetch` from Alpine.
+- Optimistic read/star controls change local state, post a hidden `action`, and
+  expect the server to return only the OOB list row. The viewer is not replaced,
+  so local state survives. A non-2xx response reverts the state and shows an
+  alert.
+- Implementations and the keyboard map live in `docs/ui-interaction.md`.
+
 ## Authoritative Resources
 
 - [HTMX Documentation](https://htmx.org/docs/)

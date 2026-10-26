@@ -1,0 +1,63 @@
+{% load i18n %}
+<dialog
+  id="command-palette"
+  class="modal"
+  aria-labelledby="command-palette-title"
+>
+  <div class="modal-box max-w-2xl p-0">
+    <h2 id="command-palette-title" class="sr-only">{% translate "Command palette" %}</h2>
+    <form
+      class="flex items-center gap-2 border-b border-base-300 px-4 py-3"
+      method="get"
+      action="{% url 'mail:palette' %}"
+      hx-get="{% url 'mail:palette' %}"
+      hx-trigger="input changed delay:250ms, search, submit"
+      hx-target="#palette-results"
+      hx-swap="innerHTML"
+      hx-sync="this:replace"
+      hx-indicator="#palette-spinner"
+      hx-include="#current-folder"
+    >
+      <label class="sr-only" for="palette-query">{% translate "Search messages and folders" %}</label>
+      <input
+        id="palette-query"
+        name="q"
+        type="search"
+        class="input input-ghost input-lg w-full"
+        placeholder="{% translate 'Search this folder…' %}"
+        autocomplete="off"
+        data-dialog-autofocus
+      >
+      <span
+        id="palette-spinner"
+        class="loading loading-spinner loading-sm htmx-indicator text-primary"
+        aria-hidden="true"
+      ></span>
+    </form>
+    <div id="palette-results" class="max-h-96 overflow-y-auto p-2" aria-live="polite">
+      <p class="px-2 py-6 text-center text-sm text-base-content/60">
+        {% translate "Type to search this folder." %}
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 border-t border-base-300 px-4 py-3 text-sm">
+      <a class="btn btn-ghost btn-sm" href="{% url 'compose:new' %}" data-palette-close>
+        {% translate "Compose" %}
+      </a>
+      <button type="button" class="btn btn-ghost btn-sm" data-palette-search>
+        {% translate "Search this folder" %}
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        data-dialog-open="shortcuts-dialog"
+        data-palette-close
+      >
+        {% translate "Keyboard shortcuts" %}
+      </button>
+      <span class="ml-auto text-xs text-base-content/50">Esc</span>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>{% translate "Close" %}</button>
+  </form>
+</dialog>

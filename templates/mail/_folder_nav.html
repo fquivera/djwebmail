@@ -1,9 +1,15 @@
 {% load i18n %}
 <nav
   id="folder-tree"
-  class="rounded-box border border-base-300 bg-base-100 p-3 shadow-sm"
+  class="mail-folder-panel rounded-box border border-base-300 bg-base-100 p-3 shadow-sm"
   aria-label="{% translate 'Folders' %}"
   {% if oob %}hx-swap-oob="outerHTML"{% endif %}
 >
+  <div class="mb-2 flex items-center justify-between gap-2 lg:hidden">
+    <h2 class="text-sm font-semibold">{% translate "Folders" %}</h2>
+    <button type="button" class="btn btn-ghost btn-sm" @click="closeFolders()">
+      {% translate "Close" %}
+    </button>
+  </div>
   {% include "mail/_folder_tree.html" %}
 </nav>

@@ -102,10 +102,19 @@ large messages a later change should fetch only the requested part with
 ## Read and star flags, move, and delete
 
 Opening a message marks it read: the viewer fires a `read` flag request on load
-(`hx-swap="none"`) and the message-list row is refreshed out-of-band. A star
-button in the viewer header toggles `\Flagged`; the response re-renders the
-viewer and the row. The list row carries a stable `id="msg-<uid>"` so HTMX can
-swap it with `hx-swap-oob="outerHTML"`.
+(`hx-swap="none"`) and the message-list row is refreshed out-of-band. Read/unread
+and star controls in the viewer header use the same endpoint. The response only
+replaces the list row (`hx-swap-oob="outerHTML"`); it never replaces the viewer.
+That keeps the Alpine optimistic state intact while the server confirms the
+change. On a non-2xx response the component reverts and shows an error alert.
+
+The list row carries a stable `id="msg-<uid>"` and `data-unread` so HTMX can
+swap it and CSS can style the unread state without duplicating Tailwind
+conditionals. The endpoint returns `503` for mail failures, not the normal `200`
+error partial, so HTMX does not mistake a failed flag change for success. On the
+standalone full-page route the forms send `standalone=1` and the endpoint returns
+`204`: there is no list row to refresh, and an OOB row would have no target. See
+[`docs/ui-interaction.md`](ui-interaction.md).
 
 A folder `<select>` in the viewer header moves the message to another selectable
 folder and redirects there. Flags and move are written with
