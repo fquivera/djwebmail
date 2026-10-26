@@ -1177,3 +1177,42 @@ def test_message_view_renders_delete_confirmation(
     assert b'data-confirm-open="delete-dialog-7"' in response.content
     assert b'id="delete-dialog-7"' in response.content
     assert b"/mail/message/INBOX/7/delete/" in response.content
+
+
+def test_mail_row_renders_hover_quick_actions(
+    logged_in_client: Client,
+    mailbox_data: MessagePage,
+) -> None:
+    response: Any = logged_in_client.get(reverse("mail:index"))
+
+    assert response.status_code == 200
+    assert reverse("compose:reply", kwargs={"folder_name": "INBOX", "uid": 7}).encode() in (
+        response.content
+    )
+    assert reverse("compose:reply_all", kwargs={"folder_name": "INBOX", "uid": 7}).encode() in (
+        response.content
+    )
+    assert reverse("compose:forward", kwargs={"folder_name": "INBOX", "uid": 7}).encode() in (
+        response.content
+    )
+    assert reverse("mail:message_delete", kwargs={"folder_name": "INBOX", "uid": 7}).encode() in (
+        response.content
+    )
+    assert reverse("mail:message_flags", kwargs={"folder_name": "INBOX", "uid": 7}).encode() in (
+        response.content
+    )
+
+
+def test_message_view_renders_reply_all_and_details(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert reverse("compose:reply_all", kwargs={"folder_name": "INBOX", "uid": 7}).encode() in (
+        response.content
+    )
+    assert b"Show details" in response.content

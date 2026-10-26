@@ -11,6 +11,7 @@ from apps.compose.services import (
     build_message,
     forward_initial,
     html_to_text,
+    reply_all_initial,
     reply_initial,
     send_message,
 )
@@ -75,6 +76,20 @@ def test_reply_initial_targets_sender_and_prefixes_subject() -> None:
 def test_reply_initial_does_not_duplicate_prefix() -> None:
     initial = reply_initial(make_detail(subject="Re: Original subject"))
 
+    assert initial["subject"] == "Re: Original subject"
+
+
+def test_reply_all_initial_includes_all_participants_except_self() -> None:
+    detail = make_detail(
+        sender="Alice <alice@example.com>",
+        recipients="User <user@example.com>, Bob <bob@example.com>",
+        cc="Carol <carol@example.com>, user@example.com",
+    )
+
+    initial = reply_all_initial(detail, account_email="user@example.com")
+
+    assert initial["to"] == "alice@example.com, bob@example.com"
+    assert initial["cc"] == "carol@example.com"
     assert initial["subject"] == "Re: Original subject"
 
 

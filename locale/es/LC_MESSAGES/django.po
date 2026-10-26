@@ -689,3 +689,16 @@ msgstr "Alinear a la derecha"
 
 msgid "Clear formatting"
 msgstr "Limpiar formato"
+
+msgid "Reply all"
+msgstr "Responder a todos"
+
+msgid "Message actions"
+msgstr "Acciones del mensaje"
+
+msgid "Show details"
+msgstr "Mostrar detalles"
+
+msgid "Download"
+msgstr "Descargar"
+
