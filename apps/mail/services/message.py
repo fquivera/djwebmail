@@ -72,15 +72,40 @@ ALLOWED_TAGS = frozenset(
         "th",
         "td",
         "caption",
+        "col",
+        "colgroup",
+        "font",
+        "center",
         "img",
     }
 )
 ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
     "a": {"href", "title"},
-    "img": {"src", "alt"},
-    "ol": {"start"},
-    "td": {"colspan", "rowspan"},
-    "th": {"colspan", "rowspan", "scope"},
+    "img": {"src", "alt", "width", "height", "title", "border", "align"},
+    "ol": {"start", "type"},
+    "ul": {"type"},
+    "table": {
+        "width",
+        "height",
+        "border",
+        "cellpadding",
+        "cellspacing",
+        "align",
+        "valign",
+        "summary",
+    },
+    "thead": {"align", "valign"},
+    "tbody": {"align", "valign"},
+    "tfoot": {"align", "valign"},
+    "tr": {"align", "valign"},
+    "td": {"width", "height", "colspan", "rowspan", "align", "valign"},
+    "th": {"width", "height", "colspan", "rowspan", "align", "valign", "scope"},
+    "col": {"width", "span", "align", "valign"},
+    "colgroup": {"width", "span", "align", "valign"},
+    "hr": {"width", "size", "align"},
+    "div": {"align"},
+    "p": {"align"},
+    "font": {"color", "size", "face"},
 }
 # ``cid`` is allowed so the sanitizer keeps inline image sources; they are
 # rewritten to the same-origin inline endpoint before anything reaches a page.
@@ -97,6 +122,71 @@ _REMOTE_RESOURCE_RE = re.compile(
 _ANCHOR_OPEN_RE = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
 _IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 _IMG_SRC_RE = re.compile(r'src="([^"]+)"', re.IGNORECASE)
+
+_STYLE_CONVERTIBLE_TAGS_RE = re.compile(
+    r"<(?P<tag>img|table|td|th|tr|div|p|col|colgroup)\b(?P<attrs>[^>]*)>",
+    re.IGNORECASE,
+)
+_STYLE_ATTR_RE = re.compile(r"""style\s*=\s*["']([^"']*)["']""", re.IGNORECASE)
+_STYLE_WIDTH_RE = re.compile(r"(?<![a-z-])width\s*:\s*(\d+(?:\.\d+)?)(px|%)?", re.IGNORECASE)
+_STYLE_HEIGHT_RE = re.compile(r"(?<![a-z-])height\s*:\s*(\d+(?:\.\d+)?)(px|%)?", re.IGNORECASE)
+_STYLE_TEXT_ALIGN_RE = re.compile(
+    r"(?<![a-z-])text-align\s*:\s*(left|center|right|justify)", re.IGNORECASE
+)
+_STYLE_VERTICAL_ALIGN_RE = re.compile(
+    r"(?<![a-z-])vertical-align\s*:\s*(top|middle|bottom|baseline)", re.IGNORECASE
+)
+
+_HAS_WIDTH_ATTR = re.compile(r"\bwidth\s*=", re.IGNORECASE)
+_HAS_HEIGHT_ATTR = re.compile(r"\bheight\s*=", re.IGNORECASE)
+_HAS_ALIGN_ATTR = re.compile(r"\balign\s*=", re.IGNORECASE)
+_HAS_VALIGN_ATTR = re.compile(r"\bvalign\s*=", re.IGNORECASE)
+
+
+def _extract_style_attributes(html: str) -> str:
+    """Extract presentational attributes from inline styles so elements size safely under CSP."""
+
+    def replace_tag(match: re.Match[str]) -> str:
+        tag_name = match.group("tag").lower()
+        attrs = match.group("attrs")
+        style_match = _STYLE_ATTR_RE.search(attrs)
+        if not style_match:
+            return match.group(0)
+
+        style_content = style_match.group(1)
+        added_attrs: list[str] = []
+
+        if not _HAS_WIDTH_ATTR.search(attrs):
+            w_m = _STYLE_WIDTH_RE.search(style_content)
+            if w_m:
+                val = str(round(float(w_m.group(1))))
+                if w_m.group(2) == "%":
+                    val += "%"
+                added_attrs.append(f'width="{val}"')
+
+        if not _HAS_HEIGHT_ATTR.search(attrs):
+            h_m = _STYLE_HEIGHT_RE.search(style_content)
+            if h_m:
+                val = str(round(float(h_m.group(1))))
+                if h_m.group(2) == "%":
+                    val += "%"
+                added_attrs.append(f'height="{val}"')
+
+        if not _HAS_ALIGN_ATTR.search(attrs):
+            ta_m = _STYLE_TEXT_ALIGN_RE.search(style_content)
+            if ta_m:
+                added_attrs.append(f'align="{ta_m.group(1).lower()}"')
+
+        if not _HAS_VALIGN_ATTR.search(attrs) and tag_name in ("td", "th", "tr"):
+            va_m = _STYLE_VERTICAL_ALIGN_RE.search(style_content)
+            if va_m:
+                added_attrs.append(f'valign="{va_m.group(1).lower()}"')
+
+        if added_attrs:
+            return f"<{tag_name} {' '.join(added_attrs)} {attrs.strip()}>"
+        return match.group(0)
+
+    return _STYLE_CONVERTIBLE_TAGS_RE.sub(replace_tag, html)
 
 
 def resolve_attachment_content_type(content_type: str, filename: str = "") -> str:
@@ -230,8 +320,9 @@ def get_part(
 
 def sanitize_html(html: str) -> str:
     """Strip unsafe markup and harden links; the result is safe to render."""
+    normalized = _extract_style_attributes(html)
     cleaned = nh3.clean(
-        html,
+        normalized,
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
         url_schemes=ALLOWED_URL_SCHEMES,
@@ -291,6 +382,10 @@ def _image_src_filter(element: str, attribute: str, value: str) -> str | None:
         if lowered.startswith("cid:") or lowered.startswith(_IMAGE_SCHEME_PREFIXES):
             return value
         return None
+    if attribute in ("width", "height"):
+        val = value.strip().lower()
+        if val.endswith("px") and val[:-2].isdigit():
+            return val[:-2]
     return value
 
 
