@@ -171,6 +171,8 @@ DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES
 DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS  DJANGO_SESSION_COOKIE_AGE
 DJANGO_MAIL_MAX_ATTACHMENT_BYTES  DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES
 DJANGO_MAIL_MAX_ATTACHMENTS  DJANGO_MAIL_COMPOSE_TTL_SECONDS
+DJANGO_MAIL_ACCOUNTS_FILE  DJANGO_MAIL_POPPASSD_HOST
+DJANGO_MAIL_POPPASSD_PORT  DJANGO_MAIL_CHANGE_PASSWORD_ENABLED
 REDIS_URL  FERNET_KEY
 FUNCTIONAL_TESTS_ENABLED  FUNCTIONAL_MAIL_USER  FUNCTIONAL_MAIL_PASSWORD
 ```
@@ -484,7 +486,17 @@ Done:
     recipient suggestions and `?to=` prefill, and "+ Save contact" from the
     message viewer.
 
-Next: Phase 5 is complete. Ready for the `v0.3.0` release. Do not open new
+- Phase 6 (`docs/phase-6.md`):
+  - Email archiving (`POST /mail/message/<folder>/<uid>/archive/`, batch archive,
+    RFC 6154 `\Archive` / `Archive` folder resolution, and `y` / `a` keyboard shortcut).
+  - Strict blocking modal attachment viewer (`<dialog data-modal-strict>`,
+    `GET /attachment/<part>/preview/` and `inline/`), supporting image, PDF,
+    escaped text/CSV/JSON, and audio/video previews with backdrop and Escape lock.
+  - Self-service password management (`POST /settings/password/`) with OWASP/NIST
+    minimum security rules, live interactive checklist, visibility toggles,
+    and `docker-mailserver` / `poppassd` backend driver support.
+
+Next: Phase 6 is complete. Ready for the next release. Do not open new
 protocol areas without a new phase document.
 
 ## 12. Anti-patterns

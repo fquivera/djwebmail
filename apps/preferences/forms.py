@@ -11,6 +11,8 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+from apps.accounts.constants import PASSWORD_MIN_LENGTH
+from apps.accounts.services.password import validate_password_rules
 from apps.preferences.constants import (
     ACCOUNT_LABEL_MAX_LENGTH,
     DISPLAY_NAME_MAX_LENGTH,
@@ -140,3 +142,67 @@ class MailPreferenceForm(forms.ModelForm):
         if isinstance(instance_value, str) and instance_value in RemoteImages.values:
             return instance_value
         return RemoteImages.ASK
+
+
+class ChangePasswordForm(forms.Form):
+    """Form to change the account password with OWASP/NIST validation rules."""
+
+    current_password = forms.CharField(
+        label=_("Current password"),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "autocomplete": "current-password",
+                "placeholder": "••••••••••••",
+            }
+        ),
+    )
+    new_password = forms.CharField(
+        label=_("New password"),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "autocomplete": "new-password",
+                "minlength": PASSWORD_MIN_LENGTH,
+                "placeholder": "••••••••••••",
+                "data-password-input": "new",
+            }
+        ),
+        help_text=_("Minimum 12 characters, including uppercase, lowercase, numbers, and symbols."),
+    )
+    confirm_password = forms.CharField(
+        label=_("Confirm new password"),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "autocomplete": "new-password",
+                "minlength": PASSWORD_MIN_LENGTH,
+                "placeholder": "••••••••••••",
+                "data-password-input": "confirm",
+            }
+        ),
+    )
+
+    def __init__(self, *args: Any, email: str = "", **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.email = email
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        current_password = cleaned_data.get("current_password") or ""
+        new_password = cleaned_data.get("new_password") or ""
+        confirm_password = cleaned_data.get("confirm_password") or ""
+
+        if new_password and confirm_password and new_password != confirm_password:
+            self.add_error("confirm_password", _("The new passwords do not match."))
+
+        if new_password:
+            errors = validate_password_rules(
+                new_password,
+                current_password=current_password,
+                email=self.email,
+            )
+            for err in errors:
+                self.add_error("new_password", err)
+
+        return cleaned_data

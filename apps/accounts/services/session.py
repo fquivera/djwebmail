@@ -81,6 +81,16 @@ def start_mail_session(request: HttpRequest, account: MailAccount, password: str
     return preference
 
 
+def update_mail_session_password(request: HttpRequest, new_password: str) -> None:
+    """Rotate the session key and update the Fernet-encrypted stored password."""
+    session = _session(request)
+    session.cycle_key()
+    session_key = session.session_key
+    if not session_key:
+        raise MailSessionError("Django did not create a session key")
+    CredentialStore().save(session_key, new_password)
+
+
 def end_mail_session(request: HttpRequest) -> None:
     """Delete the encrypted credential and invalidate the session."""
     session = _session(request)

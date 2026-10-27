@@ -51,3 +51,11 @@ class SmtpSendError(SmtpError):
 
 class MailSessionError(MailError):
     """The server-side mail session is missing or no longer usable."""
+
+
+class PasswordChangeError(MailError):
+    """Failure changing an account's email password."""
+
+
+class PasswordValidationError(MailError):
+    """The proposed password violates security policy rules."""

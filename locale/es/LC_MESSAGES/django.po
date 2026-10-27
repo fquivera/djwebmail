@@ -939,6 +939,146 @@ msgstr "La vista previa no está disponible para este tipo de archivo."
 msgid "Download the attachment to open it on your device."
 msgstr "Descarga el adjunto para abrirlo en tu dispositivo."
 
+msgid "The new password must be at least %(min)d characters long."
+msgstr "La nueva contraseña debe tener al menos %(min)d caracteres."
+
+msgid "The new password must contain at least one uppercase letter."
+msgstr "La nueva contraseña debe contener al menos una letra mayúscula."
+
+msgid "The new password must contain at least one lowercase letter."
+msgstr "La nueva contraseña debe contener al menos una letra minúscula."
+
+msgid "The new password must contain at least one number."
+msgstr "La nueva contraseña debe contener al menos un número."
+
+msgid "The new password must contain at least one special symbol."
+msgstr "La nueva contraseña debe contener al menos un símbolo especial."
+
+msgid "The new password cannot be the same as your current password."
+msgstr "La nueva contraseña no puede ser igual a tu contraseña actual."
+
+msgid "The new password cannot contain your username or email."
+msgstr "La nueva contraseña no puede contener tu nombre de usuario ni correo."
+
+msgid "The new password cannot contain repetitive sequences of characters."
+msgstr "La nueva contraseña no puede contener secuencias repetitivas de caracteres."
+
+msgid "System cryptographic library (libcrypt) is not available."
+msgstr "La biblioteca criptográfica del sistema (libcrypt) no está disponible."
+
+msgid "System libcrypt does not provide the crypt function."
+msgstr "La biblioteca libcrypt del sistema no proporciona la función crypt."
+
+msgid "Failed to generate password hash."
+msgstr "No se pudo generar el hash de la contraseña."
+
+msgid "Accounts file '%(path)s' does not exist."
+msgstr "El archivo de cuentas '%(path)s' no existe."
+
+msgid "Failed to update accounts file: %(error)s"
+msgstr "No se pudo actualizar el archivo de cuentas: %(error)s"
+
+msgid "POPPASSD server rejected connection: %(msg)s"
+msgstr "El servidor POPPASSD rechazó la conexión: %(msg)s"
+
+msgid "POPPASSD rejected user: %(msg)s"
+msgstr "POPPASSD rechazó el usuario: %(msg)s"
+
+msgid "POPPASSD rejected current password: %(msg)s"
+msgstr "POPPASSD rechazó la contraseña actual: %(msg)s"
+
+msgid "POPPASSD rejected new password: %(msg)s"
+msgstr "POPPASSD rechazó la nueva contraseña: %(msg)s"
+
+msgid "Could not reach POPPASSD server: %(error)s"
+msgstr "No se pudo conectar con el servidor POPPASSD: %(error)s"
+
+msgid "Password change is not enabled for this server."
+msgstr "El cambio de contraseña no está habilitado en este servidor."
+
+msgid "The current password is incorrect."
+msgstr "La contraseña actual es incorrecta."
+
+msgid "Current password"
+msgstr "Contraseña actual"
+
+msgid "New password"
+msgstr "Nueva contraseña"
+
+msgid "Confirm new password"
+msgstr "Confirmar nueva contraseña"
+
+msgid "Minimum 12 characters, including uppercase, lowercase, numbers, and symbols."
+msgstr "Mínimo 12 caracteres, incluyendo mayúsculas, minúsculas, números y símbolos."
+
+msgid "The new passwords do not match."
+msgstr "Las contraseñas nuevas no coinciden."
+
+msgid "Password changed successfully."
+msgstr "Contraseña cambiada exitosamente."
+
+msgid "Security and change password"
+msgstr "Seguridad y cambio de contraseña"
+
+msgid "Password security best practices"
+msgstr "Buenas prácticas de seguridad para contraseñas"
+
+msgid "Use at least 12 characters combining uppercase, lowercase, numbers, and special symbols."
+msgstr "Usa al menos 12 caracteres combinando mayúsculas, minúsculas, números y símbolos especiales."
+
+msgid "Create memorable passphrases with 3 or more unrelated words."
+msgstr "Crea frases de contraseña fáciles de recordar combinando 3 o más palabras no relacionadas."
+
+msgid "Never reuse passwords from other services or email accounts."
+msgstr "Nunca reutilices contraseñas de otros servicios o cuentas de correo."
+
+msgid "Avoid using personal information such as birthdates, names, or common dictionary words."
+msgstr "Evita usar información personal como fechas de nacimiento, nombres o palabras comunes de diccionario."
+
+msgid "We recommend using a dedicated password manager to generate and store strong credentials."
+msgstr "Recomendamos usar un gestor de contraseñas dedicado para generar y almacenar credenciales seguras."
+
+msgid "Show/hide password"
+msgstr "Mostrar/ocultar contraseña"
+
+msgid "Password strength"
+msgstr "Seguridad de la contraseña"
+
+msgid "Not entered"
+msgstr "No ingresada"
+
+msgid "At least 12 characters"
+msgstr "Al menos 12 caracteres"
+
+msgid "Uppercase & lowercase letters"
+msgstr "Letras mayúsculas y minúsculas"
+
+msgid "At least one number (0-9)"
+msgstr "Al menos un número (0-9)"
+
+msgid "At least one symbol (!@#$%...)"
+msgstr "Al menos un símbolo (!@#$%...)"
+
+msgid "Passwords match"
+msgstr "Las contraseñas coinciden"
+
+msgid "Change password"
+msgstr "Cambiar contraseña"
+
+msgid "No password backend driver is configured for this deployment. Please configure DJANGO_MAIL_ACCOUNTS_FILE or DJANGO_MAIL_POPPASSD_HOST."
+msgstr "No hay ningún controlador de contraseñas configurado para este despliegue. Por favor configure DJANGO_MAIL_ACCOUNTS_FILE o DJANGO_MAIL_POPPASSD_HOST."
+
+msgid "Password changes are not configured."
+msgstr "El cambio de contraseña no está configurado."
+
+msgid "This deployment does not have a mail password driver configured (DJANGO_MAIL_ACCOUNTS_FILE or DJANGO_MAIL_POPPASSD_HOST). Contact your mail administrator."
+msgstr "Este despliegue no tiene un controlador de contraseñas configurado (DJANGO_MAIL_ACCOUNTS_FILE o DJANGO_MAIL_POPPASSD_HOST). Contacta al administrador del correo."
+
+msgid "Password changes are not configured on this server"
+msgstr "El cambio de contraseña no está configurado en este servidor"
+
+
+
 
 
 

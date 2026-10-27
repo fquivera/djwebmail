@@ -7,11 +7,12 @@ encrypted session store; PostgreSQL only holds the preference row.
 ## Route
 
 - `GET /settings/` renders the full page.
-- `POST /settings/` saves the form.
-- HTMX requests target `#settings-form` and receive
-  `templates/preferences/_settings_form.html` with the same root id.
-- The route is `preferences:index`; the header exposes it only when a mail
-  session exists.
+- `POST /settings/` saves the presentation preferences form (`#settings-form`).
+- `POST /settings/password/` validates and changes the email password (`#password-form`).
+- HTMX requests target `#settings-form` or `#password-form` respectively and swap
+  the refreshed fragments in place.
+- The routes are `preferences:index` and `preferences:password`; the header exposes
+  them only when a mail session exists.
 
 The view is `never_cache`, varies on `HX-Request`, and requires a mail login.
 A missing preference row is created on demand for the authenticated account.
@@ -46,6 +47,37 @@ showing them would be misleading.
 4. Saving the form updates both the row and the session.
 
 There is no `localStorage` preference and no client-side source of truth.
+
+## Security and password change
+
+The `/settings/` page provides a dedicated self-service password update form
+(`templates/preferences/_password_form.html`) when `MAIL_CHANGE_PASSWORD_ENABLED`
+is true (default: `True`):
+
+- **OWASP ASVS & NIST requirements enforced**:
+  - Minimum 12 characters.
+  - At least one uppercase letter (`A-Z`).
+  - At least one lowercase letter (`a-z`).
+  - At least one number (`0-9`).
+  - At least one special symbol (`!@#$%^&*()_+-=[]{}|;:,.<>?/~`).
+  - Cannot match the current password.
+  - Cannot contain the user's email address or username.
+  - Rejects repetitive character patterns (e.g. `aaaa`).
+- **Real-time UX feedback**:
+  - Live interactive checklist updating checkmarks (`✓`) dynamically as the user
+    types.
+  - Password strength progress bar (`Débil` / `Media` / `Fuerte`).
+  - Show/hide password visibility toggles (`data-password-toggle`).
+  - Security recommendations banner emphasizing unique passphrases, no password
+    reuse across services, and dedicated password managers.
+- **Backend drivers**:
+  - `DJANGO_MAIL_ACCOUNTS_FILE`: atomic updates to `{SHA512-CRYPT}` hashes in
+    Dovecot/docker-mailserver accounts files (`postfix-accounts.cf`).
+  - `DJANGO_MAIL_POPPASSD_HOST` / `DJANGO_MAIL_POPPASSD_PORT`: authenticated
+    `POPPASSD` protocol communication (port 106).
+  - Session rotation: when the backend update succeeds, the session key cycles
+    (`request.session.cycle_key()`) and stores the new Fernet-encrypted password,
+    keeping the user authenticated smoothly.
 
 ## Theme and density
 

@@ -22,6 +22,16 @@ Phase 6 adds three core capabilities to DjWebmail:
      SAMEORIGIN`, `frame-ancestors 'self'`), UTF-8 text/CSV/Markdown/JSON
      (escaped `<pre>` capped at 256 KB), and audio/video (paused on close),
      while rejecting `image/svg+xml` and `text/html` on the inline endpoint.
+3. **Password Management and Security Best Practices (`apps/accounts/` & `apps/preferences/`)**:
+   - Self-service password change form at `/settings/` (`POST /settings/password/`).
+   - OWASP ASVS and NIST password complexity: minimum 12 chars, uppercase,
+     lowercase, number, symbol, no email/username containment, no repetitive
+     sequences, and must differ from current password.
+   - Interactive client-side strength checklist and meter with live visual feedback,
+     password visibility toggles, and security recommendations banner.
+   - Backend drivers for `docker-mailserver` / Dovecot (`DJANGO_MAIL_ACCOUNTS_FILE`
+     `{SHA512-CRYPT}`), `POPPASSD` protocol (`DJANGO_MAIL_POPPASSD_HOST`), and
+     seamless session key rotation (`request.session.cycle_key()`).
 
 ## Upstream Evidence
 
@@ -34,3 +44,6 @@ Phase 6 adds three core capabilities to DjWebmail:
 - `snappymail/v/0.0.0/app/libraries/RainLoop/Actions/Messages.php` and
   `dev/Model/Attachment.js`: inline vs download attachment disposition and
   preview classification.
+- `snappymail-master/plugins/change-password/` and
+  `plugins/change-password-poppassd/driver.php`: change-password plugin flow,
+  rules, and POPPASSD driver.
