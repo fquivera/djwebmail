@@ -81,6 +81,19 @@ def test_import_and_export_jcard_for_account_upserts_by_email() -> None:
     assert len(list_contacts("acct-1")) == 1
 
 
+def test_save_contact_with_accented_name_does_not_rfc2047_encode_formatted_address() -> None:
+    contact = Contact(
+        full_name="=?utf-8?q?Francisco_Antonio_Quivera_Gonz=C3=A1lez?=",
+        primary_email="fquivera@example.org",
+    )
+
+    saved = save_contact_for_account("acct-1", contact)
+
+    assert saved.full_name == "Francisco Antonio Quivera González"
+    assert saved.formatted_address == "Francisco Antonio Quivera González <fquivera@example.org>"
+    assert "=?" not in saved.formatted_address
+
+
 def test_import_jcard_rejects_malformed_json() -> None:
     with pytest.raises(ValidationError):
         import_jcard_for_account("acct-1", "{not-valid-json")

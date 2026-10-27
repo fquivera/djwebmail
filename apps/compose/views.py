@@ -47,13 +47,15 @@ from apps.compose.forms import ComposeForm
 from apps.compose.services import (
     append_to_sent,
     apply_signature,
+    decode_mime_words,
     format_sender_address,
     forward_initial,
     reply_all_initial,
     reply_initial,
     send_message,
 )
-from apps.contacts.selectors import list_contact_suggestions
+from apps.contacts.constants import MAX_CONTACTS_AUTOCOMPLETE
+from apps.contacts.selectors import list_contact_suggestions, list_contacts
 from apps.mail.constants import IMAP_INBOX
 from apps.mail.services.message import MessageDetail, get_message
 
@@ -66,11 +68,15 @@ def compose_new(request: HttpRequest) -> HttpResponse:
     draft = load_draft(session_key)
     signature = get_mail_signature(request)
     raw_to = request.GET.get("to")
-    to_prefill = raw_to.strip() if isinstance(raw_to, str) else ""
+    to_prefill = decode_mime_words(raw_to) if isinstance(raw_to, str) else ""
     if draft:
         initial: dict[str, str] | None = draft.as_initial()
-        if to_prefill and initial is not None:
-            initial["to"] = to_prefill
+        if initial is not None:
+            for field in ("to", "cc", "bcc"):
+                if field in initial and initial[field]:
+                    initial[field] = decode_mime_words(initial[field])
+            if to_prefill:
+                initial["to"] = to_prefill
     elif signature or to_prefill:
         base_initial = {"to": to_prefill} if to_prefill else {}
         initial = apply_signature(base_initial, signature)
@@ -282,6 +288,9 @@ def _render_compose(
             "draft_autosave": draft_autosave,
             "sender_display": format_sender_address(account_email, display_name),
             "account_label": get_mail_account_label(request),
+            "contacts": (
+                list_contacts(account_key)[:MAX_CONTACTS_AUTOCOMPLETE] if account_key else []
+            ),
             "contact_suggestions": list_contact_suggestions(account_key) if account_key else [],
         },
         status=status,

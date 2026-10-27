@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass
+from email.header import decode_header, make_header
 from typing import Any
 
 from django.core.exceptions import ValidationError
@@ -40,10 +41,21 @@ class ContactData:
     notes: str = ""
 
 
+def decode_mime_text(value: str) -> str:
+    """Decode RFC 2047 encoded-words (``=?utf-8?q?...?=``) into clean Unicode text."""
+    text = value.replace("\r", " ").replace("\n", " ").strip()
+    if "=?" not in text:
+        return text
+    try:
+        return str(make_header(decode_header(text))).strip()
+    except Exception:
+        return text
+
+
 def build_jcard(data: ContactData) -> list[Any]:
     """Build a canonical RFC 7095 jCard array from ``data``."""
     clean_uid = data.uid.strip() or str(uuid.uuid4())
-    clean_name = data.full_name.strip()[:CONTACT_NAME_MAX_LENGTH]
+    clean_name = decode_mime_text(data.full_name)[:CONTACT_NAME_MAX_LENGTH]
     clean_email = data.email.strip().lower()
     if not clean_name:
         clean_name = clean_email.split("@", 1)[0]
@@ -154,7 +166,9 @@ def parse_jcard(payload: Any) -> ContactData:
     except ValidationError as exc:
         raise ValueError("jCard email property is not a valid email address") from exc
 
-    resolved_name = (fn_val or n_fallback or email_val.split("@", 1)[0])[:CONTACT_NAME_MAX_LENGTH]
+    resolved_name = decode_mime_text(fn_val or n_fallback or email_val.split("@", 1)[0])[
+        :CONTACT_NAME_MAX_LENGTH
+    ]
     resolved_uid = uid_val or str(uuid.uuid4())
     return ContactData(
         uid=resolved_uid,

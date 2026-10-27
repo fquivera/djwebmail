@@ -182,17 +182,21 @@ def test_compose_includes_contact_suggestions_and_to_prefill(
 ) -> None:
     save_contact_for_account(
         account.account_key,
-        Contact(full_name="Ada Lovelace", primary_email="ada@example.org"),
+        Contact(
+            full_name="Francisco Antonio Quivera González",
+            primary_email="fquivera@example.org",
+        ),
     )
 
     response = logged_in_client.get(
         reverse("compose:new"),
-        {"to": "Ada Lovelace <ada@example.org>"},
+        {"to": "=?utf-8?q?Francisco_Antonio_Quivera_Gonz=C3=A1lez?= <fquivera@example.org>"},
     )
     assert response.status_code == 200
     html = response.content.decode("utf-8")
     assert 'id="contact-suggestions"' in html
-    assert "Ada Lovelace &lt;ada@example.org&gt;" in html
+    assert "Francisco Antonio Quivera González &lt;fquivera@example.org&gt;" in html
+    assert "=?utf-8?" not in html
 
 
 def test_contacts_page_renders_spanish_translations(logged_in_client: Any) -> None:

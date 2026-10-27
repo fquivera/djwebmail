@@ -101,12 +101,42 @@
           {{ form.to.label }}
         </label>
         <div class="flex-1 min-w-0">
-          {{ form.to }}
+          <input
+            type="text"
+            name="to"
+            id="{{ form.to.id_for_label }}"
+            x-ref="toInput"
+            value="{{ form.to.value|default:'' }}"
+            autocomplete="off"
+            class="input w-full"
+            placeholder="{{ form.to.field.widget.attrs.placeholder|default:'' }}"
+            @focus="focusTo()"
+            @input="inputTo()"
+            @keydown.escape="closeContacts()"
+          >
           {% if form.to.errors %}
             <div class="text-xs text-error mt-0.5" role="alert">{{ form.to.errors }}</div>
           {% endif %}
         </div>
         <div class="flex items-center gap-1 shrink-0">
+          {% if contacts %}
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs gap-1 text-xs font-medium"
+              x-bind:class="showContacts ? 'btn-active text-primary' : ''"
+              title="{% translate 'Contacts' %}"
+              @click="toggleContactsPicker()"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span class="hidden sm:inline">{% translate "Contacts" %}</span>
+              <span class="badge badge-primary badge-soft badge-xs">{{ contacts|length }}</span>
+            </button>
+          {% endif %}
           <button
             type="button"
             class="btn btn-ghost btn-xs text-xs font-medium"
@@ -137,9 +167,11 @@
             x-ref="ccInput"
             value="{{ form.cc.value|default:'' }}"
             autocomplete="off"
-            list="contact-suggestions"
             class="input w-full"
             placeholder="{{ form.cc.field.widget.attrs.placeholder|default:'' }}"
+            @focus="focusCc()"
+            @input="inputCc()"
+            @keydown.escape="closeContacts()"
           >
           {% if form.cc.errors %}
             <div class="text-xs text-error mt-0.5" role="alert">{{ form.cc.errors }}</div>
@@ -162,15 +194,69 @@
             x-ref="bccInput"
             value="{{ form.bcc.value|default:'' }}"
             autocomplete="off"
-            list="contact-suggestions"
             class="input w-full"
             placeholder="{{ form.bcc.field.widget.attrs.placeholder|default:'' }}"
+            @focus="focusBcc()"
+            @input="inputBcc()"
+            @keydown.escape="closeContacts()"
           >
           {% if form.bcc.errors %}
             <div class="text-xs text-error mt-0.5" role="alert">{{ form.bcc.errors }}</div>
           {% endif %}
         </div>
       </div>
+
+      {% if contacts %}
+        <div
+          id="contact-suggestions"
+          x-show="showContacts"
+          class="border-b border-base-300 bg-base-200/40 px-4 py-2.5 space-y-2"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-base-content/60">
+              {% translate "Select a contact" %}
+            </span>
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs"
+              @click="closeContacts()"
+            >{% translate "Close" %}</button>
+          </div>
+          <div x-ref="contactsList" class="grid gap-1.5 sm:grid-cols-2 max-h-48 overflow-y-auto">
+            {% for contact in contacts %}
+              <button
+                type="button"
+                data-contact-item
+                data-address="{{ contact.formatted_address }}"
+                data-search="{{ contact.full_name|lower }} {{ contact.primary_email|lower }} {{ contact.category|lower }} {{ contact.organization|lower }}"
+                class="flex items-center justify-between gap-2.5 rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-left shadow-2xs transition hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
+                @mousedown.prevent
+                @click="selectContact"
+              >
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <span
+                    class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary"
+                    aria-hidden="true"
+                  >{{ contact.full_name|slice:":1"|upper }}</span>
+                  <div class="min-w-0">
+                    <div class="truncate text-xs font-semibold text-base-content">{{ contact.full_name }}</div>
+                    <div class="truncate text-xs text-base-content/65">{{ contact.primary_email }}</div>
+                  </div>
+                </div>
+                <div class="flex shrink-0 items-center gap-1.5">
+                  {% if contact.category %}
+                    <span class="badge badge-outline badge-xs">{{ contact.category }}</span>
+                  {% endif %}
+                  <span class="badge badge-primary badge-soft badge-xs">+</span>
+                </div>
+              </button>
+            {% endfor %}
+          </div>
+          <p x-show="noMatchingContacts" class="py-1 text-center text-xs text-base-content/60">
+            {% translate "No contacts found." %}
+          </p>
+        </div>
+      {% endif %}
 
       <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
         <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.subject.id_for_label }}">
@@ -329,12 +415,6 @@
           {% include "compose/_attachment_list.html" %}
         </div>
       </div>
-
-      <datalist id="contact-suggestions">
-        {% for suggestion in contact_suggestions %}
-          <option value="{{ suggestion }}"></option>
-        {% endfor %}
-      </datalist>
     </form>
   </div>
 {% endblock %}

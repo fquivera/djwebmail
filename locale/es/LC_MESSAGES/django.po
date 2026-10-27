@@ -915,4 +915,8 @@ msgstr "El archivo jCard debe ser JSON codificado en UTF-8."
 msgid "Select a jCard JSON file or paste a jCard payload."
 msgstr "Selecciona un archivo JSON jCard o pega un contenido jCard."
 
+msgid "Select a contact"
+msgstr "Seleccionar un contacto"
+
+
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime
-from email.utils import formataddr
 from typing import Any, cast
 
 from django.core.exceptions import ValidationError
@@ -22,7 +21,7 @@ from apps.contacts.constants import (
     CONTACT_PHONE_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 )
-from apps.contacts.jcard import ContactData, build_jcard, parse_jcard
+from apps.contacts.jcard import ContactData, build_jcard, decode_mime_text, parse_jcard
 
 
 class Contact(models.Model):
@@ -82,16 +81,23 @@ class Contact(models.Model):
             )
         ]
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if isinstance(self.full_name, str) and "=?" in self.full_name:
+            self.full_name = decode_mime_text(self.full_name)
+
     def __str__(self) -> str:
         return self.formatted_address
 
     @property
     def formatted_address(self) -> str:
-        """Return ``"Full Name <email>"`` for compose fields."""
-        clean_name = self.full_name.replace("\r", " ").replace("\n", " ").strip()
+        """Return human-readable ``"Full Name <email>"`` for compose fields."""
+        clean_name = decode_mime_text(self.full_name).replace('"', "").strip()
         clean_email = self.primary_email.strip()
         if clean_name and clean_email:
-            return formataddr((clean_name, clean_email))
+            if any(ch in clean_name for ch in (",", ";", "<", ">")):
+                return f'"{clean_name}" <{clean_email}>'
+            return f"{clean_name} <{clean_email}>"
         return clean_email
 
     @property
@@ -116,7 +122,7 @@ class Contact(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        self.full_name = self.full_name.replace("\r", " ").replace("\n", " ").strip()
+        self.full_name = decode_mime_text(self.full_name)
         self.primary_email = self.primary_email.strip().lower()
         self.phone = self.phone.strip()
         self.organization = self.organization.strip()

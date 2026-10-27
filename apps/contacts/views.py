@@ -18,6 +18,7 @@ from django.views.decorators.vary import vary_on_headers
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.contacts.constants import JCARD_MIME_TYPE, MAX_JCARD_IMPORT_BYTES
 from apps.contacts.forms import ContactForm
+from apps.contacts.jcard import decode_mime_text
 from apps.contacts.models import Contact
 from apps.contacts.selectors import get_contact, list_contacts
 from apps.contacts.services import (
@@ -199,9 +200,10 @@ def _build_initial_form(
 
     sender = _query_text(request, "sender").strip()
     if sender:
-        parsed_name, parsed_addr = parseaddr(sender)
+        parsed_name, parsed_addr = parseaddr(decode_mime_text(sender))
         addr = parsed_addr.strip().lower()
-        name = parsed_name.strip() or (addr.split("@", 1)[0] if "@" in addr else sender)
+        raw_name = decode_mime_text(parsed_name)
+        name = raw_name or (addr.split("@", 1)[0] if "@" in addr else decode_mime_text(sender))
         return ContactForm(
             initial={"full_name": name, "primary_email": addr},
             account_key=account_key,

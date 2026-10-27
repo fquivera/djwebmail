@@ -1,9 +1,10 @@
 /* Progressive UI behaviors for the compose editor.
  *
- * Alpine component for recipient toggles (Cc/Bcc), Rich Text / Plain Text
- * toggling, formatting commands via document.execCommand, active button state
- * tracking via document.queryCommandState, and synchronization between
- * contenteditable and the form textarea.
+ * Alpine component for recipient toggles (Cc/Bcc), interactive contact picker
+ * and autocomplete, Rich Text / Plain Text toggling, formatting commands via
+ * document.execCommand, active button state tracking via
+ * document.queryCommandState, and synchronization between contenteditable and
+ * the form textarea.
  */
 (function () {
   "use strict";
@@ -17,6 +18,9 @@
       return {
         showCc: false,
         showBcc: false,
+        showContacts: false,
+        noMatchingContacts: false,
+        activeRecipient: "to",
         richText: true,
         isBold: false,
         isItalic: false,
@@ -52,6 +56,127 @@
               self.updateFormatState();
             }
           });
+        },
+        activeRecipientInput() {
+          if (this.activeRecipient === "cc" && this.$refs.ccInput) {
+            return this.$refs.ccInput;
+          }
+          if (this.activeRecipient === "bcc" && this.$refs.bccInput) {
+            return this.$refs.bccInput;
+          }
+          return this.$refs.toInput || null;
+        },
+        focusTo() {
+          this.activeRecipient = "to";
+          this.openContactsForInput(this.$refs.toInput);
+        },
+        focusCc() {
+          this.activeRecipient = "cc";
+          this.openContactsForInput(this.$refs.ccInput);
+        },
+        focusBcc() {
+          this.activeRecipient = "bcc";
+          this.openContactsForInput(this.$refs.bccInput);
+        },
+        inputTo() {
+          this.activeRecipient = "to";
+          this.filterContactsByInput(this.$refs.toInput);
+        },
+        inputCc() {
+          this.activeRecipient = "cc";
+          this.filterContactsByInput(this.$refs.ccInput);
+        },
+        inputBcc() {
+          this.activeRecipient = "bcc";
+          this.filterContactsByInput(this.$refs.bccInput);
+        },
+        openContactsForInput(inputEl) {
+          if (!this.$refs.contactsList || !inputEl) {
+            return;
+          }
+          var raw = (inputEl.value || "").trim();
+          if (!raw || raw.endsWith(",")) {
+            this.filterContactItems("");
+            this.showContacts = true;
+          }
+        },
+        filterContactsByInput(inputEl) {
+          if (!this.$refs.contactsList || !inputEl) {
+            return;
+          }
+          var parts = (inputEl.value || "").split(",");
+          var lastToken = (parts[parts.length - 1] || "").trim().toLowerCase();
+          this.filterContactItems(lastToken);
+          this.showContacts = true;
+        },
+        filterContactItems(query) {
+          if (!this.$refs.contactsList) {
+            return;
+          }
+          var items = this.$refs.contactsList.querySelectorAll("[data-contact-item]");
+          var visibleCount = 0;
+          var needle = (query || "").trim().toLowerCase();
+          for (var i = 0; i < items.length; i += 1) {
+            var item = items[i];
+            var haystack = (item.getAttribute("data-search") || "").toLowerCase();
+            var matches = !needle || haystack.indexOf(needle) !== -1;
+            if (matches) {
+              item.classList.remove("hidden");
+              visibleCount += 1;
+            } else {
+              item.classList.add("hidden");
+            }
+          }
+          this.noMatchingContacts = visibleCount === 0;
+        },
+        toggleContactsPicker() {
+          if (!this.$refs.contactsList) {
+            return;
+          }
+          this.showContacts = !this.showContacts;
+          if (this.showContacts) {
+            this.filterContactItems("");
+            var inputEl = this.activeRecipientInput();
+            if (inputEl) {
+              inputEl.focus();
+            }
+          }
+        },
+        closeContacts() {
+          this.showContacts = false;
+        },
+        selectContact(event) {
+          var button = event && event.currentTarget ? event.currentTarget : null;
+          if (!button) {
+            return;
+          }
+          var address = (button.getAttribute("data-address") || "").trim();
+          if (!address) {
+            return;
+          }
+          var inputEl = this.activeRecipientInput();
+          if (!inputEl) {
+            return;
+          }
+          var current = inputEl.value || "";
+          var rawSegments = current.split(",");
+          var kept = [];
+          for (var i = 0; i < rawSegments.length - 1; i += 1) {
+            var seg = rawSegments[i].trim();
+            if (seg && kept.indexOf(seg) === -1) {
+              kept.push(seg);
+            }
+          }
+          var lastSeg = (rawSegments[rawSegments.length - 1] || "").trim();
+          if (lastSeg && lastSeg.indexOf("@") !== -1 && kept.indexOf(lastSeg) === -1) {
+            kept.push(lastSeg);
+          }
+          if (kept.indexOf(address) === -1) {
+            kept.push(address);
+          }
+          inputEl.value = kept.join(", ");
+          this.showContacts = false;
+          inputEl.dispatchEvent(new Event("input", { bubbles: true }));
         },
         updateFormatState() {
           if (!this.richText || !this.$refs.editor) {
@@ -161,6 +286,7 @@
           this.syncToTextarea();
         },
         initEditorContent() {
+          this.closeContacts();
           if (!this.$refs.editor || !this.$refs.bodyInput) {
             return;
           }
@@ -179,10 +305,12 @@
           }
         },
         onEditorInput() {
+          this.closeContacts();
           this.updateFormatState();
           this.syncToTextarea();
         },
         onEditorActivity() {
+          this.closeContacts();
           this.updateFormatState();
         },
         syncToTextarea() {
