@@ -43,8 +43,15 @@
         </div>
 
         <div class="min-w-0 flex-1">
-          <div class="font-semibold text-sm text-base-content break-words">
-            {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+          <div class="flex flex-wrap items-center gap-2 font-semibold text-sm text-base-content break-words">
+            <span>{% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}</span>
+            {% if message.sender %}
+              <a
+                class="btn btn-ghost btn-xs text-xs font-normal text-primary"
+                href="{% url 'contacts:index' %}?sender={{ message.sender|urlencode }}"
+                title="{% translate 'Save contact' %}"
+              >+ {% translate "Save contact" %}</a>
+            {% endif %}
           </div>
 
           <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-base-content/70">

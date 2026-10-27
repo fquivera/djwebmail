@@ -137,6 +137,7 @@
             x-ref="ccInput"
             value="{{ form.cc.value|default:'' }}"
             autocomplete="off"
+            list="contact-suggestions"
             class="input w-full"
             placeholder="{{ form.cc.field.widget.attrs.placeholder|default:'' }}"
           >
@@ -161,6 +162,7 @@
             x-ref="bccInput"
             value="{{ form.bcc.value|default:'' }}"
             autocomplete="off"
+            list="contact-suggestions"
             class="input w-full"
             placeholder="{{ form.bcc.field.widget.attrs.placeholder|default:'' }}"
           >
@@ -327,6 +329,12 @@
           {% include "compose/_attachment_list.html" %}
         </div>
       </div>
+
+      <datalist id="contact-suggestions">
+        {% for suggestion in contact_suggestions %}
+          <option value="{{ suggestion }}"></option>
+        {% endfor %}
+      </datalist>
     </form>
   </div>
 {% endblock %}

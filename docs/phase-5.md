@@ -24,10 +24,11 @@ SnappyMail evidence and RFC standards:
      selector, then redirects (`HX-Redirect` or `302`) to the newly created
      folder.
    - Evidence: `snappymail/v/0.0.0/app/libraries/RainLoop/Actions/Folders.php:114-133`.
-3. **Contacts module with jCard (RFC 7095)** — planned (Stage 3)
+3. **Contacts module with jCard (RFC 7095)** — done
    - Per-account address book in `apps/contacts/` backed by a canonical RFC 7095
      `jcard` (`["vcard", [...]]`) JSON representation, HTMX search/CRUD,
      `.json` (jCard) import/export, compose recipient autocomplete, and
-     one-click contact creation from the message viewer.
+     one-click contact creation from the message viewer. See `docs/contacts.md`.
    - Evidence: `dev/DAV/JCard.js:1-227`,
-     `snappymail/v/0.0.0/app/libraries/RainLoop/Providers/AddressBook/Classes/Contact.php:7-91`.
+     `snappymail/v/0.0.0/app/libraries/RainLoop/Providers/AddressBook/Classes/Contact.php:7-91`,
+     and `docs/upstream/migracion-django-fase0-2.md:856, 1080`.

@@ -53,6 +53,7 @@ from apps.compose.services import (
     reply_initial,
     send_message,
 )
+from apps.contacts.selectors import list_contact_suggestions
 from apps.mail.constants import IMAP_INBOX
 from apps.mail.services.message import MessageDetail, get_message
 
@@ -64,10 +65,15 @@ def compose_new(request: HttpRequest) -> HttpResponse:
     session_key = _session_key(request)
     draft = load_draft(session_key)
     signature = get_mail_signature(request)
+    raw_to = request.GET.get("to")
+    to_prefill = raw_to.strip() if isinstance(raw_to, str) else ""
     if draft:
         initial: dict[str, str] | None = draft.as_initial()
-    elif signature:
-        initial = apply_signature({}, signature)
+        if to_prefill and initial is not None:
+            initial["to"] = to_prefill
+    elif signature or to_prefill:
+        base_initial = {"to": to_prefill} if to_prefill else {}
+        initial = apply_signature(base_initial, signature)
     else:
         initial = None
     return _render_compose(
@@ -263,6 +269,7 @@ def _render_compose(
 ) -> HttpResponse:
     account = getattr(request, "mail_account", None)
     account_email = account.email if account is not None else ""
+    account_key = account.account_key if account is not None else ""
     display_name = get_mail_display_name(request)
     return render(
         request,
@@ -275,6 +282,7 @@ def _render_compose(
             "draft_autosave": draft_autosave,
             "sender_display": format_sender_address(account_email, display_name),
             "account_label": get_mail_account_label(request),
+            "contact_suggestions": list_contact_suggestions(account_key) if account_key else [],
         },
         status=status,
     )

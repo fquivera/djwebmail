@@ -813,3 +813,106 @@ msgstr "Crear carpeta"
 msgid "Enter a valid folder name."
 msgstr "Introduzca un nombre de carpeta válido."
 
+msgid "Contacts"
+msgstr "Contactos"
+
+msgid "contact"
+msgstr "contacto"
+
+msgid "contacts"
+msgstr "contactos"
+
+msgid "Manage your address book using the standard RFC 7095 jCard JSON format."
+msgstr "Gestiona tu libreta de direcciones usando el formato estándar JSON jCard (RFC 7095)."
+
+msgid "Export jCard (.json)"
+msgstr "Exportar jCard (.json)"
+
+msgid "Search contacts"
+msgstr "Buscar contactos"
+
+msgid "Search by name, email, organization, or label..."
+msgstr "Buscar por nombre, correo, organización o etiqueta..."
+
+msgid "Edit contact"
+msgstr "Editar contacto"
+
+msgid "New contact"
+msgstr "Nuevo contacto"
+
+msgid "Full name"
+msgstr "Nombre completo"
+
+msgid "Phone"
+msgstr "Teléfono"
+
+msgid "Organization"
+msgstr "Organización"
+
+msgid "Job title"
+msgstr "Cargo"
+
+msgid "Label / Group"
+msgstr "Etiqueta / Grupo"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Save contact"
+msgstr "Guardar contacto"
+
+msgid "Import RFC 7095 jCard"
+msgstr "Importar jCard RFC 7095"
+
+msgid "jCard JSON file (.json)"
+msgstr "Archivo JSON jCard (.json)"
+
+msgid "Or paste jCard JSON"
+msgstr "O pegar JSON jCard"
+
+msgid "Import jCard"
+msgstr "Importar jCard"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "View RFC 7095 jCard JSON"
+msgstr "Ver JSON jCard RFC 7095"
+
+msgid "No contacts found."
+msgstr "No se encontraron contactos."
+
+msgid "Add a contact using the form or import an RFC 7095 jCard (.json) file."
+msgstr "Añade un contacto con el formulario o importa un archivo jCard (.json) RFC 7095."
+
+msgid "A contact with this email address already exists."
+msgstr "Ya existe un contacto con esta dirección de correo."
+
+msgid "Invalid RFC 7095 jCard representation."
+msgstr "Representación jCard RFC 7095 no válida."
+
+msgid "Invalid RFC 7095 jCard payload."
+msgstr "Contenido jCard RFC 7095 no válido."
+
+msgid "The jCard payload contains no valid contacts."
+msgstr "El archivo jCard no contiene contactos válidos."
+
+msgid "Contact saved."
+msgstr "Contacto guardado."
+
+msgid "Contact deleted."
+msgstr "Contacto eliminado."
+
+msgid "jCard contacts imported: %(created)d new, %(updated)d updated."
+msgstr "Contactos jCard importados: %(created)d nuevos, %(updated)d actualizados."
+
+msgid "The jCard file exceeds the maximum allowed size."
+msgstr "El archivo jCard supera el tamaño máximo permitido."
+
+msgid "The jCard file must be UTF-8 encoded JSON."
+msgstr "El archivo jCard debe ser JSON codificado en UTF-8."
+
+msgid "Select a jCard JSON file or paste a jCard payload."
+msgstr "Selecciona un archivo JSON jCard o pega un contenido jCard."
+
+

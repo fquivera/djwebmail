@@ -73,7 +73,8 @@ djwebmail/
 │   ├── accounts/     # IMAP/SMTP login, session handling
 │   ├── mail/         # Folders, message list, message view
 │   ├── compose/      # Compose, reply, forward, send
-│   └── preferences/  # Per-user UI preferences
+│   ├── contacts/     # RFC 7095 jCard address book, import/export
+│   └── preferences/  # Per-user UI preferences and account identity
 ├── common/           # Shared views, services, templatetags
 ├── templates/        # Base layout and partials
 ├── theme/            # Tailwind source and committed compiled CSS
@@ -264,6 +265,8 @@ MIT — see the LICENSE file for details.
 ☑ Responsive single-panel navigation and optimistic flags<br>
 ☑ Batch message selection and actions (read/unread, star, move, delete)<br>
 ☑ Sent folder copy on send and per-account HTML signature<br>
+☑ Account owner display name, account label, and custom IMAP folder creation<br>
+☑ Contacts module with RFC 7095 jCard import/export and compose autocomplete<br>
 ☑ Docker image publishing<br>
 ☑ Deployment guide<br>
 

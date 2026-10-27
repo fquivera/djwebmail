@@ -22,6 +22,7 @@ class ComposeForm(forms.Form):
             attrs={
                 "autocomplete": "off",
                 "class": "input w-full",
+                "list": "contact-suggestions",
                 "placeholder": _("name@example.com, another@example.com"),
             }
         ),
@@ -33,6 +34,7 @@ class ComposeForm(forms.Form):
             attrs={
                 "autocomplete": "off",
                 "class": "input w-full",
+                "list": "contact-suggestions",
             }
         ),
     )
@@ -43,6 +45,7 @@ class ComposeForm(forms.Form):
             attrs={
                 "autocomplete": "off",
                 "class": "input w-full",
+                "list": "contact-suggestions",
             }
         ),
     )

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Contacts" %}{% endblock %}
+
+{% block scripts %}
+  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
+  <script defer src="{% static 'js/htmx-config.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <section class="flex-1 overflow-y-auto px-4 py-6">
+    <div class="mx-auto max-w-6xl space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-3">
+        <div class="flex items-center gap-2.5">
+          <a
+            class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-base-content"
+            href="{% url 'mail:index' %}"
+            title="{% translate 'Back to mail' %}"
+            aria-label="{% translate 'Back to mail' %}"
+          >
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m12 19-7-7 7-7"></path>
+              <path d="M19 12H5"></path>
+            </svg>
+          </a>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight text-base-content">{% translate "Contacts" %}</h1>
+            <p class="text-xs text-base-content/60">{% translate "Manage your address book using the standard RFC 7095 jCard JSON format." %}</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <a class="btn btn-outline btn-sm gap-1.5" href="{% url 'contacts:export_jcard' %}">
+            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" x2="12" y1="15" y2="3"></line>
+            </svg>
+            <span>{% translate "Export jCard (.json)" %}</span>
+          </a>
+          <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
+        </div>
+      </div>
+
+      <div class="grid gap-5 lg:grid-cols-12">
+        <div class="space-y-4 lg:col-span-7">
+          <form
+            method="get"
+            action="{% url 'contacts:index' %}"
+            hx-get="{% url 'contacts:index' %}"
+            hx-target="#contact-list-results"
+            hx-trigger="submit, input changed delay:250ms from:#id_contact_search"
+            class="flex items-center gap-2"
+          >
+            <label for="id_contact_search" class="sr-only">{% translate "Search contacts" %}</label>
+            <input
+              id="id_contact_search"
+              type="search"
+              name="q"
+              value="{{ query }}"
+              placeholder="{% translate 'Search by name, email, organization, or label...' %}"
+              class="input input-bordered input-sm flex-1"
+            >
+            <button class="btn btn-ghost btn-sm" type="submit">{% translate "Search" %}</button>
+          </form>
+
+          {% include "contacts/_contact_list.html" %}
+        </div>
+
+        <div class="space-y-4 lg:col-span-5">
+          <form
+            method="post"
+            action="{% if editing_contact %}{% url 'contacts:update' editing_contact.pk %}{% else %}{% url 'contacts:create' %}{% endif %}"
+            class="space-y-3 rounded-xl border border-base-300 bg-base-100 p-4 shadow-xs"
+            novalidate
+          >
+            {% csrf_token %}
+            <div class="flex items-center justify-between border-b border-base-200 pb-2">
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-base-content/60">
+                {% if editing_contact %}
+                  {% translate "Edit contact" %}
+                {% else %}
+                  {% translate "New contact" %}
+                {% endif %}
+              </h2>
+              {% if editing_contact %}
+                <a class="btn btn-ghost btn-xs" href="{% url 'contacts:index' %}">{% translate "Cancel" %}</a>
+              {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-error py-2 text-xs" role="alert">
+                {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="form-control sm:col-span-2">
+                <label class="label py-0.5" for="{{ form.full_name.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.full_name.label }}</span>
+                </label>
+                {{ form.full_name }}
+                {% for error in form.full_name.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="form-control sm:col-span-2">
+                <label class="label py-0.5" for="{{ form.primary_email.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.primary_email.label }}</span>
+                </label>
+                {{ form.primary_email }}
+                {% for error in form.primary_email.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="form-control">
+                <label class="label py-0.5" for="{{ form.phone.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.phone.label }}</span>
+                </label>
+                {{ form.phone }}
+                {% for error in form.phone.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="form-control">
+                <label class="label py-0.5" for="{{ form.category.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.category.label }}</span>
+                </label>
+                {{ form.category }}
+                {% for error in form.category.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="form-control">
+                <label class="label py-0.5" for="{{ form.organization.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.organization.label }}</span>
+                </label>
+                {{ form.organization }}
+                {% for error in form.organization.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="form-control">
+                <label class="label py-0.5" for="{{ form.job_title.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.job_title.label }}</span>
+                </label>
+                {{ form.job_title }}
+                {% for error in form.job_title.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+
+              <div class="form-control sm:col-span-2">
+                <label class="label py-0.5" for="{{ form.notes.id_for_label }}">
+                  <span class="label-text text-xs font-semibold">{{ form.notes.label }}</span>
+                </label>
+                {{ form.notes }}
+                {% for error in form.notes.errors %}
+                  <p class="mt-0.5 text-xs text-error" role="alert">{{ error }}</p>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-1">
+              <button class="btn btn-primary btn-sm" type="submit">{% translate "Save contact" %}</button>
+            </div>
+          </form>
+
+          <form
+            method="post"
+            action="{% url 'contacts:import_jcard' %}"
+            enctype="multipart/form-data"
+            class="space-y-3 rounded-xl border border-base-300 bg-base-100 p-4 shadow-xs"
+          >
+            {% csrf_token %}
+            <h2 class="border-b border-base-200 pb-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+              {% translate "Import RFC 7095 jCard" %}
+            </h2>
+            <div class="form-control">
+              <label class="label py-0.5" for="id_jcard_file">
+                <span class="label-text text-xs font-semibold">{% translate "jCard JSON file (.json)" %}</span>
+              </label>
+              <input
+                id="id_jcard_file"
+                type="file"
+                name="jcard_file"
+                accept=".json,application/json,application/vcard+json"
+                class="file-input file-input-bordered file-input-sm w-full"
+              >
+            </div>
+            <div class="form-control">
+              <label class="label py-0.5" for="id_raw_json">
+                <span class="label-text text-xs font-semibold">{% translate "Or paste jCard JSON" %}</span>
+              </label>
+              <textarea
+                id="id_raw_json"
+                name="raw_json"
+                rows="3"
+                class="textarea textarea-bordered textarea-sm w-full font-mono text-xs"
+                placeholder='["vcard", [["version", {}, "text", "4.0"], ["fn", {}, "text", "Ada Lovelace"], ["email", {}, "text", "ada@example.org"]]]'
+              ></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button class="btn btn-outline btn-sm" type="submit">{% translate "Import jCard" %}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
