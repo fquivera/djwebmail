@@ -317,3 +317,83 @@ def test_attachment_preview_kind_classifies_supported_and_unsupported_types() ->
     assert pdf_attachment.is_previewable is True
     assert zip_attachment.is_previewable is False
     assert resolve_attachment_content_type("application/octet-stream", "notes.txt") == "text/plain"
+
+
+def test_sanitize_html_preserves_image_dimensions_and_attributes() -> None:
+    html = (
+        '<img src="https://example.com/icon.png" width="24" height="24" '
+        'alt="Facebook" title="FB" border="0" align="left">'
+    )
+    cleaned = sanitize_html(html)
+
+    assert 'width="24"' in cleaned
+    assert 'height="24"' in cleaned
+    assert 'alt="Facebook"' in cleaned
+    assert 'title="FB"' in cleaned
+    assert 'border="0"' in cleaned
+    assert 'align="left"' in cleaned
+
+
+def test_sanitize_html_converts_style_dimensions_and_alignments() -> None:
+    html = (
+        '<table style="width: 600px;">'
+        '<tr><td style="width: 200px; vertical-align: top; text-align: right;">'
+        '<img src="https://example.com/logo.png" style="width: 180px; height: 90px;" alt="Logo">'
+        "</td></tr></table>"
+    )
+    cleaned = sanitize_html(html)
+
+    assert 'width="600"' in cleaned
+    assert 'width="200"' in cleaned
+    assert 'valign="top"' in cleaned
+    assert 'align="right"' in cleaned
+    assert 'width="180"' in cleaned
+    assert 'height="90"' in cleaned
+    assert "style=" not in cleaned
+
+
+def test_sanitize_html_normalizes_px_in_attributes() -> None:
+    html = '<img src="https://example.com/icon.png" width="32px" height="32px">'
+    cleaned = sanitize_html(html)
+
+    assert 'width="32"' in cleaned
+    assert 'height="32"' in cleaned
+    assert "32px" not in cleaned
+
+
+def test_sanitize_html_preserves_table_and_cell_attributes() -> None:
+    html = (
+        '<table width="100%" border="0" cellpadding="2" cellspacing="1" align="center">'
+        '<tr><td width="50%" align="left" valign="middle" colspan="2" rowspan="1">Test</td></tr>'
+        "</table>"
+    )
+    cleaned = sanitize_html(html)
+
+    assert 'width="100%"' in cleaned
+    assert 'border="0"' in cleaned
+    assert 'cellpadding="2"' in cleaned
+    assert 'cellspacing="1"' in cleaned
+    assert 'align="center"' in cleaned
+    assert 'width="50%"' in cleaned
+    assert 'align="left"' in cleaned
+    assert 'valign="middle"' in cleaned
+    assert 'colspan="2"' in cleaned
+    assert 'rowspan="1"' in cleaned
+
+
+def test_rewrite_images_preserves_dimensions_and_metadata() -> None:
+    html = '<img width="24" height="24" src="cid:logo123" alt="Logo" title="Brand">'
+
+    out = rewrite_images(
+        html,
+        proxy_base="/mail/image-proxy/",
+        inline_url=_inline_url,
+        inline_cids={"logo123": "2"},
+        allow_remote=False,
+    )
+
+    assert 'src="/mail/message/INBOX/7/inline/2/"' in out
+    assert 'width="24"' in out
+    assert 'height="24"' in out
+    assert 'alt="Logo"' in out
+    assert 'title="Brand"' in out
