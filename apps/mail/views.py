@@ -34,13 +34,14 @@ from apps.mail.constants import (
     SEARCH_SCOPE_ALL,
     SEARCH_SCOPE_FOLDER,
 )
-from apps.mail.forms import MailSearchForm
+from apps.mail.forms import CreateFolderForm, MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
     FolderNode,
     batch_delete_messages,
     batch_move_messages,
     batch_set_flags,
+    create_user_folder,
     delete_message,
     list_folders,
     list_messages,
@@ -392,6 +393,36 @@ def message_delete(request: HttpRequest, folder_name: str, uid: int) -> HttpResp
         return _error_response(request)
 
     target = reverse("mail:folder", kwargs={"folder_name": folder})
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def folder_create(request: HttpRequest) -> HttpResponse:
+    """Create a custom top-level or nested IMAP folder and navigate to it."""
+    form = CreateFolderForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+
+    name = str(form.cleaned_data["name"])
+    parent = str(form.cleaned_data.get("parent") or "")
+    try:
+        with get_mail_imap_service(request) as imap:
+            created_folder = create_user_folder(imap, name, parent=parent)
+    except ValueError:
+        return HttpResponse(status=400)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = f"{reverse('mail:folder', kwargs={'folder_name': created_folder})}?view=list"
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return HttpResponse(status=204, headers={"HX-Redirect": target})
     return redirect(target)

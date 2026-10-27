@@ -1331,3 +1331,36 @@ def test_mailbox_renders_spanish_folder_labels(
     assert response.status_code == 200
     assert b"Bandeja de entrada" in response.content
     assert b"Enviados" in response.content
+
+
+def test_folder_create_creates_folder_and_redirects_htmx(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str] = {}
+
+    def fake_create(imap: Any, name: str, *, parent: str = "") -> str:
+        captured["name"] = name
+        captured["parent"] = parent
+        return f"{parent}/{name}" if parent else name
+
+    monkeypatch.setattr("apps.mail.views.create_user_folder", fake_create)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:folder_create"),
+        {"name": "Facturas", "parent": "INBOX"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 204
+    assert captured == {"name": "Facturas", "parent": "INBOX"}
+    assert response["HX-Redirect"] == "/mail/folder/INBOX/Facturas/?view=list"
+
+
+def test_folder_create_rejects_invalid_name(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.post(
+        reverse("mail:folder_create"),
+        {"name": "bad/name"},
+    )
+
+    assert response.status_code == 400

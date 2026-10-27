@@ -11,6 +11,7 @@ from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import FOLDER_FLAG_NOSELECT, IMAP_INBOX, MESSAGE_FLAG_SEEN
 from apps.mail.services.mailbox import (
     build_folder_tree,
+    create_user_folder,
     delete_message,
     list_messages,
     move_message,
@@ -235,3 +236,22 @@ def test_build_folder_tree_translates_standard_folders_in_spanish() -> None:
 
     assert [node.name for node in tree] == ["INBOX", "Sent"]
     assert [node.label for node in tree] == ["Bandeja de entrada", "Enviados"]
+
+
+def test_create_user_folder_supports_root_and_nested_folders() -> None:
+    created: list[str] = []
+
+    class FakeFolderImap:
+        def list_folders(self) -> list[Folder]:
+            return [
+                Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",)),
+                Folder(name="Projects", delimiter="/", flags=("\\HasNoChildren",)),
+            ]
+
+        def create_folder(self, folder: str) -> None:
+            created.append(folder)
+
+    imap = cast(ImapService, FakeFolderImap())
+    assert create_user_folder(imap, "Invoices") == "Invoices"
+    assert create_user_folder(imap, "2026", parent="Projects") == "Projects/2026"
+    assert created == ["Invoices", "Projects/2026"]

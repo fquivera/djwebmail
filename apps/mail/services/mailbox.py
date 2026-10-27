@@ -14,7 +14,9 @@ from django.utils.translation import gettext as _
 
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import (
+    DEFAULT_IMAP_DELIMITER,
     FOLDER_FLAG_NOSELECT,
+    FOLDER_NAME_MAX_LENGTH,
     IMAP_INBOX,
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
@@ -98,6 +100,36 @@ def build_folder_tree(folders: Sequence[Folder]) -> tuple[FolderNode, ...]:
 def list_folders(imap: ImapService) -> tuple[FolderNode, ...]:
     """Read the folder tree from an open IMAP service."""
     return build_folder_tree(imap.list_folders())
+
+
+def create_user_folder(imap: ImapService, name: str, parent: str = "") -> str:
+    """Validate and create a top-level or nested IMAP folder."""
+    clean_name = name.strip()
+    clean_parent = parent.strip()
+    if not clean_name or len(clean_name) > FOLDER_NAME_MAX_LENGTH:
+        raise ValueError("Invalid folder name length")
+    if clean_name in {".", ".."} or any(ord(ch) < 32 or ord(ch) == 127 for ch in clean_name):
+        raise ValueError("Invalid characters in folder name")
+
+    folders = imap.list_folders() if hasattr(imap, "list_folders") else []
+    delimiters = [folder.delimiter for folder in folders if folder.delimiter]
+    delimiter = max(set(delimiters), key=delimiters.count) if delimiters else DEFAULT_IMAP_DELIMITER
+    if delimiter and delimiter in clean_name:
+        raise ValueError("Folder name cannot contain the hierarchy delimiter")
+
+    existing_names = {folder.name for folder in folders if folder.name}
+    if clean_parent:
+        if existing_names and clean_parent not in existing_names:
+            raise ValueError("Parent folder does not exist")
+        full_name = f"{clean_parent}{delimiter}{clean_name}"
+    else:
+        full_name = clean_name
+
+    if any(existing.casefold() == full_name.casefold() for existing in existing_names):
+        raise ValueError("Folder already exists")
+
+    imap.create_folder(full_name)
+    return full_name
 
 
 def list_messages(

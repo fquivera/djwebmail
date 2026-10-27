@@ -4,6 +4,7 @@ from django.urls import path
 
 from apps.mail.views import (
     attachment_view,
+    folder_create,
     image_proxy,
     inline_view,
     mailbox,
@@ -21,6 +22,7 @@ app_name = "mail"
 
 urlpatterns = [
     path("", mailbox, name="index"),
+    path("folders/create/", folder_create, name="folder_create"),
     path("folder/<path:folder_name>/batch/", messages_batch, name="messages_batch"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),
     path("search/", search, name="search"),

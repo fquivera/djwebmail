@@ -3,7 +3,7 @@
 Phase 5 extends DjWebmail with three user-facing capabilities grounded in
 SnappyMail evidence and RFC standards:
 
-1. **Account owner identity (`display_name` and `account_label`)** — in progress
+1. **Account owner identity (`display_name` and `account_label`)** — done
    - Editable in `/settings/` under **Account identity** (`MailPreference`).
    - Mirrored to the server-side session (`mail_display_name`,
      `mail_account_label`) on login and save; updates `#navbar-identity`
@@ -13,9 +13,16 @@ SnappyMail evidence and RFC standards:
    - Evidence: `snappymail/v/0.0.0/app/libraries/RainLoop/Model/Identity.php:11-18, 52-55`,
      `dev/Model/Identity.js:10-14, 46-51`, and
      `docs/upstream/migracion-django-fase0-2.md:826-841`.
-2. **User-created IMAP folders** — planned (Stage 2)
-   - `POST /mail/folders/create/` creates top-level or nested folders via
-     `ImapService.create_folder()` using the server's hierarchy delimiter.
+2. **User-created IMAP folders** — done
+   - `POST /mail/folders/create/` (`mail:folder_create`) validates the folder
+     name (`FOLDER_NAME_MAX_LENGTH = 64`, no control characters or hierarchy
+     delimiter) and creates top-level or nested folders via
+     `create_user_folder()` and `ImapService.create_folder()` using the
+     server's hierarchy delimiter.
+   - Triggered from the `+` (**New folder**) button in the folder sidebar,
+     which opens `#create-folder-dialog` with an optional parent-folder
+     selector, then redirects (`HX-Redirect` or `302`) to the newly created
+     folder.
    - Evidence: `snappymail/v/0.0.0/app/libraries/RainLoop/Actions/Folders.php:114-133`.
 3. **Contacts module with jCard (RFC 7095)** — planned (Stage 3)
    - Per-account address book in `apps/contacts/` backed by a canonical RFC 7095
