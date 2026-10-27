@@ -99,6 +99,10 @@ Optional operational tuning:
 | `DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES` | `25000000` | Maximum combined size of compose attachments (25 MB) |
 | `DJANGO_MAIL_MAX_ATTACHMENTS` | `10` | Maximum number of attachments per draft |
 | `DJANGO_MAIL_COMPOSE_TTL_SECONDS` | `3600` | Redis TTL for compose drafts and uploaded attachments |
+| `DJANGO_MAIL_ACCOUNTS_FILE` | `""` | Optional mounted accounts file path (e.g. `postfix-accounts.cf` for `docker-mailserver`) |
+| `DJANGO_MAIL_POPPASSD_HOST` | `""` | Optional POPPASSD daemon hostname for remote password updates |
+| `DJANGO_MAIL_POPPASSD_PORT` | `106` | POPPASSD daemon port |
+| `DJANGO_MAIL_CHANGE_PASSWORD_ENABLED` | `True` | Enable/disable self-service password changes |
 | `DJANGO_LANGUAGE_CODE` | `en-us` | Fallback UI language before a user preference is loaded |
 | `DJANGO_LOG_LEVEL` | `INFO` | Root/application log level (`INFO`, `WARNING`, `ERROR`) |
 

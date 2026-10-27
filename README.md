@@ -267,6 +267,9 @@ MIT — see the LICENSE file for details.
 ☑ Sent folder copy on send and per-account HTML signature<br>
 ☑ Account owner display name, account label, and custom IMAP folder creation<br>
 ☑ Contacts module with RFC 7095 jCard import/export and compose autocomplete<br>
+☑ Professional email archiving (single, batch, and shortcut)<br>
+☑ Blocking modal attachment viewer with live inline previews<br>
+☑ Self-service password management with OWASP/NIST rules and security guide<br>
 ☑ Docker image publishing<br>
 ☑ Deployment guide<br>
 
