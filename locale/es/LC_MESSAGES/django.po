@@ -792,3 +792,24 @@ msgstr "Etiqueta opcional para identificar este buzón (por ejemplo, Trabajo o A
 msgid "This field cannot contain line breaks."
 msgstr "Este campo no puede contener saltos de línea."
 
+msgid "New folder"
+msgstr "Nueva carpeta"
+
+msgid "Folder name"
+msgstr "Nombre de la carpeta"
+
+msgid "Parent folder"
+msgstr "Carpeta superior"
+
+msgid "Root (top level)"
+msgstr "Raíz (nivel principal)"
+
+msgid "For example: Invoices"
+msgstr "Por ejemplo: Facturas"
+
+msgid "Create folder"
+msgstr "Crear carpeta"
+
+msgid "Enter a valid folder name."
+msgstr "Introduzca un nombre de carpeta válido."
+

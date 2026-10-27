@@ -1,0 +1,71 @@
+{% load i18n %}
+<dialog
+  id="create-folder-dialog"
+  class="modal"
+  aria-labelledby="create-folder-title"
+>
+  <div class="modal-box max-w-md space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 id="create-folder-title" class="text-base font-semibold">
+        {% translate "New folder" %}
+      </h2>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs btn-circle"
+        data-dialog-close
+        aria-label="{% translate 'Close' %}"
+      >✕</button>
+    </div>
+
+    <form
+      method="post"
+      action="{% url 'mail:folder_create' %}"
+      hx-post="{% url 'mail:folder_create' %}"
+      class="space-y-4"
+    >
+      {% csrf_token %}
+      <div>
+        <label class="mb-1.5 block text-sm font-medium text-base-content" for="new-folder-name">
+          {% translate "Folder name" %}
+        </label>
+        <input
+          id="new-folder-name"
+          name="name"
+          type="text"
+          required
+          maxlength="64"
+          autocomplete="off"
+          data-dialog-autofocus
+          class="input input-bordered input-sm w-full"
+          placeholder="{% translate 'For example: Invoices' %}"
+        >
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-sm font-medium text-base-content" for="new-folder-parent">
+          {% translate "Parent folder" %}
+        </label>
+        <select
+          id="new-folder-parent"
+          name="parent"
+          class="select select-bordered select-sm w-full"
+        >
+          <option value="">{% translate "Root (top level)" %}</option>
+          {% include "mail/_folder_select_options.html" with folders=folders current_folder="" %}
+        </select>
+      </div>
+
+      <div class="modal-action mt-4">
+        <button type="button" class="btn btn-ghost btn-sm" data-dialog-close>
+          {% translate "Cancel" %}
+        </button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          {% translate "Create folder" %}
+        </button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>{% translate "Close" %}</button>
+  </form>
+</dialog>
