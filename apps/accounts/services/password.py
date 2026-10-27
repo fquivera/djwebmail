@@ -208,6 +208,15 @@ def update_poppassd_password(
         sock.close()
 
 
+def is_password_change_configured() -> bool:
+    """Return True if password change is enabled and at least one backend driver is configured."""
+    if not getattr(settings, "MAIL_CHANGE_PASSWORD_ENABLED", True):
+        return False
+    return bool(
+        getattr(settings, "MAIL_ACCOUNTS_FILE", "") or getattr(settings, "MAIL_POPPASSD_HOST", "")
+    )
+
+
 def change_account_password(
     request: HttpRequest,
     current_password: str,
@@ -216,6 +225,17 @@ def change_account_password(
     """Verify current credentials, validate security rules, update backend, and rotate session."""
     if not settings.MAIL_CHANGE_PASSWORD_ENABLED:
         raise PasswordChangeError(_("Password change is not enabled for this server."))
+
+    accounts_file = getattr(settings, "MAIL_ACCOUNTS_FILE", "")
+    poppassd_host = getattr(settings, "MAIL_POPPASSD_HOST", "")
+
+    if not accounts_file and not poppassd_host:
+        raise PasswordChangeError(
+            _(
+                "No password backend driver is configured for this deployment. "
+                "Please configure DJANGO_MAIL_ACCOUNTS_FILE or DJANGO_MAIL_POPPASSD_HOST."
+            )
+        )
 
     account, cached_password = _mail_credentials(request)
 
@@ -229,9 +249,6 @@ def change_account_password(
     )
     if errors:
         raise PasswordValidationError(errors[0])
-
-    accounts_file = getattr(settings, "MAIL_ACCOUNTS_FILE", "")
-    poppassd_host = getattr(settings, "MAIL_POPPASSD_HOST", "")
 
     if accounts_file:
         update_accounts_file_password(accounts_file, account.email, new_password)

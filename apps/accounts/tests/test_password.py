@@ -8,7 +8,7 @@ import pytest
 from django.contrib.sessions.backends.db import SessionStore
 from django.test import RequestFactory
 
-from apps.accounts.exceptions import PasswordValidationError
+from apps.accounts.exceptions import PasswordChangeError, PasswordValidationError
 from apps.accounts.services.account import MailAccount
 from apps.accounts.services.credentials import CredentialStore
 from apps.accounts.services.password import (
@@ -125,7 +125,15 @@ def test_change_account_password_verifies_current_and_rotates_session(
     with pytest.raises(PasswordValidationError):
         change_account_password(request, "OldPassword!2026", "short")
 
-    # Succeed with strong new password
+    # Reject when no backend driver is configured
+    monkeypatch.setattr("apps.accounts.services.password.settings.MAIL_ACCOUNTS_FILE", "")
+    with pytest.raises(PasswordChangeError):
+        change_account_password(request, "OldPassword!2026", "NewStrongPassword!2026")
+
+    # Restore accounts file and succeed with strong new password
+    monkeypatch.setattr(
+        "apps.accounts.services.password.settings.MAIL_ACCOUNTS_FILE", accounts_file
+    )
     change_account_password(request, "OldPassword!2026", "NewStrongPassword!2026")
 
     # Verify session credential rotated

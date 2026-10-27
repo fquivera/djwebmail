@@ -15,7 +15,7 @@ from django.views.decorators.vary import vary_on_headers
 
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import MailSessionError, PasswordChangeError, PasswordValidationError
-from apps.accounts.services.password import change_account_password
+from apps.accounts.services.password import change_account_password, is_password_change_configured
 from apps.preferences.forms import ChangePasswordForm, MailPreferenceForm
 from apps.preferences.models import MailPreference
 from apps.preferences.services import apply_mail_preference, get_mail_preference
@@ -86,6 +86,7 @@ def _render(
         "form": form,
         "password_form": ChangePasswordForm(email=preference.email),
         "change_password_enabled": getattr(settings, "MAIL_CHANGE_PASSWORD_ENABLED", True),
+        "password_backend_available": is_password_change_configured(),
         "email": preference.email,
         "display_name": preference.display_name,
         "account_label": preference.account_label,
@@ -129,6 +130,7 @@ def password_change_view(request: HttpRequest) -> HttpResponse:
         "password_form": form,
         "password_saved": saved,
         "change_password_enabled": getattr(settings, "MAIL_CHANGE_PASSWORD_ENABLED", True),
+        "password_backend_available": is_password_change_configured(),
         "email": preference.email,
         "display_name": preference.display_name,
         "account_label": preference.account_label,

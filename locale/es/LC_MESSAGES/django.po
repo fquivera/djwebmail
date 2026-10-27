@@ -1065,6 +1065,19 @@ msgstr "Las contraseñas coinciden"
 msgid "Change password"
 msgstr "Cambiar contraseña"
 
+msgid "No password backend driver is configured for this deployment. Please configure DJANGO_MAIL_ACCOUNTS_FILE or DJANGO_MAIL_POPPASSD_HOST."
+msgstr "No hay ningún controlador de contraseñas configurado para este despliegue. Por favor configure DJANGO_MAIL_ACCOUNTS_FILE o DJANGO_MAIL_POPPASSD_HOST."
+
+msgid "Password changes are not configured."
+msgstr "El cambio de contraseña no está configurado."
+
+msgid "This deployment does not have a mail password driver configured (DJANGO_MAIL_ACCOUNTS_FILE or DJANGO_MAIL_POPPASSD_HOST). Contact your mail administrator."
+msgstr "Este despliegue no tiene un controlador de contraseñas configurado (DJANGO_MAIL_ACCOUNTS_FILE o DJANGO_MAIL_POPPASSD_HOST). Contacta al administrador del correo."
+
+msgid "Password changes are not configured on this server"
+msgstr "El cambio de contraseña no está configurado en este servidor"
+
+
 
 
 
