@@ -286,6 +286,36 @@
 
   {% include "mail/_attachment_list.html" %}
 
+  {% if message.attachments %}
+    <dialog
+      id="attachment-viewer-dialog"
+      class="modal bg-black/60 backdrop-blur-xs"
+      data-modal-strict
+      aria-labelledby="attachment-viewer-title"
+    >
+      <div class="modal-box max-w-4xl w-11/12 p-0 overflow-hidden border border-base-300 shadow-2xl">
+        <div id="attachment-viewer-content">
+          <div class="flex items-center justify-between border-b border-base-300 px-5 py-3.5 bg-base-200/60">
+            <h2 id="attachment-viewer-title" class="text-sm font-semibold text-base-content">
+              {% translate "Attachment preview" %}
+            </h2>
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              data-dialog-close
+              data-dialog-autofocus
+            >
+              {% translate "Close" %}
+            </button>
+          </div>
+          <div class="p-8 text-center text-sm text-base-content/60">
+            {% translate "Loading attachment…" %}
+          </div>
+        </div>
+      </div>
+    </dialog>
+  {% endif %}
+
   <dialog
     id="delete-dialog-{{ message.uid }}"
     class="modal"

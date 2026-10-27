@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Any, cast
 from urllib.parse import quote
 
+from csp.decorators import csp_replace
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.vary import vary_on_headers
 
@@ -23,6 +25,8 @@ from apps.accounts.services.session import (
     get_mail_remote_images,
 )
 from apps.mail.constants import (
+    ATTACHMENT_INLINE_ALLOWED_CONTENT_TYPES,
+    ATTACHMENT_PREVIEW_MAX_TEXT_BYTES,
     GLOBAL_SEARCH_PER_FOLDER_LIMIT,
     IMAGE_PROXY_ALLOWED_CONTENT_TYPES,
     IMAP_INBOX,
@@ -52,7 +56,14 @@ from apps.mail.services.mailbox import (
     set_message_flags,
     translate_folder_label,
 )
-from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
+from apps.mail.services.message import (
+    MessageDetail,
+    attachment_preview_kind,
+    get_message,
+    get_part,
+    resolve_attachment_content_type,
+    rewrite_images,
+)
 from apps.mail.services.search import SearchFilters, search_messages
 from apps.preferences.constants import RemoteImages
 
@@ -531,6 +542,101 @@ def attachment_view(
 ) -> HttpResponse:
     """Stream one message part as a download."""
     return _stream_part(request, folder_name, uid, part, inline=False)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def attachment_preview_view(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+) -> HttpResponse:
+    """Render an HTMX modal preview fragment for one message attachment."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            result = get_part(imap, folder, uid, part)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return HttpResponse(status=404)
+
+    if result is None:
+        return HttpResponse(status=404)
+
+    content, content_type, filename, _disposition = result
+    resolved_type = resolve_attachment_content_type(content_type, filename)
+    preview_kind = attachment_preview_kind(content_type, filename)
+    text_content = ""
+    text_truncated = False
+    if preview_kind == "text":
+        text_truncated = len(content) > ATTACHMENT_PREVIEW_MAX_TEXT_BYTES
+        sample = content[:ATTACHMENT_PREVIEW_MAX_TEXT_BYTES]
+        text_content = sample.decode("utf-8", errors="replace")
+
+    return render(
+        request,
+        "mail/_attachment_preview.html",
+        {
+            "filename": filename,
+            "content_type": resolved_type,
+            "size": len(content),
+            "preview_kind": preview_kind,
+            "text_content": text_content,
+            "text_truncated": text_truncated,
+            "inline_url": reverse(
+                "mail:attachment_inline",
+                kwargs={"folder_name": folder, "uid": uid, "part": part},
+            ),
+            "download_url": reverse(
+                "mail:attachment",
+                kwargs={"folder_name": folder, "uid": uid, "part": part},
+            ),
+        },
+    )
+
+
+@never_cache
+@require_GET
+@xframe_options_sameorigin
+@csp_replace({"frame-ancestors": ["'self'"], "object-src": ["'self'"]})
+@mail_login_required
+def attachment_inline_view(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+) -> HttpResponse:
+    """Stream one attachment inline for the modal viewer (safe media/PDF allowlist only)."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            result = get_part(imap, folder, uid, part)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return HttpResponse(status=404)
+
+    if result is None:
+        return HttpResponse(status=404)
+
+    content, content_type, filename, _disposition = result
+    resolved_type = resolve_attachment_content_type(content_type, filename)
+    if resolved_type not in ATTACHMENT_INLINE_ALLOWED_CONTENT_TYPES:
+        return HttpResponse(status=404)
+
+    response = HttpResponse(content, content_type=resolved_type)
+    response["Content-Disposition"] = _content_disposition("inline", filename)
+    response["Cache-Control"] = "private, max-age=3600"
+    return response
 
 
 @never_cache

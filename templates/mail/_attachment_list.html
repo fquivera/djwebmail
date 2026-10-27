@@ -19,19 +19,37 @@
               {{ attachment.size|filesizeformat }}
             </div>
           </div>
-          <a
-            class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 shrink-0 gap-1"
-            href="{% url 'mail:attachment' folder_name message.uid attachment.part %}"
-            download
-            title="{% translate 'Download' %} {{ attachment.filename }}"
-          >
-            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" x2="12" y1="15" y2="3"></line>
-            </svg>
-            <span>{% translate "Download" %}</span>
-          </a>
+          <div class="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1"
+              hx-get="{% url 'mail:attachment_preview' folder_name message.uid attachment.part %}"
+              hx-target="#attachment-viewer-content"
+              hx-swap="innerHTML"
+              data-dialog-open="attachment-viewer-dialog"
+              aria-haspopup="dialog"
+              title="{% translate 'View' %} {{ attachment.filename }}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <span>{% translate "View" %}</span>
+            </button>
+            <a
+              class="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1"
+              href="{% url 'mail:attachment' folder_name message.uid attachment.part %}"
+              download
+              title="{% translate 'Download' %} {{ attachment.filename }}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" x2="12" y1="15" y2="3"></line>
+              </svg>
+              <span>{% translate "Download" %}</span>
+            </a>
+          </div>
         </li>
       {% endfor %}
     </ul>

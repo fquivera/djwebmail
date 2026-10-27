@@ -34,3 +34,18 @@ IMAGE_PROXY_ALLOWED_SCHEMES = frozenset({"http", "https"})
 IMAGE_PROXY_ALLOWED_CONTENT_TYPES = frozenset(
     {"image/png", "image/jpeg", "image/gif", "image/webp"}
 )
+
+ATTACHMENT_PREVIEW_IMAGE_TYPES = IMAGE_PROXY_ALLOWED_CONTENT_TYPES
+ATTACHMENT_PREVIEW_PDF_TYPES = frozenset({"application/pdf"})
+ATTACHMENT_PREVIEW_TEXT_TYPES = frozenset(
+    {"text/plain", "text/csv", "text/markdown", "application/json"}
+)
+ATTACHMENT_PREVIEW_AUDIO_TYPES = frozenset({"audio/mpeg", "audio/ogg", "audio/wav", "audio/mp4"})
+ATTACHMENT_PREVIEW_VIDEO_TYPES = frozenset({"video/mp4", "video/webm", "video/ogg"})
+ATTACHMENT_INLINE_ALLOWED_CONTENT_TYPES = (
+    ATTACHMENT_PREVIEW_IMAGE_TYPES
+    | ATTACHMENT_PREVIEW_PDF_TYPES
+    | ATTACHMENT_PREVIEW_AUDIO_TYPES
+    | ATTACHMENT_PREVIEW_VIDEO_TYPES
+)
+ATTACHMENT_PREVIEW_MAX_TEXT_BYTES = 262_144
