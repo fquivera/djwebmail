@@ -38,11 +38,14 @@ from apps.mail.forms import CreateFolderForm, MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
     FolderNode,
+    archive_message,
+    batch_archive_messages,
     batch_delete_messages,
     batch_move_messages,
     batch_set_flags,
     create_user_folder,
     delete_message,
+    is_archive_folder,
     list_folders,
     list_messages,
     move_message,
@@ -79,6 +82,7 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
     context = {
         "folder_name": folder,
         "folder_label": translate_folder_label(folder),
+        "is_archive_folder": is_archive_folder(folder),
         "folders": folders,
         "page": page,
         "search_form": MailSearchForm(initial={"folder": folder}),
@@ -241,6 +245,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     context = {
         "folder_name": folder,
         "folder_label": translate_folder_label(folder),
+        "is_archive_folder": is_archive_folder(folder),
         "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=allow_remote),
@@ -378,6 +383,29 @@ def message_move(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
 @never_cache
 @require_POST
 @mail_login_required
+def message_archive(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Move one message to the account's Archive folder and return to the current folder."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            archive_message(imap, folder, uid)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = reverse("mail:folder", kwargs={"folder_name": folder})
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
+
+
+@never_cache
+@require_POST
+@mail_login_required
 def message_delete(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
     """Permanently delete one message and return to its folder."""
     folder = folder_name or IMAP_INBOX
@@ -443,7 +471,7 @@ def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
     if action == "move":
         if not isinstance(destination, str) or not destination:
             return HttpResponse(status=400)
-    elif action != "delete" and not add and not remove:
+    elif action not in {"delete", "archive"} and not add and not remove:
         return HttpResponse(status=400)
 
     folder = folder_name or IMAP_INBOX
@@ -452,6 +480,8 @@ def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
         with get_mail_imap_service(request) as imap:
             if action == "delete":
                 batch_delete_messages(imap, folder, uids)
+            elif action == "archive":
+                batch_archive_messages(imap, folder, uids)
             elif action == "move":
                 assert isinstance(destination, str)
                 batch_move_messages(imap, folder, uids, destination)
@@ -475,6 +505,7 @@ def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
             "mail/_message_list.html",
             {
                 "folder_name": folder,
+                "is_archive_folder": is_archive_folder(folder),
                 "page": page,
                 "search_active": False,
                 "search_error": "",

@@ -1364,3 +1364,49 @@ def test_folder_create_rejects_invalid_name(logged_in_client: Client) -> None:
     )
 
     assert response.status_code == 400
+
+
+def test_message_archive_moves_to_archive_and_redirects_to_folder(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archived: dict[str, Any] = {}
+
+    def fake_archive(imap: Any, folder: str, uid: int) -> str:
+        archived["folder"] = folder
+        archived["uid"] = uid
+        return "Archive"
+
+    monkeypatch.setattr("apps.mail.views.archive_message", fake_archive)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_archive", kwargs={"folder_name": "INBOX", "uid": 7}),
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == reverse("mail:folder", kwargs={"folder_name": "INBOX"})
+    assert archived == {"folder": "INBOX", "uid": 7}
+
+
+def test_messages_batch_archive_moves_selected_uids(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archived: dict[str, Any] = {}
+
+    def fake_batch_archive(imap: Any, folder: str, uids: tuple[int, ...]) -> str:
+        archived["folder"] = folder
+        archived["uids"] = uids
+        return "Archive"
+
+    monkeypatch.setattr("apps.mail.views.batch_archive_messages", fake_batch_archive)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:messages_batch", kwargs={"folder_name": "INBOX"}),
+        {"uids": "7,9", "action": "archive"},
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse("mail:folder", kwargs={"folder_name": "INBOX"})
+    assert archived == {"folder": "INBOX", "uids": (7, 9)}

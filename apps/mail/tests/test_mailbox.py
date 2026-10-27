@@ -10,11 +10,15 @@ from django.utils import translation
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import FOLDER_FLAG_NOSELECT, IMAP_INBOX, MESSAGE_FLAG_SEEN
 from apps.mail.services.mailbox import (
+    archive_message,
+    batch_archive_messages,
     build_folder_tree,
     create_user_folder,
     delete_message,
+    is_archive_folder,
     list_messages,
     move_message,
+    resolve_archive_folder,
     set_message_flags,
 )
 
@@ -255,3 +259,50 @@ def test_create_user_folder_supports_root_and_nested_folders() -> None:
     assert create_user_folder(imap, "Invoices") == "Invoices"
     assert create_user_folder(imap, "2026", parent="Projects") == "Projects/2026"
     assert created == ["Invoices", "Projects/2026"]
+
+
+def test_resolve_and_archive_messages_creates_or_uses_archive_folder() -> None:
+    created: list[str] = []
+    moved: list[tuple[list[int], str]] = []
+
+    class FakeArchiveImap:
+        def __init__(self, folders: list[Folder]) -> None:
+            self._folders = folders
+            self.selected: tuple[str, bool] | None = None
+
+        def list_folders(self) -> list[Folder]:
+            return self._folders
+
+        def create_folder(self, folder: str) -> None:
+            created.append(folder)
+
+        def select(self, folder: str, *, readonly: bool = True) -> None:
+            self.selected = (folder, readonly)
+
+        def move(self, uids: list[int], destination: str) -> None:
+            moved.append((list(uids), destination))
+
+    # Case 1: No Archive folder exists -> auto-creates "Archive"
+    imap_missing = cast(
+        ImapService,
+        FakeArchiveImap([Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",))]),
+    )
+    assert resolve_archive_folder(imap_missing) == "Archive"
+    assert created == ["Archive"]
+
+    # Case 2: RFC 6154 \Archive special-use flag present
+    imap_flagged = cast(
+        ImapService,
+        FakeArchiveImap(
+            [
+                Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",)),
+                Folder(name="All Mail", delimiter="/", flags=("\\Archive",)),
+            ]
+        ),
+    )
+    assert archive_message(imap_flagged, "INBOX", 42) == "All Mail"
+    assert batch_archive_messages(imap_flagged, "INBOX", [10, 11]) == "All Mail"
+    assert moved == [([42], "All Mail"), ([10, 11], "All Mail")]
+    assert is_archive_folder("Archive") is True
+    assert is_archive_folder("INBOX/Archive") is True
+    assert is_archive_folder("INBOX") is False

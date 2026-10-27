@@ -18,6 +18,9 @@
   (`action` = `read` | `unread` | `star` | `unstar`).
 - `POST /mail/message/<folder>/<uid>/move/` moves the message to `dest` and
   redirects to that folder.
+- `POST /mail/message/<folder>/<uid>/archive/` archives the message into the
+  account's RFC 6154 `\Archive` / `Archive` folder (creating `Archive` via IMAP
+  `CREATE` when missing) and refreshes the source folder.
 - `POST /mail/message/<folder>/<uid>/delete/` permanently deletes the message
   and redirects to its folder.
 
@@ -99,7 +102,7 @@ Attachments and inline parts are served from a fresh `BODY.PEEK[]` fetch. For
 large messages a later change should fetch only the requested part with
 `BODY.PEEK[<part>]`.
 
-## Read and star flags, move, and delete
+## Read and star flags, archive, move, and delete
 
 Opening a message marks it read: the viewer fires a `read` flag request on load
 (`hx-swap="none"`) and the message-list row is refreshed out-of-band. Read/unread
@@ -116,6 +119,16 @@ standalone full-page route the forms send `standalone=1` and the endpoint return
 `204`: there is no list row to refresh, and an OOB row would have no target. See
 [`docs/ui-interaction.md`](ui-interaction.md).
 
+Archiving (`POST /mail/message/<folder>/<uid>/archive/`, keyboard shortcut `y`
+or `a`, plus row hover quick action and batch toolbar action) resolves the
+account's archive folder by checking selectable folders for the RFC 6154
+`\Archive` special-use attribute first, then a case-insensitive `Archive` folder
+name, and creates `Archive` automatically when neither exists. Moving to the
+archive folder uses `ImapService.move` (`UID MOVE` with `COPY` + `\Deleted` +
+`EXPUNGE` fallback) and keeps the user in the source folder with the archived
+message removed from the list. Archiving is hidden when already viewing the
+archive folder.
+
 A folder `<select>` in the viewer header moves the message to another selectable
 folder and redirects there. Flags and move are written with
 `ImapService.store_flags` / `ImapService.move` on a read-write selection.
@@ -126,7 +139,8 @@ Delete opens a native `<dialog>` confirmation (no `window.confirm`, no
 message `\Deleted` and expunges it; the response redirects to the folder. The
 dialog states that the removal is permanent. In the message list, checkboxes
 (`data-batch-uid`) and `POST /mail/folder/<folder>/batch/` (`messages_batch`)
-allow marking selected messages read/unread/flagged or deleting them in batch.
+allow marking selected messages read/unread/flagged, archiving them (`action="archive"`),
+or deleting them in batch.
 
 ## Tests
 
