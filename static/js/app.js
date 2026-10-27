@@ -401,6 +401,15 @@
       return;
     }
 
+    if (key === "y" || key === "a") {
+      var archive = document.querySelector('[data-shortcut="archive"]');
+      if (archive) {
+        event.preventDefault();
+        archive.click();
+      }
+      return;
+    }
+
     if (key === "m") {
       var move = document.querySelector('[data-shortcut="move"]');
       if (move) {

@@ -62,6 +62,7 @@ palette uses Ctrl/Cmd+K.
 | `Enter` | Open the focused row (native link behavior) |
 | `r` | Reply to the open message |
 | `e` | Toggle read/unread for the open message |
+| `y` / `a` | Archive the open message |
 | `m` | Focus the move-to-folder selector |
 | `u` | Back to the message list |
 | `?` | Open the shortcuts dialog |

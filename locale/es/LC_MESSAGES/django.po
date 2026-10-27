@@ -918,5 +918,9 @@ msgstr "Selecciona un archivo JSON jCard o pega un contenido jCard."
 msgid "Select a contact"
 msgstr "Seleccionar un contacto"
 
+msgid "Archive message"
+msgstr "Archivar mensaje"
+
+
 
 
