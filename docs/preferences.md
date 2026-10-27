@@ -22,6 +22,8 @@ The form exposes only choices that the current application applies:
 
 | Field | Effect |
 |---|---|
+| `display_name` | Owner display name formatted into outgoing `From: "Name" <email>` headers and shown in the top navigation bar. |
+| `account_label` | Optional descriptive tag (e.g., `Work`, `Admin`) shown as a badge in the navigation bar, settings header, and compose header. |
 | `language` | Stored in the session and activated with Django translation. |
 | `timezone` | Activated per request; message dates use it. |
 | `theme` | `light`, `dark`, or `system`; mapped to the daisyUI themes. |

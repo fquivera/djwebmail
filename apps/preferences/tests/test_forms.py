@@ -116,3 +116,42 @@ def test_unknown_timezone_is_rejected() -> None:
     errors = form.errors
     assert errors is not None
     assert "timezone" in errors
+
+
+def test_form_saves_and_strips_display_name_and_account_label() -> None:
+    preference = make_preference()
+    form = MailPreferenceForm(
+        data={
+            "display_name": "  Francisco Quivera  ",
+            "account_label": "  Administración  ",
+            "language": "es",
+            "timezone": "UTC",
+            "theme": Theme.SYSTEM,
+            "density": Density.COMPACT,
+            "page_size": "50",
+        },
+        instance=preference,
+    )
+
+    assert form.is_valid(), form.errors
+    saved = form.save()
+
+    assert saved.display_name == "Francisco Quivera"
+    assert saved.account_label == "Administración"
+
+
+def test_form_rejects_line_breaks_in_display_name() -> None:
+    form = MailPreferenceForm(
+        data={
+            "display_name": "Alice\r\nBcc: eve@example.com",
+            "language": "en",
+            "timezone": "UTC",
+            "theme": Theme.SYSTEM,
+            "density": Density.COMPACT,
+            "page_size": "50",
+        },
+        instance=make_preference(),
+    )
+
+    assert not form.is_valid()
+    assert "display_name" in (form.errors or {})

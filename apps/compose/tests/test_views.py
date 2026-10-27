@@ -492,3 +492,26 @@ def test_compose_send_appends_copy_to_sent_folder(
     assert len(appended) == 1
     assert appended[0][0] == "Sent"
     assert b"Subject: Saved to sent" in appended[0][1]
+
+
+def test_compose_send_uses_session_display_name_in_from_header(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    smtp = FakeSmtp()
+    monkeypatch.setattr("apps.compose.views.get_mail_smtp_service", lambda request: smtp)
+    session = logged_in_client.session
+    session["mail_display_name"] = "Alice Owner"
+    session["mail_account_label"] = "Oficina"
+    session.save()
+
+    response: Any = logged_in_client.post(
+        reverse("compose:send"),
+        {"to": "bob@example.com", "cc": "", "subject": "Named sender", "body": "Hello"},
+    )
+
+    assert response.status_code == 302
+    assert smtp.sent is not None
+    envelope_sender, _recipients, raw = smtp.sent
+    assert envelope_sender == "user@example.com"
+    assert b"From: Alice Owner <user@example.com>" in raw

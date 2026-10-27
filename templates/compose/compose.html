@@ -84,6 +84,18 @@
         </div>
       {% endif %}
 
+      {% if sender_display %}
+        <div class="border-b border-base-200 bg-base-200/30 px-4 py-2 flex items-center gap-3 text-sm">
+          <span class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+            {% translate "From" %}
+          </span>
+          <span class="font-medium text-base-content truncate">{{ sender_display }}</span>
+          {% if account_label %}
+            <span class="badge badge-primary badge-soft badge-xs font-medium shrink-0">{{ account_label }}</span>
+          {% endif %}
+        </div>
+      {% endif %}
+
       <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
         <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.to.id_for_label }}">
           {{ form.to.label }}

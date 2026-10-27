@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from email.message import EmailMessage
-from email.utils import formatdate, getaddresses, make_msgid, parseaddr
+from email.utils import formataddr, formatdate, getaddresses, make_msgid, parseaddr
 from html import unescape
 
 from django.utils import formats
@@ -38,9 +38,19 @@ _HTML_TAGS_PATTERN = re.compile(
 )
 
 
+def format_sender_address(email: str, display_name: str = "") -> str:
+    """Format an RFC 5322 From header with an optional owner display name."""
+    clean_email = email.strip()
+    clean_name = display_name.replace("\r", " ").replace("\n", " ").strip()
+    if clean_name and clean_email:
+        return formataddr((clean_name, clean_email))
+    return clean_email
+
+
 def build_message(
     *,
     sender: str,
+    sender_name: str = "",
     to: Sequence[str],
     cc: Sequence[str],
     bcc: Sequence[str] = (),
@@ -49,14 +59,16 @@ def build_message(
     attachments: Sequence[Attachment] = (),
 ) -> EmailMessage:
     """Assemble an RFC 5322 message with plain-text or HTML alternative and stable Message-ID."""
+    _, parsed_email = parseaddr(sender)
+    envelope_sender = parsed_email or sender.strip()
     message = EmailMessage()
-    message["From"] = sender
+    message["From"] = format_sender_address(envelope_sender, sender_name) if sender_name else sender
     message["To"] = ", ".join(to)
     if cc:
         message["Cc"] = ", ".join(cc)
     message["Subject"] = subject[:MAX_SUBJECT_LENGTH]
     message["Date"] = formatdate(localtime=True)
-    message["Message-ID"] = make_msgid(domain=sender.rsplit("@", 1)[-1])
+    message["Message-ID"] = make_msgid(domain=envelope_sender.rsplit("@", 1)[-1])
 
     # If body contains rich HTML markup, assemble multipart/alternative
     if "<" in body and ">" in body and _HTML_TAGS_PATTERN.search(body):
@@ -75,6 +87,7 @@ def send_message(
     smtp: SmtpService,
     *,
     sender: str,
+    sender_name: str = "",
     to: Sequence[str],
     cc: Sequence[str],
     bcc: Sequence[str] = (),
@@ -85,6 +98,7 @@ def send_message(
     """Build the message, hand it to SMTP for every recipient, and return raw bytes."""
     message = build_message(
         sender=sender,
+        sender_name=sender_name,
         to=to,
         cc=cc,
         bcc=bcc,
@@ -93,7 +107,8 @@ def send_message(
         attachments=attachments,
     )
     raw = message.as_bytes()
-    smtp.send(sender, [*to, *cc, *bcc], raw)
+    _, parsed_email = parseaddr(sender)
+    smtp.send(parsed_email or sender, [*to, *cc, *bcc], raw)
     return raw
 
 

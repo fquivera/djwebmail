@@ -13,13 +13,21 @@
   <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 px-4 py-3 shadow-xs">
     <div class="avatar placeholder shrink-0">
       <div class="size-10 rounded-full bg-primary/15 text-primary border border-primary/25 font-bold text-sm flex items-center justify-center">
-        <span>{{ email|default:"?"|slice:":1"|upper }}</span>
+        <span>{% if display_name %}{{ display_name|slice:":1"|upper }}{% else %}{{ email|default:"?"|slice:":1"|upper }}{% endif %}</span>
       </div>
     </div>
     <div class="min-w-0 flex-1">
-      <p class="text-sm font-medium text-base-content truncate">
-        {% blocktranslate with address=email %}Signed in as {{ address }}.{% endblocktranslate %}
-      </p>
+      <div class="flex flex-wrap items-center gap-2">
+        {% if display_name %}
+          <span class="text-sm font-semibold text-base-content truncate">{{ display_name }}</span>
+        {% endif %}
+        <p class="text-sm font-medium text-base-content/80 truncate">
+          {% blocktranslate with address=email %}Signed in as {{ address }}.{% endblocktranslate %}
+        </p>
+        {% if account_label %}
+          <span class="badge badge-primary badge-soft badge-sm font-medium">{{ account_label }}</span>
+        {% endif %}
+      </div>
       <p class="text-xs text-base-content/60">
         {% translate "Preferences are stored per account and applied immediately." %}
       </p>
@@ -30,6 +38,7 @@
     <div class="alert alert-success text-sm py-2.5" role="status">
       {% translate "Preferences saved." %}
     </div>
+    {% include "partials/_navbar_identity.html" with oob=True %}
   {% endif %}
 
   {% if form.non_field_errors %}
@@ -39,6 +48,20 @@
       {% endfor %}
     </div>
   {% endif %}
+
+  <fieldset class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
+    <legend class="flex items-center gap-2 px-1 text-sm font-semibold text-base-content">
+      <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <span>{% translate "Account identity" %}</span>
+    </legend>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "preferences/_field.html" with field=form.display_name %}
+      {% include "preferences/_field.html" with field=form.account_label %}
+    </div>
+  </fieldset>
 
   <fieldset class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-xs space-y-4">
     <legend class="flex items-center gap-2 px-1 text-sm font-semibold text-base-content">
