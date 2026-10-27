@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.mail",
     "apps.compose",
+    "apps.contacts",
     "apps.preferences",
 ]
 
@@ -155,6 +156,10 @@ MAIL_MAX_ATTACHMENTS_TOTAL_BYTES = env.int(
 )
 MAIL_MAX_ATTACHMENTS = env.int("DJANGO_MAIL_MAX_ATTACHMENTS", default=10)
 MAIL_COMPOSE_TTL_SECONDS = env.int("DJANGO_MAIL_COMPOSE_TTL_SECONDS", default=3600)
+MAIL_ACCOUNTS_FILE = env.str("DJANGO_MAIL_ACCOUNTS_FILE", default="")
+MAIL_POPPASSD_HOST = env.str("DJANGO_MAIL_POPPASSD_HOST", default="")
+MAIL_POPPASSD_PORT = env.int("DJANGO_MAIL_POPPASSD_PORT", default=106)
+MAIL_CHANGE_PASSWORD_ENABLED = env.bool("DJANGO_MAIL_CHANGE_PASSWORD_ENABLED", default=True)
 
 if SESSION_COOKIE_AGE <= 0:
     raise ImproperlyConfigured("DJANGO_SESSION_COOKIE_AGE must be positive")
@@ -174,6 +179,8 @@ if MAIL_MAX_ATTACHMENTS <= 0:
     raise ImproperlyConfigured("DJANGO_MAIL_MAX_ATTACHMENTS must be positive")
 if MAIL_COMPOSE_TTL_SECONDS <= 0:
     raise ImproperlyConfigured("DJANGO_MAIL_COMPOSE_TTL_SECONDS must be positive")
+if MAIL_POPPASSD_PORT <= 0 or MAIL_POPPASSD_PORT > 65535:
+    raise ImproperlyConfigured("DJANGO_MAIL_POPPASSD_PORT must be between 1 and 65535")
 
 X_FRAME_OPTIONS = "DENY"
 

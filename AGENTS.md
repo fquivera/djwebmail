@@ -61,6 +61,7 @@ apps/
 ├── accounts/      # IMAP login, session, identities
 ├── mail/          # folders, message list, viewer
 ├── compose/       # compose, attachments, sending
+├── contacts/      # per-account RFC 7095 jCard contacts
 └── preferences/   # per-account preferences
 common/            # shared views and utilities
 templates/         # base templates and partials
@@ -170,6 +171,8 @@ DJANGO_MAIL_LOGIN_WINDOW_SECONDS  DJANGO_MAIL_IMAGE_PROXY_MAX_BYTES
 DJANGO_MAIL_IMAGE_PROXY_TIMEOUT_SECONDS  DJANGO_SESSION_COOKIE_AGE
 DJANGO_MAIL_MAX_ATTACHMENT_BYTES  DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES
 DJANGO_MAIL_MAX_ATTACHMENTS  DJANGO_MAIL_COMPOSE_TTL_SECONDS
+DJANGO_MAIL_ACCOUNTS_FILE  DJANGO_MAIL_POPPASSD_HOST
+DJANGO_MAIL_POPPASSD_PORT  DJANGO_MAIL_CHANGE_PASSWORD_ENABLED
 REDIS_URL  FERNET_KEY
 FUNCTIONAL_TESTS_ENABLED  FUNCTIONAL_MAIL_USER  FUNCTIONAL_MAIL_PASSWORD
 ```
@@ -390,7 +393,7 @@ A change is done when:
 Done:
 
 - Django 5.2 scaffold with split settings and local SQLite.
-- `accounts`, `mail`, `compose`, `preferences`, and `common` apps.
+- `accounts`, `mail`, `compose`, `contacts`, `preferences`, and `common` apps.
 - `/health/`, base template, static assets, and smoke tests.
 - CI/CD with GHCR, protection rulesets, and `hardcode-scan`.
 - GitFlow, commit, CI, i18n, and configuration skills.
@@ -472,9 +475,29 @@ Done:
 - Production deployment guide (`docs/deployment.md`): reverse-proxy TLS
   termination, required environment variables, Docker Compose production
   stack, healthcheck, and upgrade workflow.
+- Phase 5 (`docs/phase-5.md` and `docs/contacts.md`):
+  - Account owner identity (`display_name` and `account_label`) in `/settings/`,
+    reflected in the top navbar (`#navbar-identity`) and outgoing RFC 5322
+    `From:` headers.
+  - Custom top-level and nested IMAP folder creation (`POST /mail/folders/create/`)
+    from the folder sidebar.
+  - Contacts module (`apps/contacts/`) using **jCard (RFC 7095)** (`["vcard", [...]]`),
+    with HTMX search/CRUD, `.json` jCard import/export, Compose `<datalist>`
+    recipient suggestions and `?to=` prefill, and "+ Save contact" from the
+    message viewer.
 
-Next: Phase 4 and the deployment guide are complete. Ready for the `v0.2.0`
-release. Do not open new protocol areas without a new phase document.
+- Phase 6 (`docs/phase-6.md`):
+  - Email archiving (`POST /mail/message/<folder>/<uid>/archive/`, batch archive,
+    RFC 6154 `\Archive` / `Archive` folder resolution, and `y` / `a` keyboard shortcut).
+  - Strict blocking modal attachment viewer (`<dialog data-modal-strict>`,
+    `GET /attachment/<part>/preview/` and `inline/`), supporting image, PDF,
+    escaped text/CSV/JSON, and audio/video previews with backdrop and Escape lock.
+  - Self-service password management (`POST /settings/password/`) with OWASP/NIST
+    minimum security rules, live interactive checklist, visibility toggles,
+    and `docker-mailserver` / `poppassd` backend driver support.
+
+Next: Phase 6 is complete. Ready for the next release. Do not open new
+protocol areas without a new phase document.
 
 ## 12. Anti-patterns
 

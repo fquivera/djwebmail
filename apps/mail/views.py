@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Any, cast
 from urllib.parse import quote
 
+from csp.decorators import csp_replace
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.vary import vary_on_headers
 
@@ -23,6 +25,8 @@ from apps.accounts.services.session import (
     get_mail_remote_images,
 )
 from apps.mail.constants import (
+    ATTACHMENT_INLINE_ALLOWED_CONTENT_TYPES,
+    ATTACHMENT_PREVIEW_MAX_TEXT_BYTES,
     GLOBAL_SEARCH_PER_FOLDER_LIMIT,
     IMAGE_PROXY_ALLOWED_CONTENT_TYPES,
     IMAP_INBOX,
@@ -34,21 +38,32 @@ from apps.mail.constants import (
     SEARCH_SCOPE_ALL,
     SEARCH_SCOPE_FOLDER,
 )
-from apps.mail.forms import MailSearchForm
+from apps.mail.forms import CreateFolderForm, MailSearchForm
 from apps.mail.services.image_proxy import ImageProxyError, fetch_image
 from apps.mail.services.mailbox import (
     FolderNode,
+    archive_message,
+    batch_archive_messages,
     batch_delete_messages,
     batch_move_messages,
     batch_set_flags,
+    create_user_folder,
     delete_message,
+    is_archive_folder,
     list_folders,
     list_messages,
     move_message,
     set_message_flags,
     translate_folder_label,
 )
-from apps.mail.services.message import MessageDetail, get_message, get_part, rewrite_images
+from apps.mail.services.message import (
+    MessageDetail,
+    attachment_preview_kind,
+    get_message,
+    get_part,
+    resolve_attachment_content_type,
+    rewrite_images,
+)
 from apps.mail.services.search import SearchFilters, search_messages
 from apps.preferences.constants import RemoteImages
 
@@ -78,6 +93,7 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
     context = {
         "folder_name": folder,
         "folder_label": translate_folder_label(folder),
+        "is_archive_folder": is_archive_folder(folder),
         "folders": folders,
         "page": page,
         "search_form": MailSearchForm(initial={"folder": folder}),
@@ -240,6 +256,7 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
     context = {
         "folder_name": folder,
         "folder_label": translate_folder_label(folder),
+        "is_archive_folder": is_archive_folder(folder),
         "folders": folders,
         "message": message,
         "body_html": _render_body_html(message, folder, uid, allow_remote=allow_remote),
@@ -377,6 +394,29 @@ def message_move(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
 @never_cache
 @require_POST
 @mail_login_required
+def message_archive(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Move one message to the account's Archive folder and return to the current folder."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            archive_message(imap, folder, uid)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = reverse("mail:folder", kwargs={"folder_name": folder})
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
+
+
+@never_cache
+@require_POST
+@mail_login_required
 def message_delete(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
     """Permanently delete one message and return to its folder."""
     folder = folder_name or IMAP_INBOX
@@ -400,6 +440,36 @@ def message_delete(request: HttpRequest, folder_name: str, uid: int) -> HttpResp
 @never_cache
 @require_POST
 @mail_login_required
+def folder_create(request: HttpRequest) -> HttpResponse:
+    """Create a custom top-level or nested IMAP folder and navigate to it."""
+    form = CreateFolderForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(status=400)
+
+    name = str(form.cleaned_data["name"])
+    parent = str(form.cleaned_data.get("parent") or "")
+    try:
+        with get_mail_imap_service(request) as imap:
+            created_folder = create_user_folder(imap, name, parent=parent)
+    except ValueError:
+        return HttpResponse(status=400)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = f"{reverse('mail:folder', kwargs={'folder_name': created_folder})}?view=list"
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
+
+
+@never_cache
+@require_POST
+@mail_login_required
 def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
     """Apply a batch flag, move, or delete action to selected messages in a folder."""
     uids = _parse_uids(request)
@@ -412,7 +482,7 @@ def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
     if action == "move":
         if not isinstance(destination, str) or not destination:
             return HttpResponse(status=400)
-    elif action != "delete" and not add and not remove:
+    elif action not in {"delete", "archive"} and not add and not remove:
         return HttpResponse(status=400)
 
     folder = folder_name or IMAP_INBOX
@@ -421,6 +491,8 @@ def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
         with get_mail_imap_service(request) as imap:
             if action == "delete":
                 batch_delete_messages(imap, folder, uids)
+            elif action == "archive":
+                batch_archive_messages(imap, folder, uids)
             elif action == "move":
                 assert isinstance(destination, str)
                 batch_move_messages(imap, folder, uids, destination)
@@ -444,6 +516,7 @@ def messages_batch(request: HttpRequest, folder_name: str) -> HttpResponse:
             "mail/_message_list.html",
             {
                 "folder_name": folder,
+                "is_archive_folder": is_archive_folder(folder),
                 "page": page,
                 "search_active": False,
                 "search_error": "",
@@ -469,6 +542,101 @@ def attachment_view(
 ) -> HttpResponse:
     """Stream one message part as a download."""
     return _stream_part(request, folder_name, uid, part, inline=False)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def attachment_preview_view(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+) -> HttpResponse:
+    """Render an HTMX modal preview fragment for one message attachment."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            result = get_part(imap, folder, uid, part)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return HttpResponse(status=404)
+
+    if result is None:
+        return HttpResponse(status=404)
+
+    content, content_type, filename, _disposition = result
+    resolved_type = resolve_attachment_content_type(content_type, filename)
+    preview_kind = attachment_preview_kind(content_type, filename)
+    text_content = ""
+    text_truncated = False
+    if preview_kind == "text":
+        text_truncated = len(content) > ATTACHMENT_PREVIEW_MAX_TEXT_BYTES
+        sample = content[:ATTACHMENT_PREVIEW_MAX_TEXT_BYTES]
+        text_content = sample.decode("utf-8", errors="replace")
+
+    return render(
+        request,
+        "mail/_attachment_preview.html",
+        {
+            "filename": filename,
+            "content_type": resolved_type,
+            "size": len(content),
+            "preview_kind": preview_kind,
+            "text_content": text_content,
+            "text_truncated": text_truncated,
+            "inline_url": reverse(
+                "mail:attachment_inline",
+                kwargs={"folder_name": folder, "uid": uid, "part": part},
+            ),
+            "download_url": reverse(
+                "mail:attachment",
+                kwargs={"folder_name": folder, "uid": uid, "part": part},
+            ),
+        },
+    )
+
+
+@never_cache
+@require_GET
+@xframe_options_sameorigin
+@csp_replace({"frame-ancestors": ["'self'"], "object-src": ["'self'"]})
+@mail_login_required
+def attachment_inline_view(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+    part: str,
+) -> HttpResponse:
+    """Stream one attachment inline for the modal viewer (safe media/PDF allowlist only)."""
+    folder = folder_name or IMAP_INBOX
+    try:
+        with get_mail_imap_service(request) as imap:
+            result = get_part(imap, folder, uid, part)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return HttpResponse(status=404)
+
+    if result is None:
+        return HttpResponse(status=404)
+
+    content, content_type, filename, _disposition = result
+    resolved_type = resolve_attachment_content_type(content_type, filename)
+    if resolved_type not in ATTACHMENT_INLINE_ALLOWED_CONTENT_TYPES:
+        return HttpResponse(status=404)
+
+    response = HttpResponse(content, content_type=resolved_type)
+    response["Content-Disposition"] = _content_disposition("inline", filename)
+    response["Cache-Control"] = "private, max-age=3600"
+    return response
 
 
 @never_cache

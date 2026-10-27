@@ -11,8 +11,10 @@ from django.utils import timezone, translation
 
 from apps.accounts.constants import (
     SESSION_ACCOUNT_KEY,
+    SESSION_ACCOUNT_LABEL_KEY,
     SESSION_AUTHENTICATED_AT_KEY,
     SESSION_DENSITY_KEY,
+    SESSION_DISPLAY_NAME_KEY,
     SESSION_EMAIL_KEY,
     SESSION_EXPIRES_AT_KEY,
     SESSION_LANGUAGE_KEY,
@@ -72,9 +74,21 @@ def start_mail_session(request: HttpRequest, account: MailAccount, password: str
     session[SESSION_PAGE_SIZE_KEY] = preference.page_size
     session[SESSION_REMOTE_IMAGES_KEY] = preference.remote_images
     session[SESSION_SIGNATURE_KEY] = preference.signature_html
+    session[SESSION_DISPLAY_NAME_KEY] = preference.display_name
+    session[SESSION_ACCOUNT_LABEL_KEY] = preference.account_label
     setattr(request, "mail_account", account)  # noqa: B010
     translation.activate(language)
     return preference
+
+
+def update_mail_session_password(request: HttpRequest, new_password: str) -> None:
+    """Rotate the session key and update the Fernet-encrypted stored password."""
+    session = _session(request)
+    session.cycle_key()
+    session_key = session.session_key
+    if not session_key:
+        raise MailSessionError("Django did not create a session key")
+    CredentialStore().save(session_key, new_password)
 
 
 def end_mail_session(request: HttpRequest) -> None:
@@ -150,6 +164,18 @@ def get_mail_remote_images(request: HttpRequest) -> str:
 def get_mail_signature(request: HttpRequest) -> str:
     """Return the account's signature text from the session."""
     value = _session(request).get(SESSION_SIGNATURE_KEY)
+    return value.strip() if isinstance(value, str) else ""
+
+
+def get_mail_display_name(request: HttpRequest) -> str:
+    """Return the account's owner display name from the session."""
+    value = _session(request).get(SESSION_DISPLAY_NAME_KEY)
+    return value.strip() if isinstance(value, str) else ""
+
+
+def get_mail_account_label(request: HttpRequest) -> str:
+    """Return the account's descriptive label from the session."""
+    value = _session(request).get(SESSION_ACCOUNT_LABEL_KEY)
     return value.strip() if isinstance(value, str) else ""
 
 

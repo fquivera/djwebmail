@@ -8,7 +8,9 @@ from django.http import HttpRequest
 from django.utils import timezone, translation
 
 from apps.accounts.constants import (
+    SESSION_ACCOUNT_LABEL_KEY,
     SESSION_DENSITY_KEY,
+    SESSION_DISPLAY_NAME_KEY,
     SESSION_LANGUAGE_KEY,
     SESSION_PAGE_SIZE_KEY,
     SESSION_REMOTE_IMAGES_KEY,
@@ -42,6 +44,8 @@ def apply_mail_preference(request: HttpRequest, preference: MailPreference) -> N
     session[SESSION_PAGE_SIZE_KEY] = preference.page_size
     session[SESSION_REMOTE_IMAGES_KEY] = preference.remote_images
     session[SESSION_SIGNATURE_KEY] = preference.signature_html
+    session[SESSION_DISPLAY_NAME_KEY] = preference.display_name
+    session[SESSION_ACCOUNT_LABEL_KEY] = preference.account_label
     translation.activate(preference.language)
     setattr(request, "LANGUAGE_CODE", preference.language)  # noqa: B010
     try:

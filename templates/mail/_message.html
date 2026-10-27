@@ -43,8 +43,15 @@
         </div>
 
         <div class="min-w-0 flex-1">
-          <div class="font-semibold text-sm text-base-content break-words">
-            {% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}
+          <div class="flex flex-wrap items-center gap-2 font-semibold text-sm text-base-content break-words">
+            <span>{% if message.sender %}{{ message.sender }}{% else %}{% translate "Unknown sender" %}{% endif %}</span>
+            {% if message.sender %}
+              <a
+                class="btn btn-ghost btn-xs text-xs font-normal text-primary"
+                href="{% url 'contacts:index' %}?sender={{ message.sender|urlencode }}"
+                title="{% translate 'Save contact' %}"
+              >+ {% translate "Save contact" %}</a>
+            {% endif %}
           </div>
 
           <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-base-content/70">
@@ -144,6 +151,33 @@
             </svg>
             <span class="sr-only">{% translate "Forward" %}</span>
           </a>
+
+          {% if not is_archive_folder %}
+            <form
+              method="post"
+              action="{% url 'mail:message_archive' folder_name message.uid %}"
+              hx-post="{% url 'mail:message_archive' folder_name message.uid %}"
+              hx-target="body"
+              hx-swap="none"
+              class="inline-flex"
+            >
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+                data-shortcut="archive"
+                title="{% translate 'Archive' %}"
+                aria-label="{% translate 'Archive' %}"
+              >
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="20" height="5" x="2" y="3" rx="1"></rect>
+                  <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path>
+                  <path d="M10 12h4"></path>
+                </svg>
+                <span class="sr-only">{% translate "Archive" %}</span>
+              </button>
+            </form>
+          {% endif %}
 
           <button
             type="button"
@@ -251,6 +285,36 @@
   </header>
 
   {% include "mail/_attachment_list.html" %}
+
+  {% if message.attachments %}
+    <dialog
+      id="attachment-viewer-dialog"
+      class="modal bg-black/60 backdrop-blur-xs"
+      data-modal-strict
+      aria-labelledby="attachment-viewer-title"
+    >
+      <div class="modal-box max-w-4xl w-11/12 p-0 overflow-hidden border border-base-300 shadow-2xl">
+        <div id="attachment-viewer-content">
+          <div class="flex items-center justify-between border-b border-base-300 px-5 py-3.5 bg-base-200/60">
+            <h2 id="attachment-viewer-title" class="text-sm font-semibold text-base-content">
+              {% translate "Attachment preview" %}
+            </h2>
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              data-dialog-close
+              data-dialog-autofocus
+            >
+              {% translate "Close" %}
+            </button>
+          </div>
+          <div class="p-8 text-center text-sm text-base-content/60">
+            {% translate "Loading attachment…" %}
+          </div>
+        </div>
+      </div>
+    </dialog>
+  {% endif %}
 
   <dialog
     id="delete-dialog-{{ message.uid }}"

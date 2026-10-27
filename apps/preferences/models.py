@@ -16,6 +16,8 @@ from django.utils.translation import gettext_lazy
 
 from apps.accounts.constants import ACCOUNT_KEY_MAX_LENGTH
 from apps.preferences.constants import (
+    ACCOUNT_LABEL_MAX_LENGTH,
+    DISPLAY_NAME_MAX_LENGTH,
     PAGE_SIZE_MIN,
     Density,
     Layout,
@@ -42,6 +44,14 @@ class MailPreference(models.Model):
     # each field to the Python type the descriptor returns at runtime.
     account_key = cast(str, models.CharField(max_length=ACCOUNT_KEY_MAX_LENGTH, unique=True))
     email = cast(str, models.EmailField(db_index=True))
+    display_name = cast(
+        str,
+        models.CharField(max_length=DISPLAY_NAME_MAX_LENGTH, blank=True, default=""),
+    )
+    account_label = cast(
+        str,
+        models.CharField(max_length=ACCOUNT_LABEL_MAX_LENGTH, blank=True, default=""),
+    )
     language = cast(str, models.CharField(max_length=8, default=default_language))
     timezone = cast(str, models.CharField(max_length=64, default=default_timezone))
     theme = cast(
@@ -111,6 +121,12 @@ class MailPreference(models.Model):
                 "minimum": PAGE_SIZE_MIN,
                 "maximum": settings.MAIL_MAX_PAGE_SIZE,
             }
+
+        if "\r" in self.display_name or "\n" in self.display_name:
+            errors["display_name"] = _("This field cannot contain line breaks.")
+
+        if "\r" in self.account_label or "\n" in self.account_label:
+            errors["account_label"] = _("This field cannot contain line breaks.")
 
         if errors:
             raise ValidationError(errors)

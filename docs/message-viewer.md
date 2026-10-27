@@ -10,6 +10,15 @@
   `#message-body`).
 - `GET /mail/image-proxy/?u=<url>` streams one validated remote image as
   same-origin bytes.
+- `GET /mail/message/<folder>/<uid>/attachment/<part>/preview/` renders an HTMX
+  modal fragment (`mail/_attachment_preview.html`) for the strict blocking
+  attachment viewer modal (`#attachment-viewer-dialog`).
+- `GET /mail/message/<folder>/<uid>/attachment/<part>/inline/` streams one
+  attachment with `Content-Disposition: inline` for safe preview MIME types
+  (`image/png`, `image/jpeg`, `image/gif`, `image/webp`, `application/pdf`,
+  `audio/mpeg`, `audio/ogg`, `audio/wav`, `audio/mp4`, `video/mp4`,
+  `video/webm`, `video/ogg`), rejecting `image/svg+xml`, `text/html`, and
+  executable content.
 - `GET /mail/message/<folder>/<uid>/attachment/<part>/` streams one MIME part as
   a download.
 - `GET /mail/message/<folder>/<uid>/inline/<part>/` streams one inline image
@@ -18,6 +27,9 @@
   (`action` = `read` | `unread` | `star` | `unstar`).
 - `POST /mail/message/<folder>/<uid>/move/` moves the message to `dest` and
   redirects to that folder.
+- `POST /mail/message/<folder>/<uid>/archive/` archives the message into the
+  account's RFC 6154 `\Archive` / `Archive` folder (creating `Archive` via IMAP
+  `CREATE` when missing) and refreshes the source folder.
 - `POST /mail/message/<folder>/<uid>/delete/` permanently deletes the message
   and redirects to its folder.
 
@@ -83,11 +95,27 @@ The proxy is an anti-SSRF boundary:
 DNS rebinding between the validation lookup and the fetch is a known residual
 risk; connecting to the pre-validated address is a later hardening step.
 
-## Attachments and inline images
+## Attachments, modal viewer, and inline images
 
 MIME parts that are not the body are exposed as attachments and listed under the
-message. Each entry links to `/attachment/<part>/`, which streams the decoded
-part bytes with a sanitized `Content-Disposition`.
+message. Each entry provides:
+
+- a **View** (`Visualizar`) button that opens a strict blocking `<dialog
+  id="attachment-viewer-dialog" data-modal-strict>` via `.showModal()` (putting
+  the background page into Top Layer inertness and preventing `Escape` or
+  backdrop dismissal so the user must click the explicit **Close** button to
+  continue) and loads `/attachment/<part>/preview/` into
+  `#attachment-viewer-content`;
+- a **Download** (`Descargar`) link to `/attachment/<part>/`, which streams the
+  decoded part bytes with a sanitized `Content-Disposition`.
+
+Inside the modal:
+
+- raster images (`png`, `jpeg`, `gif`, `webp`) render via `<img src="/attachment/<part>/inline/">`;
+- PDF documents (`application/pdf`) render via a same-origin `<iframe src="/attachment/<part>/inline/">` with `X-Frame-Options: SAMEORIGIN` and `frame-ancestors 'self'`;
+- plain text, CSV, Markdown, and JSON (`text/plain`, `text/csv`, `text/markdown`, `application/json`) are decoded server-side (up to `ATTACHMENT_PREVIEW_MAX_TEXT_BYTES`, 256 KB) and rendered inside an auto-escaped `<pre>` block;
+- audio and video (`audio/*`, `video/*`) render with native `<audio controls>` / `<video controls>` elements and are automatically paused when the modal closes;
+- unsupported MIME types show file metadata and a direct download action.
 
 Inline images referenced by `Content-ID` are not listed as attachments. Their
 `cid:` references in the sanitized body are rewritten to `/inline/<part>/`, so
@@ -99,7 +127,7 @@ Attachments and inline parts are served from a fresh `BODY.PEEK[]` fetch. For
 large messages a later change should fetch only the requested part with
 `BODY.PEEK[<part>]`.
 
-## Read and star flags, move, and delete
+## Read and star flags, archive, move, and delete
 
 Opening a message marks it read: the viewer fires a `read` flag request on load
 (`hx-swap="none"`) and the message-list row is refreshed out-of-band. Read/unread
@@ -116,6 +144,16 @@ standalone full-page route the forms send `standalone=1` and the endpoint return
 `204`: there is no list row to refresh, and an OOB row would have no target. See
 [`docs/ui-interaction.md`](ui-interaction.md).
 
+Archiving (`POST /mail/message/<folder>/<uid>/archive/`, keyboard shortcut `y`
+or `a`, plus row hover quick action and batch toolbar action) resolves the
+account's archive folder by checking selectable folders for the RFC 6154
+`\Archive` special-use attribute first, then a case-insensitive `Archive` folder
+name, and creates `Archive` automatically when neither exists. Moving to the
+archive folder uses `ImapService.move` (`UID MOVE` with `COPY` + `\Deleted` +
+`EXPUNGE` fallback) and keeps the user in the source folder with the archived
+message removed from the list. Archiving is hidden when already viewing the
+archive folder.
+
 A folder `<select>` in the viewer header moves the message to another selectable
 folder and redirects there. Flags and move are written with
 `ImapService.store_flags` / `ImapService.move` on a read-write selection.
@@ -126,7 +164,8 @@ Delete opens a native `<dialog>` confirmation (no `window.confirm`, no
 message `\Deleted` and expunges it; the response redirects to the folder. The
 dialog states that the removal is permanent. In the message list, checkboxes
 (`data-batch-uid`) and `POST /mail/folder/<folder>/batch/` (`messages_batch`)
-allow marking selected messages read/unread/flagged or deleting them in batch.
+allow marking selected messages read/unread/flagged, archiving them (`action="archive"`),
+or deleting them in batch.
 
 ## Tests
 

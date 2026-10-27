@@ -6,7 +6,7 @@
 {% block scripts %}
   <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
   <script defer src="{% static 'js/htmx-config.js' %}"></script>
-  <script defer src="{% static 'js/compose.js' %}"></script>
+  <script defer src="{% static 'js/compose.js' %}?v=2"></script>
   <script defer src="{% static 'vendor/alpine-csp.min.js' %}"></script>
 {% endblock %}
 
@@ -84,12 +84,34 @@
         </div>
       {% endif %}
 
+      {% if sender_display %}
+        <div class="border-b border-base-200 bg-base-200/30 px-4 py-2 flex items-center gap-3 text-sm">
+          <span class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+            {% translate "From" %}
+          </span>
+          <span class="font-medium text-base-content truncate">{{ sender_display }}</span>
+          {% if account_label %}
+            <span class="badge badge-primary badge-soft badge-xs font-medium shrink-0">{{ account_label }}</span>
+          {% endif %}
+        </div>
+      {% endif %}
+
       <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
         <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.to.id_for_label }}">
           {{ form.to.label }}
         </label>
         <div class="flex-1 min-w-0">
-          {{ form.to }}
+          <input
+            type="text"
+            name="to"
+            id="{{ form.to.id_for_label }}"
+            x-ref="toInput"
+            data-recipient-input
+            value="{{ form.to.value|default:'' }}"
+            autocomplete="off"
+            class="input w-full"
+            placeholder="{{ form.to.field.widget.attrs.placeholder|default:'' }}"
+          >
           {% if form.to.errors %}
             <div class="text-xs text-error mt-0.5" role="alert">{{ form.to.errors }}</div>
           {% endif %}
@@ -123,6 +145,7 @@
             name="cc"
             id="{{ form.cc.id_for_label }}"
             x-ref="ccInput"
+            data-recipient-input
             value="{{ form.cc.value|default:'' }}"
             autocomplete="off"
             class="input w-full"
@@ -147,6 +170,7 @@
             name="bcc"
             id="{{ form.bcc.id_for_label }}"
             x-ref="bccInput"
+            data-recipient-input
             value="{{ form.bcc.value|default:'' }}"
             autocomplete="off"
             class="input w-full"
@@ -157,6 +181,43 @@
           {% endif %}
         </div>
       </div>
+
+      {% if contacts %}
+        <div
+          id="contact-suggestions"
+          hidden
+          role="listbox"
+          aria-label="{% translate 'Contacts' %}"
+          class="border-b border-base-300 bg-base-200/40 px-4 py-2"
+        >
+          <div class="space-y-1 max-h-48 overflow-y-auto">
+            {% for contact in contacts %}
+              <button
+                type="button"
+                role="option"
+                data-contact-item
+                data-address="{{ contact.formatted_address }}"
+                data-search="{{ contact.full_name|lower }} {{ contact.primary_email|lower }} {{ contact.category|lower }} {{ contact.organization|lower }}"
+                class="w-full flex items-center justify-between gap-2.5 rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-left shadow-2xs transition hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
+              >
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <span
+                    class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary"
+                    aria-hidden="true"
+                  >{{ contact.full_name|slice:":1"|upper }}</span>
+                  <div class="min-w-0 flex flex-wrap items-baseline gap-x-2">
+                    <span class="truncate text-xs font-semibold text-base-content">{{ contact.full_name }}</span>
+                    <span class="truncate text-xs text-base-content/65">&lt;{{ contact.primary_email }}&gt;</span>
+                  </div>
+                </div>
+                {% if contact.category %}
+                  <span class="badge badge-outline badge-xs shrink-0">{{ contact.category }}</span>
+                {% endif %}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
 
       <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
         <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.subject.id_for_label }}">

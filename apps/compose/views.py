@@ -24,6 +24,8 @@ from apps.accounts.exceptions import (
 )
 from apps.accounts.services.session import (
     end_mail_session,
+    get_mail_account_label,
+    get_mail_display_name,
     get_mail_imap_service,
     get_mail_signature,
     get_mail_smtp_service,
@@ -45,11 +47,15 @@ from apps.compose.forms import ComposeForm
 from apps.compose.services import (
     append_to_sent,
     apply_signature,
+    decode_mime_words,
+    format_sender_address,
     forward_initial,
     reply_all_initial,
     reply_initial,
     send_message,
 )
+from apps.contacts.constants import MAX_CONTACTS_AUTOCOMPLETE
+from apps.contacts.selectors import list_contact_suggestions, list_contacts
 from apps.mail.constants import IMAP_INBOX
 from apps.mail.services.message import MessageDetail, get_message
 
@@ -61,10 +67,19 @@ def compose_new(request: HttpRequest) -> HttpResponse:
     session_key = _session_key(request)
     draft = load_draft(session_key)
     signature = get_mail_signature(request)
+    raw_to = request.GET.get("to")
+    to_prefill = decode_mime_words(raw_to) if isinstance(raw_to, str) else ""
     if draft:
         initial: dict[str, str] | None = draft.as_initial()
-    elif signature:
-        initial = apply_signature({}, signature)
+        if initial is not None:
+            for field in ("to", "cc", "bcc"):
+                if field in initial and initial[field]:
+                    initial[field] = decode_mime_words(initial[field])
+            if to_prefill:
+                initial["to"] = to_prefill
+    elif signature or to_prefill:
+        base_initial = {"to": to_prefill} if to_prefill else {}
+        initial = apply_signature(base_initial, signature)
     else:
         initial = None
     return _render_compose(
@@ -140,11 +155,13 @@ def compose_send(request: HttpRequest) -> HttpResponse:
         return login_redirect(request)
 
     attachments = load_attachments(session_key, _attachment_ids(request))
+    display_name = get_mail_display_name(request)
     try:
         with get_mail_smtp_service(request) as smtp:
             raw = send_message(
                 smtp,
                 sender=account.email,
+                sender_name=display_name,
                 to=form.cleaned_data["to"],
                 cc=form.cleaned_data["cc"],
                 bcc=form.cleaned_data.get("bcc", []),
@@ -256,6 +273,10 @@ def _render_compose(
     attachment_error: str = "",
     draft_autosave: bool = False,
 ) -> HttpResponse:
+    account = getattr(request, "mail_account", None)
+    account_email = account.email if account is not None else ""
+    account_key = account.account_key if account is not None else ""
+    display_name = get_mail_display_name(request)
     return render(
         request,
         "compose/compose.html",
@@ -265,6 +286,12 @@ def _render_compose(
             "attachment_error": attachment_error,
             "max_attachment_bytes": settings.MAIL_MAX_ATTACHMENT_BYTES,
             "draft_autosave": draft_autosave,
+            "sender_display": format_sender_address(account_email, display_name),
+            "account_label": get_mail_account_label(request),
+            "contacts": (
+                list_contacts(account_key)[:MAX_CONTACTS_AUTOCOMPLETE] if account_key else []
+            ),
+            "contact_suggestions": list_contact_suggestions(account_key) if account_key else [],
         },
         status=status,
     )

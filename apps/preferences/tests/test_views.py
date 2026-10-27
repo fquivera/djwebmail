@@ -286,3 +286,80 @@ def test_settings_saves_signature_and_remote_images_policy(
     session = logged_in_client.session
     assert session["mail_remote_images"] == "always"
     assert session["mail_signature"] == "Best,\nUser"
+
+
+def test_settings_saves_owner_name_and_label_and_refreshes_navbar_oob(
+    logged_in_client: Client,
+    preference: MailPreference,
+) -> None:
+    data = valid_data(display_name="Alice Smith", account_label="Condominio")
+
+    response: Any = logged_in_client.post(
+        reverse("preferences:index"),
+        data,
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    preference.refresh_from_db()
+    assert preference.display_name == "Alice Smith"
+    assert preference.account_label == "Condominio"
+    session = logged_in_client.session
+    assert session["mail_display_name"] == "Alice Smith"
+    assert session["mail_account_label"] == "Condominio"
+    assert b'id="navbar-identity"' in response.content
+    assert b'hx-swap-oob="outerHTML"' in response.content
+    assert b"Alice Smith" in response.content
+    assert b"Condominio" in response.content
+
+
+def test_password_change_requires_login(client: Client) -> None:
+    response: Any = client.post(reverse("preferences:password"), {})
+    assert response.status_code == 302
+    assert response["Location"].startswith(reverse("accounts:login"))
+
+
+def test_password_change_renders_validation_error_on_mismatch(
+    logged_in_client: Client,
+    preference: MailPreference,
+) -> None:
+    response: Any = logged_in_client.post(
+        reverse("preferences:password"),
+        {
+            "current_password": "secret",
+            "new_password": "StrongPassword!2026",
+            "confirm_password": "DifferentPassword!2026",
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    assert b"passwords do not match" in response.content.lower()
+
+
+def test_password_change_succeeds_and_renders_success_alert(
+    logged_in_client: Client,
+    preference: MailPreference,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    changed: dict[str, str] = {}
+
+    def fake_change(request: Any, current: str, new_pass: str) -> None:
+        changed["current"] = current
+        changed["new"] = new_pass
+
+    monkeypatch.setattr("apps.preferences.views.change_account_password", fake_change)
+
+    response: Any = logged_in_client.post(
+        reverse("preferences:password"),
+        {
+            "current_password": "secret",
+            "new_password": "NewStrongPassword!2026",
+            "confirm_password": "NewStrongPassword!2026",
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    assert changed == {"current": "secret", "new": "NewStrongPassword!2026"}
+    assert b"Password changed successfully." in response.content

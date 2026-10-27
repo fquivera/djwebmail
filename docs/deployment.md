@@ -99,6 +99,10 @@ Optional operational tuning:
 | `DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES` | `25000000` | Maximum combined size of compose attachments (25 MB) |
 | `DJANGO_MAIL_MAX_ATTACHMENTS` | `10` | Maximum number of attachments per draft |
 | `DJANGO_MAIL_COMPOSE_TTL_SECONDS` | `3600` | Redis TTL for compose drafts and uploaded attachments |
+| `DJANGO_MAIL_ACCOUNTS_FILE` | `""` | Optional mounted accounts file path (e.g. `/data/mail/postfix-accounts.cf` for `docker-mailserver` or Dovecot) |
+| `DJANGO_MAIL_POPPASSD_HOST` | `""` | Optional POPPASSD daemon hostname for remote password updates |
+| `DJANGO_MAIL_POPPASSD_PORT` | `106` | POPPASSD daemon port |
+| `DJANGO_MAIL_CHANGE_PASSWORD_ENABLED` | `True` | Enable/disable self-service password changes in the UI |
 | `DJANGO_LANGUAGE_CODE` | `en-us` | Fallback UI language before a user preference is loaded |
 | `DJANGO_LOG_LEVEL` | `INFO` | Root/application log level (`INFO`, `WARNING`, `ERROR`) |
 
@@ -267,3 +271,74 @@ curl -fsS https://mail.example.com/health/
    ```
    The startup command applies any new migrations (`python manage.py migrate --noinput`)
    before launching Gunicorn.
+
+---
+
+## 7. Password management configuration
+
+IMAP (RFC 3501) does not specify an in-band password modification command.
+Self-service password changes therefore require integrating with the mail server's
+underlying authentication mechanism.
+
+DjWebmail supports two backend drivers:
+
+### Option A: `docker-mailserver` / Dovecot accounts file
+
+If running [`docker-mailserver`](https://github.com/docker-mailserver/docker-mailserver)
+or Dovecot configured with `passwd-file`, user credentials reside in
+`postfix-accounts.cf` using POSIX `{SHA512-CRYPT}` password hashes.
+
+1. Mount the accounts directory into the DjWebmail `web` container with read-write
+   access in `compose.prod.yml`:
+   ```yaml
+   services:
+     web:
+       # ...
+       volumes:
+         - /var/mail-state/docker-data/dms/config/postfix-accounts.cf:/data/mail/postfix-accounts.cf:rw
+   ```
+2. Ensure the mounted file and its directory are writable by the container's
+   unprivileged user (`UID 1000` / `GID 1000`), allowing atomic temporary file
+   replacement (`os.replace`).
+3. Set the environment variable in `.env.prod`:
+   ```dotenv
+   DJANGO_MAIL_ACCOUNTS_FILE=/data/mail/postfix-accounts.cf
+   ```
+
+When a user submits a valid password change:
+- DjWebmail validates OWASP ASVS / NIST requirements (12+ characters, uppercase,
+  lowercase, number, symbol, no email containment, no repetitions).
+- Generates a `{SHA512-CRYPT}$6$rounds=5000$...` hash via system `libcrypt`.
+- Atomically replaces the user's line in `postfix-accounts.cf`.
+- Cycles the web session (`request.session.cycle_key()`) and encrypts the new
+  password into Fernet cache, keeping the user signed in seamlessly.
+
+### Option B: POPPASSD daemon
+
+For traditional Linux mail servers running a POPPASSD service (port 106, standard
+`poppassd` daemon with PAM or shadow integration):
+
+1. Set the hostname and optional port in `.env.prod`:
+   ```dotenv
+   DJANGO_MAIL_POPPASSD_HOST=mailserver.internal
+   DJANGO_MAIL_POPPASSD_PORT=106
+   ```
+2. Ensure network connectivity between the DjWebmail container and the POPPASSD
+   service on the internal Docker or private network.
+
+### Disabling password changes
+
+If your organization manages passwords centrally via an external Identity Provider
+(LDAP, Keycloak, Active Directory, SSO) or disallows user-initiated password
+updates from webmail:
+
+```dotenv
+DJANGO_MAIL_CHANGE_PASSWORD_ENABLED=False
+```
+
+When set to `False`, the "Security and change password" section is completely
+omitted from `/settings/`. When set to `True` without configuring either backend
+driver, the interface displays an informative banner notifying the user that
+password changes are not configured on this server, disabling submission to
+prevent false-positive reports.
+

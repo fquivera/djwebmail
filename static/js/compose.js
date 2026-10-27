@@ -4,9 +4,145 @@
  * toggling, formatting commands via document.execCommand, active button state
  * tracking via document.queryCommandState, and synchronization between
  * contenteditable and the form textarea.
+ *
+ * Recipient contact autocomplete activates when typing 3 or more characters in
+ * a recipient field (To / Cc / Bcc) and uses the native `hidden` attribute so
+ * it stays hidden by default without inline style mutations.
  */
 (function () {
   "use strict";
+
+  var MIN_CONTACT_SEARCH_CHARS = 3;
+  var activeRecipientInput = null;
+
+  function getSuggestionsContainer() {
+    return document.getElementById("contact-suggestions");
+  }
+
+  function hideContactSuggestions() {
+    var container = getSuggestionsContainer();
+    if (container) {
+      container.hidden = true;
+    }
+  }
+
+  function extractLastToken(rawValue) {
+    var parts = (rawValue || "").split(",");
+    return (parts[parts.length - 1] || "").trim();
+  }
+
+  function updateContactSuggestions(inputEl) {
+    var container = getSuggestionsContainer();
+    if (!container || !(inputEl instanceof HTMLInputElement)) {
+      return;
+    }
+    activeRecipientInput = inputEl;
+    var token = extractLastToken(inputEl.value).toLowerCase();
+    if (token.length < MIN_CONTACT_SEARCH_CHARS) {
+      container.hidden = true;
+      return;
+    }
+
+    var items = container.querySelectorAll("[data-contact-item]");
+    var visibleCount = 0;
+    for (var i = 0; i < items.length; i += 1) {
+      var item = items[i];
+      var haystack = (item.getAttribute("data-search") || "").toLowerCase();
+      var matches = haystack.indexOf(token) !== -1;
+      item.hidden = !matches;
+      if (matches) {
+        visibleCount += 1;
+      }
+    }
+    container.hidden = visibleCount === 0;
+  }
+
+  function applyContactSelection(button) {
+    if (!button || !(activeRecipientInput instanceof HTMLInputElement)) {
+      return;
+    }
+    var address = (button.getAttribute("data-address") || "").trim();
+    if (!address) {
+      return;
+    }
+
+    var rawSegments = (activeRecipientInput.value || "").split(",");
+    var kept = [];
+    for (var i = 0; i < rawSegments.length - 1; i += 1) {
+      var seg = rawSegments[i].trim();
+      if (seg && kept.indexOf(seg) === -1) {
+        kept.push(seg);
+      }
+    }
+    if (kept.indexOf(address) === -1) {
+      kept.push(address);
+    }
+    activeRecipientInput.value = kept.join(", ");
+    hideContactSuggestions();
+    activeRecipientInput.focus();
+    activeRecipientInput.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  document.addEventListener("input", function (event) {
+    var target = event.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.hasAttribute("data-recipient-input")
+    ) {
+      updateContactSuggestions(target);
+    }
+  });
+
+  document.addEventListener("focusin", function (event) {
+    var target = event.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.hasAttribute("data-recipient-input")
+    ) {
+      activeRecipientInput = target;
+      updateContactSuggestions(target);
+    }
+  });
+
+  document.addEventListener("mousedown", function (event) {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+    var contactBtn = event.target.closest("[data-contact-item]");
+    if (contactBtn) {
+      event.preventDefault();
+      applyContactSelection(contactBtn);
+      return;
+    }
+    if (!event.target.closest("[data-recipient-input]")) {
+      hideContactSuggestions();
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    var container = getSuggestionsContainer();
+    if (!container || container.hidden) {
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      hideContactSuggestions();
+      return;
+    }
+    if (
+      (event.key === "Enter" || event.key === "Tab") &&
+      event.target instanceof HTMLInputElement &&
+      event.target.hasAttribute("data-recipient-input")
+    ) {
+      var firstVisible = container.querySelector(
+        "[data-contact-item]:not([hidden])",
+      );
+      if (firstVisible) {
+        event.preventDefault();
+        applyContactSelection(firstVisible);
+      }
+    }
+  });
 
   document.addEventListener("alpine:init", function () {
     if (!window.Alpine) {

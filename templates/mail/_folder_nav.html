@@ -27,8 +27,23 @@
   </div>
 
   <div class="flex-1 overflow-y-auto">
-    <div class="px-2 pb-1.5 pt-1 text-xs font-semibold uppercase tracking-wider text-base-content/50">
-      {% translate "Folders" %}
+    <div class="flex items-center justify-between px-2 pb-1.5 pt-1">
+      <span class="text-xs font-semibold uppercase tracking-wider text-base-content/50">
+        {% translate "Folders" %}
+      </span>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary"
+        data-dialog-open="create-folder-dialog"
+        aria-haspopup="dialog"
+        aria-label="{% translate 'New folder' %}"
+        title="{% translate 'New folder' %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
     </div>
     {% include "mail/_folder_tree.html" %}
   </div>

@@ -8,6 +8,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from apps.mail.constants import (
+    FOLDER_NAME_MAX_LENGTH,
     SEARCH_ADDRESS_MAX_LENGTH,
     SEARCH_QUERY_MAX_LENGTH,
     SEARCH_SCOPE_ALL,
@@ -140,3 +141,28 @@ class MailSearchForm(forms.Form):
                 _("End date must be on or after start date."),
             )
         return cleaned
+
+
+class CreateFolderForm(forms.Form):
+    """Parameters accepted by ``/mail/folders/create/``."""
+
+    name = forms.CharField(
+        label=_("Folder name"),
+        max_length=FOLDER_NAME_MAX_LENGTH,
+        strip=True,
+    )
+    parent = forms.CharField(
+        label=_("Parent folder"),
+        required=False,
+        max_length=FOLDER_NAME_MAX_LENGTH * 2,
+        strip=True,
+    )
+
+    def clean_name(self) -> str:
+        value = self.cleaned_data.get("name")
+        text = value.strip() if isinstance(value, str) else ""
+        if not text or text in {".", ".."} or "/" in text:
+            raise forms.ValidationError(_("Enter a valid folder name."))
+        if any(ord(ch) < 32 or ord(ch) == 127 for ch in text):
+            raise forms.ValidationError(_("Enter a valid folder name."))
+        return text

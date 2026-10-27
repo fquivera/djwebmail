@@ -1331,3 +1331,178 @@ def test_mailbox_renders_spanish_folder_labels(
     assert response.status_code == 200
     assert b"Bandeja de entrada" in response.content
     assert b"Enviados" in response.content
+
+
+def test_folder_create_creates_folder_and_redirects_htmx(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str] = {}
+
+    def fake_create(imap: Any, name: str, *, parent: str = "") -> str:
+        captured["name"] = name
+        captured["parent"] = parent
+        return f"{parent}/{name}" if parent else name
+
+    monkeypatch.setattr("apps.mail.views.create_user_folder", fake_create)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:folder_create"),
+        {"name": "Facturas", "parent": "INBOX"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 204
+    assert captured == {"name": "Facturas", "parent": "INBOX"}
+    assert response["HX-Redirect"] == "/mail/folder/INBOX/Facturas/?view=list"
+
+
+def test_folder_create_rejects_invalid_name(logged_in_client: Client) -> None:
+    response: Any = logged_in_client.post(
+        reverse("mail:folder_create"),
+        {"name": "bad/name"},
+    )
+
+    assert response.status_code == 400
+
+
+def test_message_archive_moves_to_archive_and_redirects_to_folder(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archived: dict[str, Any] = {}
+
+    def fake_archive(imap: Any, folder: str, uid: int) -> str:
+        archived["folder"] = folder
+        archived["uid"] = uid
+        return "Archive"
+
+    monkeypatch.setattr("apps.mail.views.archive_message", fake_archive)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:message_archive", kwargs={"folder_name": "INBOX", "uid": 7}),
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 204
+    assert response["HX-Redirect"] == reverse("mail:folder", kwargs={"folder_name": "INBOX"})
+    assert archived == {"folder": "INBOX", "uid": 7}
+
+
+def test_messages_batch_archive_moves_selected_uids(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archived: dict[str, Any] = {}
+
+    def fake_batch_archive(imap: Any, folder: str, uids: tuple[int, ...]) -> str:
+        archived["folder"] = folder
+        archived["uids"] = uids
+        return "Archive"
+
+    monkeypatch.setattr("apps.mail.views.batch_archive_messages", fake_batch_archive)
+
+    response: Any = logged_in_client.post(
+        reverse("mail:messages_batch", kwargs={"folder_name": "INBOX"}),
+        {"uids": "7,9", "action": "archive"},
+    )
+
+    assert response.status_code == 302
+    assert response["Location"] == reverse("mail:folder", kwargs={"folder_name": "INBOX"})
+    assert archived == {"folder": "INBOX", "uids": (7, 9)}
+
+
+def test_attachment_preview_renders_modal_fragment_for_pdf_and_text(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (
+            b"%PDF-1.4",
+            "application/pdf",
+            "report.pdf",
+            "attachment",
+        ),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse(
+            "mail:attachment_preview",
+            kwargs={"folder_name": "INBOX", "uid": 7, "part": "2"},
+        )
+    )
+
+    assert response.status_code == 200
+    assert b"report.pdf" in response.content
+    assert b"<iframe" in response.content
+    assert b"/mail/message/INBOX/7/attachment/2/inline/" in response.content
+    assert b"data-dialog-close" in response.content
+
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (
+            b"Line 1\nLine 2 <script>alert(1)</script>",
+            "text/plain",
+            "notes.txt",
+            "attachment",
+        ),
+    )
+
+    text_response: Any = logged_in_client.get(
+        reverse(
+            "mail:attachment_preview",
+            kwargs={"folder_name": "INBOX", "uid": 7, "part": "3"},
+        )
+    )
+
+    assert text_response.status_code == 200
+    assert b"<pre" in text_response.content
+    assert b"&lt;script&gt;alert(1)&lt;/script&gt;" in text_response.content
+
+
+def test_attachment_inline_allows_safe_preview_types_and_rejects_unsafe(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (
+            b"%PDF-1.4",
+            "application/pdf",
+            "report.pdf",
+            "attachment",
+        ),
+    )
+
+    response: Any = logged_in_client.get(
+        reverse(
+            "mail:attachment_inline",
+            kwargs={"folder_name": "INBOX", "uid": 7, "part": "2"},
+        )
+    )
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert response["Content-Disposition"] == 'inline; filename="report.pdf"'
+    assert response["X-Frame-Options"] == "SAMEORIGIN"
+    assert "frame-ancestors 'self'" in response["Content-Security-Policy"]
+
+    monkeypatch.setattr(
+        "apps.mail.views.get_part",
+        lambda imap, folder, uid, part: (
+            b"<svg><script>alert(1)</script></svg>",
+            "image/svg+xml",
+            "bad.svg",
+            "attachment",
+        ),
+    )
+
+    unsafe_response: Any = logged_in_client.get(
+        reverse(
+            "mail:attachment_inline",
+            kwargs={"folder_name": "INBOX", "uid": 7, "part": "3"},
+        )
+    )
+
+    assert unsafe_response.status_code == 404

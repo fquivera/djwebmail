@@ -14,11 +14,17 @@ from django.utils.translation import gettext as _
 
 from apps.accounts.services.imap import FetchedSummary, Folder, ImapService
 from apps.mail.constants import (
+    DEFAULT_IMAP_DELIMITER,
     FOLDER_FLAG_NOSELECT,
+    FOLDER_NAME_MAX_LENGTH,
     IMAP_INBOX,
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
 )
+
+_DEFAULT_ARCHIVE_FOLDER = "Archive"
+_ARCHIVE_FOLDER_NAMES = frozenset({"archive", "archives", "archivo", "archived"})
+_ARCHIVE_FOLDER_FLAG = "\\archive"
 
 
 @dataclass(frozen=True)
@@ -98,6 +104,36 @@ def build_folder_tree(folders: Sequence[Folder]) -> tuple[FolderNode, ...]:
 def list_folders(imap: ImapService) -> tuple[FolderNode, ...]:
     """Read the folder tree from an open IMAP service."""
     return build_folder_tree(imap.list_folders())
+
+
+def create_user_folder(imap: ImapService, name: str, parent: str = "") -> str:
+    """Validate and create a top-level or nested IMAP folder."""
+    clean_name = name.strip()
+    clean_parent = parent.strip()
+    if not clean_name or len(clean_name) > FOLDER_NAME_MAX_LENGTH:
+        raise ValueError("Invalid folder name length")
+    if clean_name in {".", ".."} or any(ord(ch) < 32 or ord(ch) == 127 for ch in clean_name):
+        raise ValueError("Invalid characters in folder name")
+
+    folders = imap.list_folders() if hasattr(imap, "list_folders") else []
+    delimiters = [folder.delimiter for folder in folders if folder.delimiter]
+    delimiter = max(set(delimiters), key=delimiters.count) if delimiters else DEFAULT_IMAP_DELIMITER
+    if delimiter and delimiter in clean_name:
+        raise ValueError("Folder name cannot contain the hierarchy delimiter")
+
+    existing_names = {folder.name for folder in folders if folder.name}
+    if clean_parent:
+        if existing_names and clean_parent not in existing_names:
+            raise ValueError("Parent folder does not exist")
+        full_name = f"{clean_parent}{delimiter}{clean_name}"
+    else:
+        full_name = clean_name
+
+    if any(existing.casefold() == full_name.casefold() for existing in existing_names):
+        raise ValueError("Folder already exists")
+
+    imap.create_folder(full_name)
+    return full_name
 
 
 def list_messages(
@@ -220,6 +256,60 @@ def batch_move_messages(
         return
     imap.select(folder, readonly=False)
     imap.move(uids, destination)
+
+
+def resolve_archive_folder(imap: ImapService) -> str:
+    """Resolve the RFC 6154 Archive folder, creating ``Archive`` if none exists."""
+    folders = imap.list_folders() if hasattr(imap, "list_folders") else []
+    target = ""
+    for folder in folders:
+        if _has_flag(folder.flags, FOLDER_FLAG_NOSELECT):
+            continue
+        if _has_flag(folder.flags, _ARCHIVE_FOLDER_FLAG):
+            target = folder.name
+            break
+        leaf = folder.name.rsplit(folder.delimiter, 1)[-1] if folder.delimiter else folder.name
+        if (
+            leaf.casefold() in _ARCHIVE_FOLDER_NAMES
+            or folder.name.casefold() in _ARCHIVE_FOLDER_NAMES
+        ):
+            target = folder.name
+    if not target:
+        target = _DEFAULT_ARCHIVE_FOLDER
+        if hasattr(imap, "create_folder"):
+            imap.create_folder(target)
+    return target
+
+
+def is_archive_folder(folder_name: str) -> bool:
+    """Return True when ``folder_name`` is already the Archive folder."""
+    normalized = folder_name.strip().casefold()
+    if normalized in _ARCHIVE_FOLDER_NAMES:
+        return True
+    leaf = normalized.replace("\\", "/").rsplit("/", 1)[-1].rsplit(".", 1)[-1]
+    return leaf in _ARCHIVE_FOLDER_NAMES
+
+
+def archive_message(imap: ImapService, folder: str, uid: int) -> str:
+    """Move one message to the account's Archive folder and return its name."""
+    destination = resolve_archive_folder(imap)
+    if folder.strip().casefold() != destination.strip().casefold():
+        imap.select(folder, readonly=False)
+        imap.move([uid], destination)
+    return destination
+
+
+def batch_archive_messages(
+    imap: ImapService,
+    folder: str,
+    uids: Sequence[int],
+) -> str:
+    """Move a batch of messages to the account's Archive folder and return its name."""
+    destination = resolve_archive_folder(imap)
+    if uids and folder.strip().casefold() != destination.strip().casefold():
+        imap.select(folder, readonly=False)
+        imap.move(uids, destination)
+    return destination
 
 
 def translate_folder_label(name: str) -> str:

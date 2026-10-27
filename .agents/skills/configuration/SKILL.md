@@ -54,6 +54,10 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_MAIL_MAX_ATTACHMENTS_TOTAL_BYTES` | no | `25000000` | max combined composed attachment size |
 | `DJANGO_MAIL_MAX_ATTACHMENTS` | no | `10` | max attachments per composed message |
 | `DJANGO_MAIL_COMPOSE_TTL_SECONDS` | no | `3600` | lifetime of transient attachments and drafts |
+| `DJANGO_MAIL_ACCOUNTS_FILE` | no | empty | optional path to mail accounts file (e.g. postfix-accounts.cf) |
+| `DJANGO_MAIL_POPPASSD_HOST` | no | empty | poppassd daemon hostname for remote password changes |
+| `DJANGO_MAIL_POPPASSD_PORT` | no | `106` | poppassd daemon port |
+| `DJANGO_MAIL_CHANGE_PASSWORD_ENABLED` | no | `True` | enable or disable self-service password changing |
 | `DJANGO_SESSION_COOKIE_AGE` | no | `28800` | absolute server-side session age |
 | `REDIS_URL` | production | — | cache and encrypted credential storage |
 | `FERNET_KEY` | production | — | encryption of transient IMAP credentials |

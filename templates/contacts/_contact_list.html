@@ -1,0 +1,74 @@
+{% load i18n %}
+<div id="contact-list-results" class="space-y-2.5">
+  {% if contacts %}
+    {% for contact in contacts %}
+      <article class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-xs transition hover:border-base-content/20">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex min-w-0 items-start gap-3">
+            <span
+              class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary"
+              aria-hidden="true"
+            >{{ contact.full_name|slice:":1"|upper }}</span>
+            <div class="min-w-0 space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="truncate text-sm font-semibold text-base-content">{{ contact.full_name }}</h2>
+                {% if contact.category %}
+                  <span class="badge badge-outline badge-xs">{{ contact.category }}</span>
+                {% endif %}
+              </div>
+              <p class="truncate text-xs font-medium text-primary">{{ contact.primary_email }}</p>
+              {% if contact.organization or contact.job_title %}
+                <p class="text-xs text-base-content/70">
+                  {% if contact.job_title %}{{ contact.job_title }}{% endif %}
+                  {% if contact.job_title and contact.organization %} · {% endif %}
+                  {% if contact.organization %}{{ contact.organization }}{% endif %}
+                </p>
+              {% endif %}
+              {% if contact.phone %}
+                <p class="text-xs text-base-content/70">{{ contact.phone }}</p>
+              {% endif %}
+              {% if contact.notes %}
+                <p class="text-xs text-base-content/60">{{ contact.notes }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1.5">
+            <a
+              class="btn btn-primary btn-xs gap-1"
+              href="{% url 'compose:new' %}?to={{ contact.formatted_address|urlencode }}"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+              </svg>
+              <span>{% translate "Compose" %}</span>
+            </a>
+            <a
+              class="btn btn-ghost btn-xs"
+              href="{% url 'contacts:index' %}?edit={{ contact.pk }}"
+            >{% translate "Edit" %}</a>
+            <form method="post" action="{% url 'contacts:delete' contact.pk %}">
+              {% csrf_token %}
+              <button class="btn btn-ghost btn-xs text-error" type="submit">{% translate "Delete" %}</button>
+            </form>
+          </div>
+        </div>
+
+        <details class="mt-2.5 border-t border-base-200 pt-2">
+          <summary class="cursor-pointer text-xs font-medium text-base-content/60 hover:text-base-content">
+            {% translate "View RFC 7095 jCard JSON" %}
+          </summary>
+          <pre class="mt-2 max-h-48 overflow-auto rounded-lg bg-base-200 p-2.5 font-mono text-xs text-base-content/80">{{ contact.jcard_pretty }}</pre>
+        </details>
+      </article>
+    {% endfor %}
+  {% else %}
+    <div class="rounded-xl border border-dashed border-base-300 bg-base-100 p-8 text-center">
+      <p class="text-sm font-medium text-base-content">{% translate "No contacts found." %}</p>
+      <p class="mt-1 text-xs text-base-content/60">
+        {% translate "Add a contact using the form or import an RFC 7095 jCard (.json) file." %}
+      </p>
+    </div>
+  {% endif %}
+</div>
