@@ -61,6 +61,7 @@ apps/
 ├── accounts/      # IMAP login, session, identities
 ├── mail/          # folders, message list, viewer
 ├── compose/       # compose, attachments, sending
+├── contacts/      # per-account RFC 7095 jCard contacts
 └── preferences/   # per-account preferences
 common/            # shared views and utilities
 templates/         # base templates and partials
@@ -390,7 +391,7 @@ A change is done when:
 Done:
 
 - Django 5.2 scaffold with split settings and local SQLite.
-- `accounts`, `mail`, `compose`, `preferences`, and `common` apps.
+- `accounts`, `mail`, `compose`, `contacts`, `preferences`, and `common` apps.
 - `/health/`, base template, static assets, and smoke tests.
 - CI/CD with GHCR, protection rulesets, and `hardcode-scan`.
 - GitFlow, commit, CI, i18n, and configuration skills.
@@ -472,9 +473,19 @@ Done:
 - Production deployment guide (`docs/deployment.md`): reverse-proxy TLS
   termination, required environment variables, Docker Compose production
   stack, healthcheck, and upgrade workflow.
+- Phase 5 (`docs/phase-5.md` and `docs/contacts.md`):
+  - Account owner identity (`display_name` and `account_label`) in `/settings/`,
+    reflected in the top navbar (`#navbar-identity`) and outgoing RFC 5322
+    `From:` headers.
+  - Custom top-level and nested IMAP folder creation (`POST /mail/folders/create/`)
+    from the folder sidebar.
+  - Contacts module (`apps/contacts/`) using **jCard (RFC 7095)** (`["vcard", [...]]`),
+    with HTMX search/CRUD, `.json` jCard import/export, Compose `<datalist>`
+    recipient suggestions and `?to=` prefill, and "+ Save contact" from the
+    message viewer.
 
-Next: Phase 4 and the deployment guide are complete. Ready for the `v0.2.0`
-release. Do not open new protocol areas without a new phase document.
+Next: Phase 5 is complete. Ready for the `v0.3.0` release. Do not open new
+protocol areas without a new phase document.
 
 ## 12. Anti-patterns
 

@@ -11,6 +11,7 @@ urlpatterns = [
     path("", include("apps.accounts.urls")),
     path("mail/", include("apps.mail.urls")),
     path("compose/", include("apps.compose.urls")),
+    path("contacts/", include("apps.contacts.urls")),
     path("settings/", include("apps.preferences.urls")),
     path("admin/", admin.site.urls),
 ]

@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.mail",
     "apps.compose",
+    "apps.contacts",
     "apps.preferences",
 ]
 

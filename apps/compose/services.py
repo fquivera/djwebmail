@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from email.header import decode_header, make_header
 from email.message import EmailMessage
-from email.utils import formataddr, formatdate, getaddresses, make_msgid, parseaddr
+from email.utils import formatdate, getaddresses, make_msgid, parseaddr
 from html import unescape
 
 from django.utils import formats
@@ -38,12 +39,25 @@ _HTML_TAGS_PATTERN = re.compile(
 )
 
 
+def decode_mime_words(value: str) -> str:
+    """Decode RFC 2047 encoded-words (``=?utf-8?q?...?=``) into human-readable Unicode."""
+    text = value.replace("\r", " ").replace("\n", " ").strip()
+    if "=?" not in text:
+        return text
+    try:
+        return str(make_header(decode_header(text))).strip()
+    except Exception:
+        return text
+
+
 def format_sender_address(email: str, display_name: str = "") -> str:
     """Format an RFC 5322 From header with an optional owner display name."""
     clean_email = email.strip()
-    clean_name = display_name.replace("\r", " ").replace("\n", " ").strip()
+    clean_name = decode_mime_words(display_name).replace('"', "").strip()
     if clean_name and clean_email:
-        return formataddr((clean_name, clean_email))
+        if any(ch in clean_name for ch in (",", ";", "<", ">")):
+            return f'"{clean_name}" <{clean_email}>'
+        return f"{clean_name} <{clean_email}>"
     return clean_email
 
 
