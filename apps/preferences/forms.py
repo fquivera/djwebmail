@@ -8,9 +8,15 @@ from zoneinfo import available_timezones
 
 from django import forms
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from apps.preferences.constants import PAGE_SIZE_MIN, RemoteImages
+from apps.preferences.constants import (
+    ACCOUNT_LABEL_MAX_LENGTH,
+    DISPLAY_NAME_MAX_LENGTH,
+    PAGE_SIZE_MIN,
+    RemoteImages,
+)
 from apps.preferences.models import MailPreference
 
 
@@ -29,6 +35,8 @@ class MailPreferenceForm(forms.ModelForm):
     class Meta:
         model = MailPreference
         fields = (
+            "display_name",
+            "account_label",
             "language",
             "timezone",
             "theme",
@@ -38,6 +46,8 @@ class MailPreferenceForm(forms.ModelForm):
             "signature_html",
         )
         labels = {
+            "display_name": _("Owner name"),
+            "account_label": _("Account label"),
             "language": _("Language"),
             "timezone": _("Time zone"),
             "theme": _("Theme"),
@@ -47,6 +57,10 @@ class MailPreferenceForm(forms.ModelForm):
             "signature_html": _("Signature"),
         }
         help_texts = {
+            "display_name": _("Shown as the sender name on outgoing messages."),
+            "account_label": _(
+                "Optional tag to identify this mailbox (for example, Work or Admin)."
+            ),
             "language": _("Applies to this account after saving."),
             "timezone": _("Used for message dates and times."),
             "theme": _("System follows the operating system preference."),
@@ -57,6 +71,19 @@ class MailPreferenceForm(forms.ModelForm):
             "signature_html": _("Appended automatically when composing a new message or reply."),
         }
         widgets = {
+            "display_name": forms.TextInput(
+                attrs={
+                    "class": "input w-full",
+                    "maxlength": DISPLAY_NAME_MAX_LENGTH,
+                    "autocomplete": "name",
+                }
+            ),
+            "account_label": forms.TextInput(
+                attrs={
+                    "class": "input w-full",
+                    "maxlength": ACCOUNT_LABEL_MAX_LENGTH,
+                }
+            ),
             "language": forms.Select(attrs={"class": "select w-full"}),
             "timezone": forms.Select(attrs={"class": "select w-full"}),
             "theme": forms.Select(attrs={"class": "select w-full"}),
@@ -81,6 +108,8 @@ class MailPreferenceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["language"].widget.choices = settings.LANGUAGES
         self.fields["timezone"].widget.choices = timezone_choices()
+        self.fields["display_name"].required = False
+        self.fields["account_label"].required = False
         self.fields["remote_images"].required = False
         self.fields["signature_html"].required = False
         auto_id = self.auto_id
@@ -88,6 +117,20 @@ class MailPreferenceForm(forms.ModelForm):
             for name, field in self.fields.items():
                 if field.help_text:
                     field.widget.attrs["aria-describedby"] = f"{auto_id % name}_help"
+
+    def clean_display_name(self) -> str:
+        value = self.cleaned_data.get("display_name")
+        text = value if isinstance(value, str) else ""
+        if "\r" in text or "\n" in text:
+            raise ValidationError(_("This field cannot contain line breaks."))
+        return text.strip()
+
+    def clean_account_label(self) -> str:
+        value = self.cleaned_data.get("account_label")
+        text = value if isinstance(value, str) else ""
+        if "\r" in text or "\n" in text:
+            raise ValidationError(_("This field cannot contain line breaks."))
+        return text.strip()
 
     def clean_remote_images(self) -> str:
         value = self.cleaned_data.get("remote_images")

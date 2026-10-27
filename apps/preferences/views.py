@@ -83,6 +83,8 @@ def _render(
     context = {
         "form": form,
         "email": preference.email,
+        "display_name": preference.display_name,
+        "account_label": preference.account_label,
         "saved": saved,
     }
     template = "preferences/_settings_form.html" if htmx else "preferences/index.html"

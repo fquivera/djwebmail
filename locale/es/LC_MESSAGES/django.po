@@ -774,3 +774,21 @@ msgstr "Correo no deseado"
 msgid "Archive"
 msgstr "Archivo"
 
+msgid "Account identity"
+msgstr "Identidad de la cuenta"
+
+msgid "Owner name"
+msgstr "Nombre del propietario"
+
+msgid "Account label"
+msgstr "Etiqueta de la cuenta"
+
+msgid "Shown as the sender name on outgoing messages."
+msgstr "Se muestra como nombre del remitente en los mensajes enviados."
+
+msgid "Optional tag to identify this mailbox (for example, Work or Admin)."
+msgstr "Etiqueta opcional para identificar este buzón (por ejemplo, Trabajo o Administración)."
+
+msgid "This field cannot contain line breaks."
+msgstr "Este campo no puede contener saltos de línea."
+

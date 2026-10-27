@@ -1,0 +1,33 @@
+<div
+  id="navbar-identity"
+  class="flex items-center gap-2"
+  {% if oob %}hx-swap-oob="outerHTML"{% endif %}
+>
+  <div
+    class="avatar placeholder hidden sm:inline-flex"
+    title="{% if request.session.mail_display_name %}{{ request.session.mail_display_name }} &lt;{{ request.session.mail_email }}&gt;{% else %}{{ request.session.mail_email }}{% endif %}"
+  >
+    <div class="size-8 rounded-full bg-primary/10 text-primary font-semibold text-xs flex items-center justify-center">
+      {% if request.session.mail_display_name %}{{ request.session.mail_display_name|slice:":2"|upper }}{% else %}{{ request.session.mail_email|slice:":2"|upper }}{% endif %}
+    </div>
+  </div>
+  <div class="hidden md:flex flex-col leading-tight max-w-52">
+    {% if request.session.mail_display_name %}
+      <span class="truncate text-sm font-semibold text-base-content">
+        {{ request.session.mail_display_name }}
+      </span>
+      <span class="truncate text-xs text-base-content/60">
+        {{ request.session.mail_email }}
+      </span>
+    {% else %}
+      <span class="truncate text-sm font-medium text-base-content/80">
+        {{ request.session.mail_email }}
+      </span>
+    {% endif %}
+  </div>
+  {% if request.session.mail_account_label %}
+    <span class="badge badge-primary badge-soft badge-sm hidden sm:inline-flex font-medium">
+      {{ request.session.mail_account_label }}
+    </span>
+  {% endif %}
+</div>

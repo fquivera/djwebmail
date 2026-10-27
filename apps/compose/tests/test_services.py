@@ -69,6 +69,20 @@ def test_build_message_sets_headers_and_body() -> None:
     assert message.get_content() == "Body text\n"
 
 
+def test_build_message_formats_sender_display_name() -> None:
+    message = build_message(
+        sender="user@example.com",
+        sender_name="Alice Smith",
+        to=["bob@example.com"],
+        cc=[],
+        subject="Formatted From",
+        body="Body text",
+    )
+
+    assert message["From"] == "Alice Smith <user@example.com>"
+    assert str(message["Message-ID"]).endswith("@example.com>")
+
+
 def test_reply_initial_targets_sender_and_prefixes_subject() -> None:
     initial = reply_initial(make_detail())
 

@@ -24,6 +24,8 @@ from apps.accounts.exceptions import (
 )
 from apps.accounts.services.session import (
     end_mail_session,
+    get_mail_account_label,
+    get_mail_display_name,
     get_mail_imap_service,
     get_mail_signature,
     get_mail_smtp_service,
@@ -45,6 +47,7 @@ from apps.compose.forms import ComposeForm
 from apps.compose.services import (
     append_to_sent,
     apply_signature,
+    format_sender_address,
     forward_initial,
     reply_all_initial,
     reply_initial,
@@ -140,11 +143,13 @@ def compose_send(request: HttpRequest) -> HttpResponse:
         return login_redirect(request)
 
     attachments = load_attachments(session_key, _attachment_ids(request))
+    display_name = get_mail_display_name(request)
     try:
         with get_mail_smtp_service(request) as smtp:
             raw = send_message(
                 smtp,
                 sender=account.email,
+                sender_name=display_name,
                 to=form.cleaned_data["to"],
                 cc=form.cleaned_data["cc"],
                 bcc=form.cleaned_data.get("bcc", []),
@@ -256,6 +261,9 @@ def _render_compose(
     attachment_error: str = "",
     draft_autosave: bool = False,
 ) -> HttpResponse:
+    account = getattr(request, "mail_account", None)
+    account_email = account.email if account is not None else ""
+    display_name = get_mail_display_name(request)
     return render(
         request,
         "compose/compose.html",
@@ -265,6 +273,8 @@ def _render_compose(
             "attachment_error": attachment_error,
             "max_attachment_bytes": settings.MAIL_MAX_ATTACHMENT_BYTES,
             "draft_autosave": draft_autosave,
+            "sender_display": format_sender_address(account_email, display_name),
+            "account_label": get_mail_account_label(request),
         },
         status=status,
     )

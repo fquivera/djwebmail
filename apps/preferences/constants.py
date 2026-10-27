@@ -27,3 +27,5 @@ class RemoteImages(models.TextChoices):
 
 
 PAGE_SIZE_MIN = 1
+DISPLAY_NAME_MAX_LENGTH = 120
+ACCOUNT_LABEL_MAX_LENGTH = 64
