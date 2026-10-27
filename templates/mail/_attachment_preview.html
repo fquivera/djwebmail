@@ -1,0 +1,97 @@
+{% load i18n %}
+<div class="flex flex-col h-full max-h-[85vh]">
+  <header class="flex items-center justify-between gap-3 border-b border-base-300 px-5 py-3.5 bg-base-200/60 shrink-0">
+    <div class="min-w-0 flex items-center gap-3">
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+      </div>
+      <div class="min-w-0">
+        <h2 id="attachment-viewer-title" class="truncate text-sm font-semibold text-base-content" title="{{ filename }}">
+          {{ filename }}
+        </h2>
+        <p class="text-xs text-base-content/60">
+          {{ content_type }} · {{ size|filesizeformat }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <a
+        href="{{ download_url }}"
+        download
+        class="btn btn-primary btn-sm gap-1.5"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" x2="12" y1="15" y2="3"></line>
+        </svg>
+        <span>{% translate "Download" %}</span>
+      </a>
+      <button
+        type="button"
+        class="btn btn-outline btn-sm gap-1.5"
+        data-dialog-close
+        data-dialog-autofocus
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        <span>{% translate "Close" %}</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex-1 overflow-auto p-5 bg-base-100 flex items-center justify-center min-h-[20rem]">
+    {% if preview_kind == "image" %}
+      <img
+        src="{{ inline_url }}"
+        alt="{{ filename }}"
+        class="max-h-[70vh] max-w-full rounded-lg object-contain shadow-sm"
+      >
+    {% elif preview_kind == "pdf" %}
+      <iframe
+        src="{{ inline_url }}"
+        title="{{ filename }}"
+        class="w-full h-[70vh] rounded-lg border border-base-300 bg-base-200/30"
+      ></iframe>
+    {% elif preview_kind == "text" %}
+      <div class="w-full self-start">
+        {% if text_truncated %}
+          <div class="alert alert-info mb-3 py-2 text-xs" role="status">
+            <span>{% translate "Showing the first 256 KB. Download the file to view the complete content." %}</span>
+          </div>
+        {% endif %}
+        <pre class="w-full max-h-[65vh] overflow-auto rounded-lg border border-base-300 bg-base-200/50 p-4 text-xs leading-relaxed font-mono whitespace-pre-wrap break-words text-base-content">{{ text_content }}</pre>
+      </div>
+    {% elif preview_kind == "audio" %}
+      <div class="w-full max-w-md flex flex-col items-center gap-4 py-8">
+        <audio controls class="w-full" preload="metadata">
+          <source src="{{ inline_url }}" type="{{ content_type }}">
+        </audio>
+      </div>
+    {% elif preview_kind == "video" %}
+      <video controls class="max-h-[70vh] max-w-full rounded-lg bg-black" preload="metadata">
+        <source src="{{ inline_url }}" type="{{ content_type }}">
+      </video>
+    {% else %}
+      <div class="text-center max-w-sm py-8 space-y-3">
+        <p class="text-sm font-medium text-base-content">
+          {% translate "Preview is not available for this file type." %}
+        </p>
+        <p class="text-xs text-base-content/60">
+          {% translate "Download the attachment to open it on your device." %}
+        </p>
+        <div class="pt-2">
+          <a href="{{ download_url }}" download class="btn btn-primary btn-sm">
+            {% translate "Download" %}
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>

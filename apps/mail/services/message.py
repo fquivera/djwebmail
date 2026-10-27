@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 import re
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -18,6 +19,11 @@ import nh3
 
 from apps.accounts.services.imap import ImapService
 from apps.mail.constants import (
+    ATTACHMENT_PREVIEW_AUDIO_TYPES,
+    ATTACHMENT_PREVIEW_IMAGE_TYPES,
+    ATTACHMENT_PREVIEW_PDF_TYPES,
+    ATTACHMENT_PREVIEW_TEXT_TYPES,
+    ATTACHMENT_PREVIEW_VIDEO_TYPES,
     IMAGE_PROXY_ALLOWED_SCHEMES,
     MESSAGE_FLAG_FLAGGED,
     MESSAGE_FLAG_SEEN,
@@ -93,6 +99,32 @@ _IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 _IMG_SRC_RE = re.compile(r'src="([^"]+)"', re.IGNORECASE)
 
 
+def resolve_attachment_content_type(content_type: str, filename: str = "") -> str:
+    """Return a normalized lowercase MIME type, inferring from filename when generic."""
+    normalized = (content_type or "").split(";", 1)[0].strip().lower()
+    if not normalized or normalized == "application/octet-stream":
+        guessed, _ = mimetypes.guess_type(filename or "")
+        if guessed:
+            return guessed.lower()
+    return normalized or "application/octet-stream"
+
+
+def attachment_preview_kind(content_type: str, filename: str = "") -> str:
+    """Classify an attachment into a safe modal preview kind."""
+    resolved = resolve_attachment_content_type(content_type, filename)
+    if resolved in ATTACHMENT_PREVIEW_IMAGE_TYPES:
+        return "image"
+    if resolved in ATTACHMENT_PREVIEW_PDF_TYPES:
+        return "pdf"
+    if resolved in ATTACHMENT_PREVIEW_TEXT_TYPES:
+        return "text"
+    if resolved in ATTACHMENT_PREVIEW_AUDIO_TYPES:
+        return "audio"
+    if resolved in ATTACHMENT_PREVIEW_VIDEO_TYPES:
+        return "video"
+    return "unsupported"
+
+
 @dataclass(frozen=True)
 class Attachment:
     """One downloadable MIME part of a message."""
@@ -102,6 +134,14 @@ class Attachment:
     content_type: str
     size: int
     disposition: str  # "attachment" or "inline"
+
+    @property
+    def preview_kind(self) -> str:
+        return attachment_preview_kind(self.content_type, self.filename)
+
+    @property
+    def is_previewable(self) -> bool:
+        return self.preview_kind != "unsupported"
 
 
 @dataclass(frozen=True)

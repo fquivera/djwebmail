@@ -921,6 +921,25 @@ msgstr "Seleccionar un contacto"
 msgid "Archive message"
 msgstr "Archivar mensaje"
 
+msgid "View"
+msgstr "Visualizar"
+
+msgid "Attachment preview"
+msgstr "Vista previa del adjunto"
+
+msgid "Loading attachment…"
+msgstr "Cargando adjunto…"
+
+msgid "Showing the first 256 KB. Download the file to view the complete content."
+msgstr "Mostrando los primeros 256 KB. Descarga el archivo para ver el contenido completo."
+
+msgid "Preview is not available for this file type."
+msgstr "La vista previa no está disponible para este tipo de archivo."
+
+msgid "Download the attachment to open it on your device."
+msgstr "Descarga el adjunto para abrirlo en tu dispositivo."
+
+
 
 
 

@@ -9,9 +9,12 @@ from typing import cast
 
 from apps.accounts.services.imap import ImapService
 from apps.mail.services.message import (
+    Attachment,
+    attachment_preview_kind,
     get_message,
     get_part,
     has_remote_content,
+    resolve_attachment_content_type,
     rewrite_images,
     sanitize_html,
 )
@@ -285,3 +288,32 @@ def test_get_part_returns_none_for_missing_part() -> None:
     imap = FakeImap(build_message_with_attachments().as_bytes())
 
     assert get_part(cast(ImapService, imap), "INBOX", 7, "99") is None
+
+
+def test_attachment_preview_kind_classifies_supported_and_unsupported_types() -> None:
+    assert attachment_preview_kind("image/png", "photo.png") == "image"
+    assert attachment_preview_kind("application/pdf", "report.pdf") == "pdf"
+    assert attachment_preview_kind("text/plain; charset=utf-8", "notes.txt") == "text"
+    assert attachment_preview_kind("audio/mpeg", "voice.mp3") == "audio"
+    assert attachment_preview_kind("video/mp4", "clip.mp4") == "video"
+    assert attachment_preview_kind("application/octet-stream", "invoice.pdf") == "pdf"
+    assert attachment_preview_kind("application/zip", "archive.zip") == "unsupported"
+    assert attachment_preview_kind("image/svg+xml", "vector.svg") == "unsupported"
+
+    pdf_attachment = Attachment(
+        part="2",
+        filename="report.pdf",
+        content_type="application/pdf",
+        size=100,
+        disposition="attachment",
+    )
+    zip_attachment = Attachment(
+        part="3",
+        filename="archive.zip",
+        content_type="application/zip",
+        size=200,
+        disposition="attachment",
+    )
+    assert pdf_attachment.is_previewable is True
+    assert zip_attachment.is_previewable is False
+    assert resolve_attachment_content_type("application/octet-stream", "notes.txt") == "text/plain"

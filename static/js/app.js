@@ -50,9 +50,27 @@
 
   function closeDialog(dialog) {
     if (dialog && dialog.open) {
+      dialog.querySelectorAll("audio, video").forEach(function (media) {
+        if (typeof media.pause === "function") {
+          media.pause();
+        }
+      });
       dialog.close();
     }
   }
+
+  document.addEventListener(
+    "cancel",
+    function (event) {
+      if (
+        event.target instanceof Element &&
+        event.target.hasAttribute("data-modal-strict")
+      ) {
+        event.preventDefault();
+      }
+    },
+    true,
+  );
 
   function isEditable(target) {
     if (!(target instanceof Element)) {
@@ -280,7 +298,9 @@
         opener.getAttribute("data-dialog-open"),
       );
       if (dialog) {
-        event.preventDefault();
+        if (!opener.hasAttribute("hx-get") && !opener.hasAttribute("hx-post")) {
+          event.preventDefault();
+        }
         openDialog(dialog);
         return;
       }
@@ -461,6 +481,12 @@
         heading.focus();
       }
       keyboardNavigation = false;
+    }
+    if (target && target.id === "attachment-viewer-content") {
+      var modalClose = target.querySelector("[data-dialog-autofocus]");
+      if (modalClose) {
+        modalClose.focus();
+      }
     }
   });
 
