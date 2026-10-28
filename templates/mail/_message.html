@@ -152,7 +152,7 @@
             <span class="sr-only">{% translate "Forward" %}</span>
           </a>
 
-          {% if not is_archive_folder %}
+          {% if not is_archive_folder and not is_trash_folder %}
             <form
               method="post"
               action="{% url 'mail:message_archive' folder_name message.uid %}"
@@ -184,15 +184,15 @@
             class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-error"
             data-confirm-open="delete-dialog-{{ message.uid }}"
             aria-haspopup="dialog"
-            title="{% translate 'Delete' %}"
-            aria-label="{% translate 'Delete' %}"
+            title="{% if is_trash_folder %}{% translate 'Delete permanently' %}{% else %}{% translate 'Move to Trash' %}{% endif %}"
+            aria-label="{% if is_trash_folder %}{% translate 'Delete permanently' %}{% else %}{% translate 'Move to Trash' %}{% endif %}"
           >
             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M3 6h18"></path>
               <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
               <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
             </svg>
-            <span class="sr-only">{% translate "Delete" %}</span>
+            <span class="sr-only">{% if is_trash_folder %}{% translate 'Delete permanently' %}{% else %}{% translate 'Move to Trash' %}{% endif %}</span>
           </button>
 
           <form
@@ -323,10 +323,18 @@
   >
     <div class="modal-box">
       <h2 id="delete-title-{{ message.uid }}" class="text-lg font-semibold">
-        {% translate "Delete this message?" %}
+        {% if is_trash_folder %}
+          {% translate "Permanently delete this message?" %}
+        {% else %}
+          {% translate "Move to Trash?" %}
+        {% endif %}
       </h2>
       <p class="py-4 text-sm">
-        {% translate "This permanently removes the message from the server and cannot be undone." %}
+        {% if is_trash_folder %}
+          {% translate "This permanently removes the message from the server and cannot be undone." %}
+        {% else %}
+          {% translate "The message will be moved to the Trash folder." %}
+        {% endif %}
       </p>
       <div class="modal-action">
         <form method="dialog">
@@ -340,7 +348,13 @@
           hx-swap="none"
         >
           {% csrf_token %}
-          <button type="submit" class="btn btn-error btn-sm">{% translate "Delete" %}</button>
+          <button type="submit" class="btn btn-error btn-sm">
+            {% if is_trash_folder %}
+              {% translate "Delete permanently" %}
+            {% else %}
+              {% translate "Move to Trash" %}
+            {% endif %}
+          </button>
         </form>
       </div>
     </div>

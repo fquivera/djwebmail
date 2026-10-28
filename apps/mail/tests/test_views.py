@@ -124,6 +124,8 @@ def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: MessageP
     assert b"alpine-csp.min.js" in response.content
     assert b"js/app.js" in response.content
     assert b'hx-include="#current-folder"' in response.content
+    assert b"mail-fab-compose" in response.content
+    assert b"mail-shell flex flex-col md:flex-row" in response.content
 
 
 @pytest.mark.django_db
@@ -1178,6 +1180,22 @@ def test_message_view_renders_delete_confirmation(
     assert b'data-confirm-open="delete-dialog-7"' in response.content
     assert b'id="delete-dialog-7"' in response.content
     assert b"/mail/message/INBOX/7/delete/" in response.content
+    assert b"Move to Trash" in response.content
+
+
+def test_message_view_renders_permanent_delete_in_trash(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "Trash", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b'data-confirm-open="delete-dialog-7"' in response.content
+    assert b'id="delete-dialog-7"' in response.content
+    assert b"/mail/message/Trash/7/delete/" in response.content
+    assert b"Delete permanently" in response.content
 
 
 def test_mail_row_renders_hover_quick_actions(
