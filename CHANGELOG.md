@@ -1,3 +1,11 @@
+## v0.4.2 (2026-10-28)
+
+### Feat
+
+- **mail**: implement 2-stage message deletion with Trash folder lifecycle (#47)
+- **compose**: optimize compose view and formatting toolbar for mobile viewports (#46)
+- **mail**: improve responsive layout and navigation for mobile and tablet (#45)
+
 ## v0.4.1 (2026-10-27)
 
 ### Fix
