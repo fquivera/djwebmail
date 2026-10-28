@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-  <div class="mx-auto max-w-4xl py-2 sm:py-4 px-2 sm:px-4">
+  <div class="w-full max-w-4xl mx-auto p-0 sm:py-4 sm:px-4 flex flex-col flex-1 min-h-0">
     {% if draft_autosave %}
       <div
         hx-post="{% url 'compose:draft' %}"
@@ -26,24 +26,29 @@
       id="compose-form"
       method="post"
       action="{% url 'compose:send' %}"
-      class="rounded-2xl border border-base-300 bg-base-100 shadow-sm overflow-hidden flex flex-col"
+      class="rounded-none border-0 sm:rounded-2xl sm:border border-base-300 bg-base-100 sm:shadow-sm overflow-hidden flex flex-col flex-1 min-h-[calc(100vh-theme(spacing.16))] sm:min-h-0"
       x-data="composer"
       @submit="syncToTextarea()"
     >
       {% csrf_token %}
-      <div class="flex items-center justify-between border-b border-base-300 bg-base-100 px-4 py-2.5 shrink-0">
-        <div class="flex items-center gap-3">
-          <a class="btn btn-ghost btn-sm gap-1.5 text-base-content/70 hover:text-base-content" href="{% url 'mail:index' %}">
+      <div class="flex items-center justify-between border-b border-base-300 bg-base-100 px-3 sm:px-4 py-2 shrink-0 gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <a
+            class="btn btn-ghost btn-sm btn-square sm:btn-auto sm:px-3 gap-1.5 text-base-content/70 hover:text-base-content shrink-0"
+            href="{% url 'mail:index' %}"
+            title="{% translate 'Back to mail' %}"
+            aria-label="{% translate 'Back to mail' %}"
+          >
             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="19" y1="12" x2="5" y2="12"/>
               <polyline points="12 19 5 12 12 5"/>
             </svg>
             <span class="hidden sm:inline">{% translate "Back to mail" %}</span>
           </a>
-          <h1 class="text-base font-semibold">{% translate "Compose" %}</h1>
+          <h1 class="text-sm sm:text-base font-semibold truncate">{% translate "Compose" %}</h1>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"
@@ -58,15 +63,17 @@
 
           <button
             type="button"
-            class="btn btn-ghost btn-sm text-xs gap-1 font-medium"
+            class="btn btn-ghost btn-sm px-2 gap-1 text-xs font-medium"
             @click="toggleMode()"
             title="{% translate 'Toggle formatting' %}"
           >
-            <span x-show="richText">{% translate "Plain text" %}</span>
-            <span x-show="isPlain">{% translate "Rich text" %}</span>
+            <span class="hidden sm:inline" x-show="richText">{% translate "Plain text" %}</span>
+            <span class="hidden sm:inline" x-show="isPlain">{% translate "Rich text" %}</span>
+            <span class="sm:hidden font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-base-200" x-show="richText">TXT</span>
+            <span class="sm:hidden font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-base-200" x-show="isPlain">HTML</span>
           </button>
 
-          <button type="submit" class="btn btn-primary btn-sm gap-1.5 font-semibold">
+          <button type="submit" class="btn btn-primary btn-sm gap-1.5 font-semibold shrink-0">
             <span>{% translate "Send" %}</span>
             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="22" y1="2" x2="11" y2="13"/>
@@ -85,19 +92,21 @@
       {% endif %}
 
       {% if sender_display %}
-        <div class="border-b border-base-200 bg-base-200/30 px-4 py-2 flex items-center gap-3 text-sm">
-          <span class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+        <div class="border-b border-base-200 bg-base-200/30 px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+          <span class="w-12 sm:w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60">
             {% translate "From" %}
           </span>
-          <span class="font-medium text-base-content truncate">{{ sender_display }}</span>
-          {% if account_label %}
-            <span class="badge badge-primary badge-soft badge-xs font-medium shrink-0">{{ account_label }}</span>
-          {% endif %}
+          <div class="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+            <span class="font-medium text-base-content truncate">{{ sender_display }}</span>
+            {% if account_label %}
+              <span class="badge badge-primary badge-soft badge-xs font-medium shrink-0">{{ account_label }}</span>
+            {% endif %}
+          </div>
         </div>
       {% endif %}
 
-      <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
-        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.to.id_for_label }}">
+      <div class="border-b border-base-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3">
+        <label class="w-12 sm:w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.to.id_for_label }}">
           {{ form.to.label }}
         </label>
         <div class="flex-1 min-w-0">
@@ -109,7 +118,7 @@
             data-recipient-input
             value="{{ form.to.value|default:'' }}"
             autocomplete="off"
-            class="input w-full"
+            class="input input-sm sm:input-md w-full"
             placeholder="{{ form.to.field.widget.attrs.placeholder|default:'' }}"
           >
           {% if form.to.errors %}
@@ -119,24 +128,24 @@
         <div class="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            class="btn btn-ghost btn-xs text-xs font-medium"
-            x-bind:class="showCc ? 'btn-active' : ''"
+            class="btn btn-ghost btn-xs text-xs font-medium px-1.5 sm:px-2"
+            x-bind:class="showCc ? 'btn-active bg-base-300' : ''"
             @click="toggleCc()"
           >CC</button>
           <button
             type="button"
-            class="btn btn-ghost btn-xs text-xs font-medium"
-            x-bind:class="showBcc ? 'btn-active' : ''"
+            class="btn btn-ghost btn-xs text-xs font-medium px-1.5 sm:px-2"
+            x-bind:class="showBcc ? 'btn-active bg-base-300' : ''"
             @click="toggleBcc()"
           >CCO</button>
         </div>
       </div>
 
       <div
-        class="border-b border-base-200 px-4 py-2 flex items-center gap-3"
+        class="border-b border-base-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3"
         x-show="showCc"
       >
-        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.cc.id_for_label }}">
+        <label class="w-12 sm:w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.cc.id_for_label }}">
           {{ form.cc.label }}
         </label>
         <div class="flex-1 min-w-0">
@@ -148,7 +157,7 @@
             data-recipient-input
             value="{{ form.cc.value|default:'' }}"
             autocomplete="off"
-            class="input w-full"
+            class="input input-sm sm:input-md w-full"
             placeholder="{{ form.cc.field.widget.attrs.placeholder|default:'' }}"
           >
           {% if form.cc.errors %}
@@ -158,10 +167,10 @@
       </div>
 
       <div
-        class="border-b border-base-200 px-4 py-2 flex items-center gap-3"
+        class="border-b border-base-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3"
         x-show="showBcc"
       >
-        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.bcc.id_for_label }}">
+        <label class="w-12 sm:w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.bcc.id_for_label }}">
           {{ form.bcc.label }}
         </label>
         <div class="flex-1 min-w-0">
@@ -173,7 +182,7 @@
             data-recipient-input
             value="{{ form.bcc.value|default:'' }}"
             autocomplete="off"
-            class="input w-full"
+            class="input input-sm sm:input-md w-full"
             placeholder="{{ form.bcc.field.widget.attrs.placeholder|default:'' }}"
           >
           {% if form.bcc.errors %}
@@ -188,7 +197,7 @@
           hidden
           role="listbox"
           aria-label="{% translate 'Contacts' %}"
-          class="border-b border-base-300 bg-base-200/40 px-4 py-2"
+          class="border-b border-base-300 bg-base-200/40 px-3 sm:px-4 py-2"
         >
           <div class="space-y-1 max-h-48 overflow-y-auto">
             {% for contact in contacts %}
@@ -219,12 +228,20 @@
         </div>
       {% endif %}
 
-      <div class="border-b border-base-200 px-4 py-2 flex items-center gap-3">
-        <label class="w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.subject.id_for_label }}">
+      <div class="border-b border-base-200 px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2 sm:gap-3">
+        <label class="w-12 sm:w-14 shrink-0 text-xs font-semibold uppercase tracking-wider text-base-content/60" for="{{ form.subject.id_for_label }}">
           {{ form.subject.label }}
         </label>
         <div class="flex-1 min-w-0">
-          {{ form.subject }}
+          <input
+            type="text"
+            name="subject"
+            id="{{ form.subject.id_for_label }}"
+            value="{{ form.subject.value|default:'' }}"
+            maxlength="998"
+            class="input input-sm sm:input-md w-full"
+            placeholder="{{ form.subject.field.widget.attrs.placeholder|default:'' }}"
+          >
           {% if form.subject.errors %}
             <div class="text-xs text-error mt-0.5" role="alert">{{ form.subject.errors }}</div>
           {% endif %}
@@ -232,10 +249,10 @@
       </div>
 
       <div
-        class="border-b border-base-200 bg-base-200/40 px-3 py-1.5 flex flex-wrap items-center gap-1 select-none"
+        class="border-b border-base-200 bg-base-200/40 px-2 sm:px-3 py-1 flex items-center gap-1 select-none overflow-x-auto no-scrollbar shrink-0"
         x-show="richText"
       >
-        <div class="join">
+        <div class="join shrink-0">
           <button
             type="button"
             class="join-item btn btn-ghost btn-xs font-bold"
@@ -269,8 +286,8 @@
             @click="strikeThrough()"
           >S</button>
         </div>
-        <div class="divider divider-horizontal my-0.5 mx-1"></div>
-        <div class="join">
+        <div class="divider divider-horizontal my-0.5 mx-0.5 sm:mx-1 shrink-0"></div>
+        <div class="join shrink-0">
           <button
             type="button"
             class="join-item btn btn-ghost btn-xs"
@@ -292,8 +309,8 @@
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
           </button>
         </div>
-        <div class="divider divider-horizontal my-0.5 mx-1"></div>
-        <div class="join">
+        <div class="divider divider-horizontal my-0.5 mx-0.5 sm:mx-1 shrink-0"></div>
+        <div class="join shrink-0">
           <button
             type="button"
             class="join-item btn btn-ghost btn-xs"
@@ -325,18 +342,18 @@
             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
           </button>
         </div>
-        <div class="divider divider-horizontal my-0.5 mx-1"></div>
-        <button type="button" class="btn btn-ghost btn-xs" title="{% translate 'Clear formatting' %}" @mousedown.prevent @click="clearFormat()">
+        <div class="divider divider-horizontal my-0.5 mx-0.5 sm:mx-1 shrink-0"></div>
+        <button type="button" class="btn btn-ghost btn-xs shrink-0" title="{% translate 'Clear formatting' %}" @mousedown.prevent @click="clearFormat()">
           <span class="text-xs font-mono">T<sub class="text-[9px]">x</sub></span>
         </button>
       </div>
 
-      <div class="relative p-4 flex-1 flex flex-col min-h-80">
+      <div class="relative p-3 sm:p-4 flex-1 flex flex-col min-h-64 sm:min-h-80">
         <div
           x-ref="editor"
           x-show="richText"
           contenteditable="true"
-          class="compose-editor flex-1 min-h-72 focus:outline-none text-sm text-base-content leading-relaxed"
+          class="compose-editor flex-1 min-h-60 sm:min-h-72 focus:outline-none text-sm text-base-content leading-relaxed"
           @input="onEditorInput()"
           @keyup="onEditorActivity()"
           @mouseup="onEditorActivity()"
@@ -348,7 +365,7 @@
           id="{{ form.body.id_for_label }}"
           x-ref="bodyInput"
           x-show="isPlain"
-          class="textarea w-full flex-1 min-h-72 text-sm leading-relaxed"
+          class="textarea textarea-bordered w-full flex-1 min-h-60 sm:min-h-72 text-sm leading-relaxed"
           rows="14"
           placeholder="{{ form.body.field.widget.attrs.placeholder|default:'' }}"
         >{{ form.body.value|default:'' }}</textarea>
@@ -358,7 +375,7 @@
         {% endif %}
       </div>
 
-      <div class="border-t border-base-200 px-4 py-3 bg-base-100">
+      <div class="border-t border-base-200 px-3 sm:px-4 py-2 sm:py-3 bg-base-100 shrink-0">
         <input
           id="compose-attachments"
           x-ref="fileInput"
