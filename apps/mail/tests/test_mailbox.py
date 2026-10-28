@@ -12,13 +12,16 @@ from apps.mail.constants import FOLDER_FLAG_NOSELECT, IMAP_INBOX, MESSAGE_FLAG_S
 from apps.mail.services.mailbox import (
     archive_message,
     batch_archive_messages,
+    batch_delete_messages,
     build_folder_tree,
     create_user_folder,
     delete_message,
     is_archive_folder,
+    is_trash_folder,
     list_messages,
     move_message,
     resolve_archive_folder,
+    resolve_trash_folder,
     set_message_flags,
 )
 
@@ -211,13 +214,37 @@ def test_set_message_flags_stores_flags_and_returns_summary() -> None:
     assert updated.uid == 5
 
 
-def test_delete_message_deletes_and_expunges() -> None:
+def test_delete_message_moves_to_trash_from_regular_folder() -> None:
     imap = FakeImap([5], {5: make_summary(5)})
 
-    delete_message(cast(ImapService, imap), "INBOX", 5)
+    destination = delete_message(cast(ImapService, imap), "INBOX", 5)
 
+    assert destination == "Trash"
     assert imap.selected == ("INBOX", False)
+    assert imap.moved == [([5], "Trash")]
+    assert imap.deleted == []
+
+
+def test_delete_message_expunges_when_already_in_trash() -> None:
+    imap = FakeImap([5], {5: make_summary(5)})
+
+    destination = delete_message(cast(ImapService, imap), "Trash", 5)
+
+    assert destination is None
+    assert imap.selected == ("Trash", False)
     assert imap.deleted == [([5], True)]
+    assert imap.moved == []
+
+
+def test_batch_delete_messages_moves_or_expunges() -> None:
+    imap = FakeImap([5, 6], {5: make_summary(5), 6: make_summary(6)})
+
+    assert batch_delete_messages(cast(ImapService, imap), "INBOX", [5, 6]) == "Trash"
+    assert imap.moved == [([5, 6], "Trash")]
+    assert imap.deleted == []
+
+    assert batch_delete_messages(cast(ImapService, imap), "Trash", [5, 6]) is None
+    assert imap.deleted == [([5, 6], True)]
 
 
 def test_move_message_moves_to_destination() -> None:
@@ -306,3 +333,61 @@ def test_resolve_and_archive_messages_creates_or_uses_archive_folder() -> None:
     assert is_archive_folder("Archive") is True
     assert is_archive_folder("INBOX/Archive") is True
     assert is_archive_folder("INBOX") is False
+
+
+def test_trash_folder_resolution() -> None:
+    created: list[str] = []
+    moved: list[tuple[list[int], str]] = []
+    deleted: list[tuple[list[int], bool]] = []
+
+    class FakeTrashImap:
+        def __init__(self, folders: list[Folder]) -> None:
+            self._folders = folders
+            self.selected: tuple[str, bool] | None = None
+
+        def list_folders(self) -> list[Folder]:
+            return self._folders
+
+        def create_folder(self, folder: str) -> None:
+            created.append(folder)
+
+        def select(self, folder: str, *, readonly: bool = True) -> None:
+            self.selected = (folder, readonly)
+
+        def move(self, uids: list[int], destination: str) -> None:
+            moved.append((list(uids), destination))
+
+        def delete(self, uids: list[int], *, expunge: bool = False) -> None:
+            deleted.append((list(uids), expunge))
+
+    # Case 1: No Trash folder exists -> auto-creates "Trash"
+    imap_missing = cast(
+        ImapService,
+        FakeTrashImap([Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",))]),
+    )
+    assert resolve_trash_folder(imap_missing) == "Trash"
+    assert created == ["Trash"]
+
+    # Case 2: RFC 6154 \Trash special-use flag present
+    imap_flagged = cast(
+        ImapService,
+        FakeTrashImap(
+            [
+                Folder(name="INBOX", delimiter="/", flags=("\\HasNoChildren",)),
+                Folder(name="Corbeille", delimiter="/", flags=("\\Trash",)),
+            ]
+        ),
+    )
+    assert resolve_trash_folder(imap_flagged) == "Corbeille"
+    assert delete_message(imap_flagged, "INBOX", 42) == "Corbeille"
+    assert batch_delete_messages(imap_flagged, "INBOX", [10, 11]) == "Corbeille"
+    assert moved == [([42], "Corbeille"), ([10, 11], "Corbeille")]
+
+    # Case 3: Folder detection
+    assert is_trash_folder("Trash") is True
+    assert is_trash_folder("INBOX/Trash") is True
+    assert is_trash_folder("Papelera") is True
+    assert is_trash_folder("INBOX/Papelera") is True
+    assert is_trash_folder("Deleted Messages") is True
+    assert is_trash_folder("INBOX") is False
+    assert is_trash_folder("Archive") is False
