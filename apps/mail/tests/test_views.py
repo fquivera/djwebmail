@@ -124,6 +124,8 @@ def test_mail_renders_full_page(logged_in_client: Client, mailbox_data: MessageP
     assert b"alpine-csp.min.js" in response.content
     assert b"js/app.js" in response.content
     assert b'hx-include="#current-folder"' in response.content
+    assert b"mail-fab-compose" in response.content
+    assert b"mail-shell flex flex-col md:flex-row" in response.content
 
 
 @pytest.mark.django_db
