@@ -179,6 +179,7 @@
             pendingFolderFocus = true;
           }
           this.foldersOpen = false;
+          showListView();
         },
         toggleFolders() {
           if (this.foldersOpen) {
@@ -304,6 +305,13 @@
         openDialog(dialog);
         return;
       }
+    }
+
+    var backBtn = event.target.closest('[data-shortcut="back"]');
+    if (backBtn && document.querySelector("[data-mail-shell]")) {
+      event.preventDefault();
+      showListView();
+      return;
     }
 
     var closer = event.target.closest("[data-dialog-close], [data-palette-close]");

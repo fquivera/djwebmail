@@ -160,32 +160,42 @@
     position: absolute;
   }
 
+  /* Drawer overlay for folders on screens below lg (mobile and tablet) */
   @media (max-width: 1023px) {
-    [data-js="true"] .mail-shell[data-view="list"] .mail-message-panel {
-      display: none;
+    .mail-shell .mail-folder-panel {
+      display: none !important;
     }
 
-    [data-js="true"] .mail-shell[data-view="message"] .mail-list-panel,
-    [data-js="true"] .mail-shell[data-view="message"] .mail-folder-panel {
-      display: none;
-    }
-
-    [data-js="true"] .mail-shell .mail-folder-panel {
-      display: none;
-    }
-
-    [data-js="true"] .mail-shell[data-folders-open="true"] .mail-folder-panel {
+    .mail-shell[data-folders-open="true"] .mail-folder-panel {
       border-radius: 0;
-      display: block;
-      inset: 0 auto 0 0;
-      overflow-y: auto;
-      position: fixed;
-      width: min(20rem, 85vw);
-      z-index: 40;
+      display: flex !important;
+      flex-direction: column !important;
+      inset: 0 auto 0 0 !important;
+      position: fixed !important;
+      width: min(20rem, 85vw) !important;
+      height: 100% !important;
+      z-index: 40 !important;
+      background-color: var(--color-base-100);
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.35);
     }
 
-    [data-js="true"] .mail-shell[data-folders-open="true"] .mail-folder-backdrop {
-      display: block;
+    .mail-shell[data-folders-open="true"] .mail-folder-backdrop {
+      display: block !important;
+    }
+  }
+
+  /* Single-column view switching on smartphones (< 768px) */
+  @media (max-width: 767px) {
+    .mail-shell[data-view="list"] .mail-message-panel {
+      display: none !important;
+    }
+
+    .mail-shell[data-view="message"] .mail-list-panel {
+      display: none !important;
+    }
+
+    .mail-shell[data-view="message"] .mail-fab-compose {
+      display: none !important;
     }
   }
 }
