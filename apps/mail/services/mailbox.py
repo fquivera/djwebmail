@@ -26,6 +26,20 @@ _DEFAULT_ARCHIVE_FOLDER = "Archive"
 _ARCHIVE_FOLDER_NAMES = frozenset({"archive", "archives", "archivo", "archived"})
 _ARCHIVE_FOLDER_FLAG = "\\archive"
 
+_DEFAULT_TRASH_FOLDER = "Trash"
+_TRASH_FOLDER_NAMES = frozenset(
+    {
+        "trash",
+        "deleted",
+        "deleted items",
+        "deleted messages",
+        "bin",
+        "papelera",
+        "elementos eliminados",
+    }
+)
+_TRASH_FOLDER_FLAG = "\\trash"
+
 
 @dataclass(frozen=True)
 class FolderNode:
@@ -206,10 +220,23 @@ def set_message_flags(
     return parse_summary(summaries[0], folder) if summaries else None
 
 
-def delete_message(imap: ImapService, folder: str, uid: int) -> None:
-    """Mark one message deleted and expunge it."""
+def delete_message(imap: ImapService, folder: str, uid: int) -> str | None:
+    """Move one message to Trash, or expunge permanently if already in Trash.
+
+    Returns the destination folder name if moved to Trash, or None if permanently deleted.
+    """
+    if is_trash_folder(folder):
+        imap.select(folder, readonly=False)
+        imap.delete([uid], expunge=True)
+        return None
+    trash_folder = resolve_trash_folder(imap)
+    if folder.strip().casefold() != trash_folder.strip().casefold():
+        imap.select(folder, readonly=False)
+        imap.move([uid], trash_folder)
+        return trash_folder
     imap.select(folder, readonly=False)
     imap.delete([uid], expunge=True)
+    return None
 
 
 def move_message(imap: ImapService, folder: str, uid: int, destination: str) -> None:
@@ -237,12 +264,25 @@ def batch_delete_messages(
     imap: ImapService,
     folder: str,
     uids: Sequence[int],
-) -> None:
-    """Mark a batch of messages deleted and expunge them."""
+) -> str | None:
+    """Move a batch of messages to Trash, or expunge permanently if already in Trash.
+
+    Returns the destination folder name if moved to Trash, or None if permanently deleted.
+    """
     if not uids:
-        return
+        return None
+    if is_trash_folder(folder):
+        imap.select(folder, readonly=False)
+        imap.delete(uids, expunge=True)
+        return None
+    trash_folder = resolve_trash_folder(imap)
+    if folder.strip().casefold() != trash_folder.strip().casefold():
+        imap.select(folder, readonly=False)
+        imap.move(uids, trash_folder)
+        return trash_folder
     imap.select(folder, readonly=False)
     imap.delete(uids, expunge=True)
+    return None
 
 
 def batch_move_messages(
@@ -312,6 +352,35 @@ def batch_archive_messages(
     return destination
 
 
+def resolve_trash_folder(imap: ImapService) -> str:
+    """Resolve the RFC 6154 Trash folder, creating ``Trash`` if none exists."""
+    folders = imap.list_folders() if hasattr(imap, "list_folders") else []
+    target = ""
+    for folder in folders:
+        if _has_flag(folder.flags, FOLDER_FLAG_NOSELECT):
+            continue
+        if _has_flag(folder.flags, _TRASH_FOLDER_FLAG):
+            target = folder.name
+            break
+        leaf = folder.name.rsplit(folder.delimiter, 1)[-1] if folder.delimiter else folder.name
+        if leaf.casefold() in _TRASH_FOLDER_NAMES or folder.name.casefold() in _TRASH_FOLDER_NAMES:
+            target = folder.name
+    if not target:
+        target = _DEFAULT_TRASH_FOLDER
+        if hasattr(imap, "create_folder"):
+            imap.create_folder(target)
+    return target
+
+
+def is_trash_folder(folder_name: str) -> bool:
+    """Return True when ``folder_name`` is the Trash folder."""
+    normalized = folder_name.strip().casefold()
+    if normalized in _TRASH_FOLDER_NAMES:
+        return True
+    leaf = normalized.replace("\\", "/").rsplit("/", 1)[-1].rsplit(".", 1)[-1]
+    return leaf in _TRASH_FOLDER_NAMES
+
+
 def translate_folder_label(name: str) -> str:
     """Return a localized display label for standard IMAP folder names."""
     normalized = name.strip().casefold()
@@ -321,7 +390,7 @@ def translate_folder_label(name: str) -> str:
         return _("Sent")
     if normalized in {"drafts", "draft"}:
         return _("Drafts")
-    if normalized in {"trash", "deleted items", "deleted messages", "bin"}:
+    if normalized in _TRASH_FOLDER_NAMES:
         return _("Trash")
     if normalized in {"spam", "junk", "junk e-mail"}:
         return _("Spam")

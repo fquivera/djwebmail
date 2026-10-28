@@ -86,7 +86,7 @@
                 <line x1="4" x2="4" y1="22" y2="15"></line>
               </svg>
             </button>
-            {% if not is_archive_folder %}
+            {% if not is_archive_folder and not is_trash_folder %}
               <button
                 type="submit"
                 name="action"
@@ -107,8 +107,8 @@
               name="action"
               value="delete"
               class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-error"
-              title="{% translate 'Delete' %}"
-              aria-label="{% translate 'Delete' %}"
+              title="{% if is_trash_folder %}{% translate 'Delete permanently' %}{% else %}{% translate 'Move to Trash' %}{% endif %}"
+              aria-label="{% if is_trash_folder %}{% translate 'Delete permanently' %}{% else %}{% translate 'Move to Trash' %}{% endif %}"
             >
               <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 6h18"></path>

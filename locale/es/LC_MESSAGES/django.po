@@ -1077,6 +1077,22 @@ msgstr "Este despliegue no tiene un controlador de contraseñas configurado (DJA
 msgid "Password changes are not configured on this server"
 msgstr "El cambio de contraseña no está configurado en este servidor"
 
+msgid "Move to Trash"
+msgstr "Mover a la papelera"
+
+msgid "Move to Trash?"
+msgstr "¿Mover a la papelera?"
+
+msgid "The message will be moved to the Trash folder."
+msgstr "El mensaje se moverá a la papelera."
+
+msgid "Delete permanently"
+msgstr "Eliminar definitivamente"
+
+msgid "Permanently delete this message?"
+msgstr "¿Eliminar este mensaje definitivamente?"
+
+
 
 
 
