@@ -353,4 +353,13 @@
     color: var(--color-base-content);
     opacity: 0.8;
   }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }

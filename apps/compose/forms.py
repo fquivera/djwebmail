@@ -21,8 +21,8 @@ class ComposeForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 "autocomplete": "off",
-                "class": "input w-full",
-                "placeholder": _("name@example.com, another@example.com"),
+                "class": "input input-sm sm:input-md w-full",
+                "placeholder": _("name@example.com"),
             }
         ),
     )
@@ -32,7 +32,7 @@ class ComposeForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 "autocomplete": "off",
-                "class": "input w-full",
+                "class": "input input-sm sm:input-md w-full",
             }
         ),
     )
@@ -42,7 +42,7 @@ class ComposeForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 "autocomplete": "off",
-                "class": "input w-full",
+                "class": "input input-sm sm:input-md w-full",
             }
         ),
     )
@@ -50,7 +50,7 @@ class ComposeForm(forms.Form):
         label=_("Subject"),
         max_length=MAX_SUBJECT_LENGTH,
         required=False,
-        widget=forms.TextInput(attrs={"class": "input w-full"}),
+        widget=forms.TextInput(attrs={"class": "input input-sm sm:input-md w-full"}),
     )
     body = forms.CharField(
         label=_("Message"),
