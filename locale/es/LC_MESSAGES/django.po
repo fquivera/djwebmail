@@ -1359,6 +1359,12 @@ msgstr "Logotipo oscuro"
 msgid "No logo"
 msgstr "Sin logotipo"
 
+msgid "Sign in to access your mail account."
+msgstr "Inicie sesión para acceder a su cuenta de correo."
+
+msgid "Need help?"
+msgstr "¿Necesita ayuda?"
+
 
 
 
