@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import DatabaseError, OperationalError, ProgrammingError, models
 from django.utils.translation import gettext_lazy as _
+
+IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "svg", "webp", "gif"]
+FAVICON_EXTENSIONS = ["ico", "png", "svg"]
 
 
 class CorporateIdentity(models.Model):
@@ -72,6 +77,14 @@ class CorporateIdentity(models.Model):
         verbose_name=_("Privacy policy URL"),
         help_text=_("Public link to data protection and privacy policy."),
     )
+    logo_light_file = models.FileField(
+        upload_to="branding/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=IMAGE_EXTENSIONS)],
+        verbose_name=_("Light mode logo file"),
+        help_text=_("Image file (.png, .jpg, .svg, .webp) for light backgrounds."),
+    )
     logo_light_url = models.URLField(
         blank=True,
         default="",
@@ -79,12 +92,28 @@ class CorporateIdentity(models.Model):
         verbose_name=_("Light mode logo URL"),
         help_text=_("Direct image URL to logo on light backgrounds."),
     )
+    logo_dark_file = models.FileField(
+        upload_to="branding/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=IMAGE_EXTENSIONS)],
+        verbose_name=_("Dark mode logo file"),
+        help_text=_("Image file (.png, .jpg, .svg, .webp) for dark backgrounds."),
+    )
     logo_dark_url = models.URLField(
         blank=True,
         default="",
         max_length=500,
         verbose_name=_("Dark mode logo URL"),
         help_text=_("Direct image URL to logo on dark backgrounds."),
+    )
+    favicon_file = models.FileField(
+        upload_to="branding/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=FAVICON_EXTENSIONS)],
+        verbose_name=_("Favicon file"),
+        help_text=_("Browser tab icon file (.ico, .png, .svg)."),
     )
     favicon_url = models.URLField(
         blank=True,
@@ -104,8 +133,61 @@ class CorporateIdentity(models.Model):
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         """Enforce singleton constraint."""
+        self.full_clean()
         self.pk = 1
         super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+
+        if self.logo_light_file and self.logo_light_url:
+            msg = _("Choose either a file or a URL for the light mode logo, not both.")
+            errors["logo_light_file"] = str(msg)
+            errors["logo_light_url"] = str(msg)
+
+        if self.logo_dark_file and self.logo_dark_url:
+            msg = _("Choose either a file or a URL for the dark mode logo, not both.")
+            errors["logo_dark_file"] = str(msg)
+            errors["logo_dark_url"] = str(msg)
+
+        if self.favicon_file and self.favicon_url:
+            msg = _("Choose either a file or a URL for the favicon, not both.")
+            errors["favicon_file"] = str(msg)
+            errors["favicon_url"] = str(msg)
+
+        if errors:
+            raise ValidationError(errors)
+
+    @property
+    def effective_logo_light_url(self) -> str:
+        file = cast(Any, self.logo_light_file)
+        if file:
+            try:
+                return str(file.url)
+            except ValueError:
+                pass
+        return str(self.logo_light_url) if self.logo_light_url else ""
+
+    @property
+    def effective_logo_dark_url(self) -> str:
+        file = cast(Any, self.logo_dark_file)
+        if file:
+            try:
+                return str(file.url)
+            except ValueError:
+                pass
+        return str(self.logo_dark_url) if self.logo_dark_url else ""
+
+    @property
+    def effective_favicon_url(self) -> str:
+        file = cast(Any, self.favicon_file)
+        if file:
+            try:
+                return str(file.url)
+            except ValueError:
+                pass
+        return str(self.favicon_url) if self.favicon_url else ""
 
     @classmethod
     def get_solo(cls) -> CorporateIdentity:

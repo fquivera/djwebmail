@@ -6,6 +6,7 @@
   hx-post="{% url 'mailadmin:branding' %}"
   hx-target="#branding-form-container"
   hx-swap="innerHTML"
+  enctype="multipart/form-data"
   class="space-y-6"
 >
   {% csrf_token %}
@@ -188,7 +189,7 @@
 
   <!-- Logos & Visual Assets -->
   <section class="card bg-base-100 border border-base-300 shadow-sm">
-    <div class="card-body p-4 sm:p-6 space-y-4">
+    <div class="card-body p-4 sm:p-6 space-y-5">
       <div class="border-b border-base-200 pb-3">
         <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
           <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -199,40 +200,125 @@
           {% translate "Logos & Visual Assets" %}
         </h2>
         <p class="text-xs text-base-content/60 mt-0.5">
-          {% translate "Image URLs for dark mode, light mode, and browser favicon." %}
+          {% translate "Upload image files or enter external URLs (mutually exclusive per asset)." %}
         </p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label class="label text-xs font-medium" for="{{ form.logo_light_url.id_for_label }}">
-            {{ form.logo_light_url.label }}
+      <!-- Light Mode Logo -->
+      <div class="rounded-xl border border-base-200 bg-base-200/30 p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-1">
+          <label class="text-xs font-bold text-base-content flex items-center gap-2">
+            <span>{% translate "Light mode logo" %}</span>
+            <span class="badge badge-sm badge-ghost text-[10px]">PNG, SVG, JPG, WebP</span>
           </label>
-          {{ form.logo_light_url }}
-          {% if form.logo_light_url.errors %}
-            <p class="text-xs text-error mt-1">{{ form.logo_light_url.errors.0 }}</p>
-          {% endif %}
+          <span class="text-[11px] text-base-content/60 italic">{% translate "File OR URL (one option only)" %}</span>
         </div>
 
-        <div>
-          <label class="label text-xs font-medium" for="{{ form.logo_dark_url.id_for_label }}">
-            {{ form.logo_dark_url.label }}
-          </label>
-          {{ form.logo_dark_url }}
-          {% if form.logo_dark_url.errors %}
-            <p class="text-xs text-error mt-1">{{ form.logo_dark_url.errors.0 }}</p>
-          {% endif %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+          <div class="space-y-1">
+            <span class="text-[11px] font-medium text-base-content/70">{% translate "Option 1: Upload image file" %}</span>
+            {{ form.logo_light_file }}
+            {% if form.logo_light_file.errors %}
+              <p class="text-xs text-error mt-1">{{ form.logo_light_file.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div class="space-y-1">
+            <span class="text-[11px] font-medium text-base-content/70">{% translate "Option 2: External image URL" %}</span>
+            {{ form.logo_light_url }}
+            {% if form.logo_light_url.errors %}
+              <p class="text-xs text-error mt-1">{{ form.logo_light_url.errors.0 }}</p>
+            {% endif %}
+          </div>
         </div>
 
-        <div>
-          <label class="label text-xs font-medium" for="{{ form.favicon_url.id_for_label }}">
-            {{ form.favicon_url.label }}
+        {% if form.instance.logo_light_file %}
+          <div class="text-xs flex items-center gap-3 rounded bg-base-100 p-2.5 border border-base-300/60 mt-1">
+            <img src="{{ form.instance.logo_light_file.url }}" alt="Preview" class="h-6 w-auto object-contain bg-white rounded p-0.5 border border-base-300">
+            <span class="text-base-content/70 truncate flex-1 font-mono text-[11px]">{{ form.instance.logo_light_file.name }}</span>
+            <label class="label cursor-pointer gap-1.5 text-error text-xs py-0">
+              <input type="checkbox" name="logo_light_file-clear" class="checkbox checkbox-xs checkbox-error" />
+              <span>{% translate "Delete uploaded file" %}</span>
+            </label>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Dark Mode Logo -->
+      <div class="rounded-xl border border-base-200 bg-base-200/30 p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-1">
+          <label class="text-xs font-bold text-base-content flex items-center gap-2">
+            <span>{% translate "Dark mode logo" %}</span>
+            <span class="badge badge-sm badge-ghost text-[10px]">PNG, SVG, JPG, WebP</span>
           </label>
-          {{ form.favicon_url }}
-          {% if form.favicon_url.errors %}
-            <p class="text-xs text-error mt-1">{{ form.favicon_url.errors.0 }}</p>
-          {% endif %}
+          <span class="text-[11px] text-base-content/60 italic">{% translate "File OR URL (one option only)" %}</span>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+          <div class="space-y-1">
+            <span class="text-[11px] font-medium text-base-content/70">{% translate "Option 1: Upload image file" %}</span>
+            {{ form.logo_dark_file }}
+            {% if form.logo_dark_file.errors %}
+              <p class="text-xs text-error mt-1">{{ form.logo_dark_file.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div class="space-y-1">
+            <span class="text-[11px] font-medium text-base-content/70">{% translate "Option 2: External image URL" %}</span>
+            {{ form.logo_dark_url }}
+            {% if form.logo_dark_url.errors %}
+              <p class="text-xs text-error mt-1">{{ form.logo_dark_url.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if form.instance.logo_dark_file %}
+          <div class="text-xs flex items-center gap-3 rounded bg-base-100 p-2.5 border border-base-300/60 mt-1">
+            <img src="{{ form.instance.logo_dark_file.url }}" alt="Preview" class="h-6 w-auto object-contain bg-slate-900 rounded p-0.5 border border-base-300">
+            <span class="text-base-content/70 truncate flex-1 font-mono text-[11px]">{{ form.instance.logo_dark_file.name }}</span>
+            <label class="label cursor-pointer gap-1.5 text-error text-xs py-0">
+              <input type="checkbox" name="logo_dark_file-clear" class="checkbox checkbox-xs checkbox-error" />
+              <span>{% translate "Delete uploaded file" %}</span>
+            </label>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Favicon -->
+      <div class="rounded-xl border border-base-200 bg-base-200/30 p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-1">
+          <label class="text-xs font-bold text-base-content flex items-center gap-2">
+            <span>{% translate "Favicon" %}</span>
+            <span class="badge badge-sm badge-ghost text-[10px]">ICO, PNG, SVG</span>
+          </label>
+          <span class="text-[11px] text-base-content/60 italic">{% translate "File OR URL (one option only)" %}</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+          <div class="space-y-1">
+            <span class="text-[11px] font-medium text-base-content/70">{% translate "Option 1: Upload icon file" %}</span>
+            {{ form.favicon_file }}
+            {% if form.favicon_file.errors %}
+              <p class="text-xs text-error mt-1">{{ form.favicon_file.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div class="space-y-1">
+            <span class="text-[11px] font-medium text-base-content/70">{% translate "Option 2: External icon URL" %}</span>
+            {{ form.favicon_url }}
+            {% if form.favicon_url.errors %}
+              <p class="text-xs text-error mt-1">{{ form.favicon_url.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if form.instance.favicon_file %}
+          <div class="text-xs flex items-center gap-3 rounded bg-base-100 p-2.5 border border-base-300/60 mt-1">
+            <img src="{{ form.instance.favicon_file.url }}" alt="Preview" class="size-5 object-contain">
+            <span class="text-base-content/70 truncate flex-1 font-mono text-[11px]">{{ form.instance.favicon_file.name }}</span>
+            <label class="label cursor-pointer gap-1.5 text-error text-xs py-0">
+              <input type="checkbox" name="favicon_file-clear" class="checkbox checkbox-xs checkbox-error" />
+              <span>{% translate "Delete uploaded file" %}</span>
+            </label>
+          </div>
+        {% endif %}
       </div>
     </div>
   </section>

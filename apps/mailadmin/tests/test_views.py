@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, override_settings
 from django.urls import reverse
 
@@ -177,3 +178,36 @@ def test_admin_index_accessible_by_django_superuser(client: Client) -> None:
     content = response.content.decode("utf-8")
     assert "superadmin" in content
     assert reverse("mailadmin:branding") in content
+
+
+@override_settings(MAIL_ADMIN_ACCOUNTS=["admin@example.com"])
+def test_branding_view_post_file_upload(admin_client: Client) -> None:
+    logo_file = SimpleUploadedFile("brand.png", b"test-logo-bytes", content_type="image/png")
+    data = {
+        "organization_name": "Empresa Archivo",
+        "logo_light_file": logo_file,
+    }
+    response: Any = admin_client.post(reverse("mailadmin:branding"), data)
+    assert response.status_code == 302
+    identity = CorporateIdentity.get_solo()
+    assert identity.organization_name == "Empresa Archivo"
+    assert identity.logo_light_file is not None
+    assert identity.effective_logo_light_url.startswith("/media/branding/")
+
+
+@override_settings(MAIL_ADMIN_ACCOUNTS=["admin@example.com"])
+def test_branding_view_post_conflict_file_and_url(admin_client: Client) -> None:
+    logo_file = SimpleUploadedFile("brand.png", b"test-logo-bytes", content_type="image/png")
+    data = {
+        "organization_name": "Empresa Conflicto",
+        "logo_light_file": logo_file,
+        "logo_light_url": "https://example.com/logo.png",
+    }
+    response: Any = admin_client.post(
+        reverse("mailadmin:branding"),
+        data,
+        HTTP_HX_REQUEST="true",
+    )
+    assert response.status_code == 422
+    content = response.content.decode("utf-8")
+    assert "not both" in content or "no ambos" in content

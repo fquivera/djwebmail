@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
@@ -90,8 +92,11 @@ class CorporateIdentityForm(forms.ModelForm):
             "website_url",
             "terms_url",
             "privacy_url",
+            "logo_light_file",
             "logo_light_url",
+            "logo_dark_file",
             "logo_dark_url",
+            "favicon_file",
             "favicon_url",
         )
         labels = {
@@ -101,6 +106,9 @@ class CorporateIdentityForm(forms.ModelForm):
             "fiscal_address": _("Fiscal / Physical address"),
             "support_email": _("Support email"),
             "support_phone": _("Support phone / WhatsApp"),
+            "logo_light_file": _("Light mode logo file"),
+            "logo_dark_file": _("Dark mode logo file"),
+            "favicon_file": _("Favicon file"),
         }
         widgets = {
             "organization_name": forms.TextInput(
@@ -140,4 +148,45 @@ class CorporateIdentityForm(forms.ModelForm):
                     "placeholder": _("+58 414 1234567"),
                 }
             ),
+            "logo_light_file": forms.ClearableFileInput(
+                attrs={
+                    "class": "file-input file-input-bordered file-input-sm w-full",
+                    "accept": ".png,.jpg,.jpeg,.svg,.webp,.gif",
+                }
+            ),
+            "logo_dark_file": forms.ClearableFileInput(
+                attrs={
+                    "class": "file-input file-input-bordered file-input-sm w-full",
+                    "accept": ".png,.jpg,.jpeg,.svg,.webp,.gif",
+                }
+            ),
+            "favicon_file": forms.ClearableFileInput(
+                attrs={
+                    "class": "file-input file-input-bordered file-input-sm w-full",
+                    "accept": ".ico,.png,.svg",
+                }
+            ),
         }
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        pairs = [
+            ("logo_light_file", "logo_light_url", _("light mode logo")),
+            ("logo_dark_file", "logo_dark_url", _("dark mode logo")),
+            ("favicon_file", "favicon_url", _("favicon")),
+        ]
+        for file_key, url_key, label in pairs:
+            file_val = cleaned_data.get(file_key)
+            url_val = (cleaned_data.get(url_key) or "").strip()
+
+            has_file = bool(file_val and file_val is not False)
+            has_url = bool(url_val)
+
+            if has_file and has_url:
+                msg = _("Choose either an image file or a URL for %(asset)s, not both.") % {
+                    "asset": label
+                }
+                self.add_error(file_key, msg)
+                self.add_error(url_key, msg)
+
+        return cleaned_data

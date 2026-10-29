@@ -1296,6 +1296,69 @@ msgstr "Predeterminada (DjWebmail)"
 msgid "Database table is not available. Please run migrations."
 msgstr "La tabla de la base de datos no está disponible. Ejecute las migraciones."
 
+msgid "Choose either a file or a URL for the light mode logo, not both."
+msgstr "Elija un archivo o una URL para el logotipo en modo claro, no ambos."
+
+msgid "Choose either a file or a URL for the dark mode logo, not both."
+msgstr "Elija un archivo o una URL para el logotipo en modo oscuro, no ambos."
+
+msgid "Choose either a file or a URL for the favicon, not both."
+msgstr "Elija un archivo o una URL para el favicon, no ambos."
+
+msgid "Choose either an image file or a URL for %(asset)s, not both."
+msgstr "Elija un archivo de imagen o una URL para %(asset)s, no ambos."
+
+msgid "light mode logo"
+msgstr "el logotipo de modo claro"
+
+msgid "dark mode logo"
+msgstr "el logotipo de modo oscuro"
+
+msgid "favicon"
+msgstr "el favicon"
+
+msgid "Light mode logo file"
+msgstr "Archivo de logotipo para modo claro"
+
+msgid "Dark mode logo file"
+msgstr "Archivo de logotipo para modo oscuro"
+
+msgid "Favicon file"
+msgstr "Archivo de favicon"
+
+msgid "Upload image files or enter external URLs (mutually exclusive per asset)."
+msgstr "Cargue archivos de imagen o introduzca URLs externas (mutuamente excluyentes por recurso)."
+
+msgid "File OR URL (one option only)"
+msgstr "Archivo O URL (solo una opción)"
+
+msgid "Option 1: Upload image file"
+msgstr "Opción 1: Cargar archivo de imagen"
+
+msgid "Option 2: External image URL"
+msgstr "Opción 2: URL de imagen externa"
+
+msgid "Option 1: Upload icon file"
+msgstr "Opción 1: Cargar archivo de ícono"
+
+msgid "Option 2: External icon URL"
+msgstr "Opción 2: URL de ícono externa"
+
+msgid "Delete uploaded file"
+msgstr "Eliminar archivo cargado"
+
+msgid "Visual Assets"
+msgstr "Recursos visuales"
+
+msgid "Light Logo"
+msgstr "Logotipo claro"
+
+msgid "Dark Logo"
+msgstr "Logotipo oscuro"
+
+msgid "No logo"
+msgstr "Sin logotipo"
+
 
 
 

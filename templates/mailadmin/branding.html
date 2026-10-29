@@ -57,15 +57,42 @@
           <div class="rounded-lg border border-base-300 bg-base-200/50 p-3 space-y-1.5">
             <span class="text-[10px] font-semibold uppercase tracking-wider text-base-content/50">{% translate "Navbar Header Preview" %}</span>
             <div class="flex items-center gap-2 bg-base-100 p-2 rounded border border-base-300/80 shadow-xs">
-              <div class="size-5 rounded bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-                ✉
-              </div>
+              {% if identity.effective_logo_light_url %}
+                <img src="{{ identity.effective_logo_light_url }}" alt="Logo" class="h-5 w-auto max-w-24 object-contain">
+              {% else %}
+                <div class="size-5 rounded bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                  ✉
+                </div>
+              {% endif %}
               <span class="font-bold text-xs">DjWebmail</span>
               {% if identity.organization_name %}
                 <span class="text-xs opacity-70 truncate">&middot; {{ identity.organization_name }}</span>
               {% else %}
                 <span class="text-xs opacity-40 italic">{% translate "· Organization name" %}</span>
               {% endif %}
+            </div>
+          </div>
+
+          <!-- Visual Assets Preview -->
+          <div class="rounded-lg border border-base-300 bg-base-200/50 p-3 space-y-2">
+            <span class="text-[10px] font-semibold uppercase tracking-wider text-base-content/50">{% translate "Visual Assets" %}</span>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="rounded bg-white p-2.5 border border-base-300 text-center">
+                <span class="text-[10px] font-medium text-slate-500 block mb-1">{% translate "Light Logo" %}</span>
+                {% if identity.effective_logo_light_url %}
+                  <img src="{{ identity.effective_logo_light_url }}" alt="Light Logo" class="h-7 mx-auto object-contain">
+                {% else %}
+                  <span class="text-[10px] text-slate-400 italic">{% translate "No logo" %}</span>
+                {% endif %}
+              </div>
+              <div class="rounded bg-slate-900 p-2.5 border border-base-300 text-center text-white">
+                <span class="text-[10px] font-medium text-slate-400 block mb-1">{% translate "Dark Logo" %}</span>
+                {% if identity.effective_logo_dark_url %}
+                  <img src="{{ identity.effective_logo_dark_url }}" alt="Dark Logo" class="h-7 mx-auto object-contain">
+                {% else %}
+                  <span class="text-[10px] text-slate-500 italic">{% translate "No logo" %}</span>
+                {% endif %}
+              </div>
             </div>
           </div>
 

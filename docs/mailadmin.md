@@ -23,7 +23,7 @@ Corporate branding is represented by the `CorporateIdentity` singleton model (`a
 - **Organization & Identification**: `organization_name`, `tagline`, `tax_id` (RIF / CIF / NIF / Tax ID).
 - **Fiscal Address & Contacts**: `fiscal_address`, `support_email`, `support_phone`.
 - **Institutional Links**: `website_url`, `terms_url`, `privacy_url`.
-- **Visual Assets**: `logo_light_url`, `logo_dark_url`, `favicon_url`.
+- **Visual Assets**: `logo_light_file` / `logo_light_url`, `logo_dark_file` / `logo_dark_url`, `favicon_file` / `favicon_url`. Each asset supports either a direct image file upload or an external URL (enforced mutually exclusive). Convenience properties `effective_logo_light_url`, `effective_logo_dark_url`, and `effective_favicon_url` resolve the active asset.
 
 ### Integration Across Views
 - Exposed globally to templates via `common.context_processors.system_info` under `corporate_identity` and `is_mail_admin`.

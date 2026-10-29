@@ -75,5 +75,19 @@ class CorporateIdentityView(MailAdminRequiredMixin, FormView):
 
         return cast(HttpResponse, super().form_valid(form))
 
+    def form_invalid(self, form: CorporateIdentityForm) -> HttpResponse:
+        if self.request.headers.get("HX-Request") == "true":
+            return render(
+                self.request,
+                "mailadmin/_branding_form.html",
+                {
+                    "form": form,
+                    "identity": form.instance,
+                    "saved": False,
+                },
+                status=422,
+            )
+        return cast(HttpResponse, super().form_invalid(form))
+
     def get_success_url(self) -> str:
         return reverse("mailadmin:branding")
