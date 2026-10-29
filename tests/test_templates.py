@@ -47,4 +47,5 @@ def test_base_template_renders_footer_and_about_dialog(client: Client) -> None:
     assert "js/dialog.js" in content
     assert "<dialog" in content
     assert "sticky" in content
+    assert "top-0" in content
     assert "bottom-0" in content
