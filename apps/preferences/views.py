@@ -91,6 +91,7 @@ def _render(
         "display_name": preference.display_name,
         "account_label": preference.account_label,
         "saved": saved,
+        "active_section": request.GET.get("section", "preferences"),
     }
     template = "preferences/_settings_form.html" if htmx else "preferences/index.html"
     return render(request, template, context, status=status)
@@ -134,6 +135,7 @@ def password_change_view(request: HttpRequest) -> HttpResponse:
         "email": preference.email,
         "display_name": preference.display_name,
         "account_label": preference.account_label,
+        "active_section": "password",
     }
     status = 200 if (saved or _is_htmx(request)) else 422
     template = "preferences/_password_form.html" if _is_htmx(request) else "preferences/index.html"

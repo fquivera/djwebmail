@@ -140,10 +140,52 @@
     }
   });
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initPasswordMeter);
-  } else {
+  function initSectionSelector() {
+    var select = document.getElementById("settings-section-selector");
+    var prefSec = document.getElementById("section-preferences");
+    var passSec = document.getElementById("section-password");
+    if (!select || !prefSec) {
+      return;
+    }
+
+    function applySection(val) {
+      if (val === "password" && passSec) {
+        prefSec.classList.add("hidden");
+        passSec.classList.remove("hidden");
+      } else {
+        prefSec.classList.remove("hidden");
+        if (passSec) {
+          passSec.classList.add("hidden");
+        }
+      }
+    }
+
+    select.addEventListener("change", function () {
+      applySection(select.value);
+      if (window.history && window.history.replaceState) {
+        var url = new URL(window.location.href);
+        url.searchParams.set("section", select.value);
+        window.history.replaceState({}, "", url.toString());
+      }
+    });
+
+    var params = new URLSearchParams(window.location.search);
+    var initialSection = params.get("section");
+    if (initialSection === "password" && passSec) {
+      select.value = "password";
+      applySection("password");
+    }
+  }
+
+  function initAll() {
     initPasswordMeter();
+    initSectionSelector();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+  } else {
+    initAll();
   }
 
   document.addEventListener("htmx:afterSettle", function (event) {

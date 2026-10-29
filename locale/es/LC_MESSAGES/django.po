@@ -1581,6 +1581,177 @@ msgstr "Cuenta de correo '%(email)s' eliminada exitosamente."
 msgid "Mail account '%(email)s' was not found."
 msgstr "No se encontró la cuenta de correo '%(email)s'."
 
+msgid "Online"
+msgstr "En línea"
+
+msgid "Offline"
+msgstr "Fuera de línea"
+
+msgid "IMAP host is not configured in settings."
+msgstr "El host IMAP no está configurado en los ajustes."
+
+msgid "SMTP host is not configured in settings."
+msgstr "El host SMTP no está configurado en los ajustes."
+
+msgid "Database"
+msgstr "Base de datos"
+
+msgid "Cache & Sessions"
+msgstr "Caché y sesiones"
+
+msgid "Cache read-back mismatch."
+msgstr "Discrepancia en lectura/escritura de caché."
+
+msgid "Not configured"
+msgstr "No configurado"
+
+msgid "All systems operational"
+msgstr "Todos los sistemas operando con normalidad"
+
+msgid "Degraded connectivity"
+msgstr "Conectividad degradada"
+
+msgid "System issues detected"
+msgstr "Problemas del sistema detectados"
+
+msgid "Diagnostics & Service Health"
+msgstr "Diagnósticos y salud del servicio"
+
+msgid "Diagnostics & Health"
+msgstr "Diagnósticos y salud"
+
+msgid "Monitor IMAP and SMTP round-trip latencies, inspect protocol capabilities, and check core infrastructure."
+msgstr "Monitoree latencias de ida y vuelta de IMAP y SMTP, inspeccione capacidades de protocolo y verifique la infraestructura central."
+
+msgid "Run Diagnostics"
+msgstr "Ejecutar diagnósticos"
+
+msgid "Core services online"
+msgstr "Servicios centrales en línea"
+
+msgid "Service attention required"
+msgstr "Se requiere atención en los servicios"
+
+msgid "IMAP Mail Service"
+msgstr "Servicio de correo IMAP"
+
+msgid "Round-trip Latency"
+msgstr "Latencia de ida y vuelta"
+
+msgid "Daemon Engine"
+msgstr "Motor del demonio"
+
+msgid "Standard IMAP4"
+msgstr "IMAP4 estándar"
+
+msgid "Greeting Banner"
+msgstr "Banner de saludo"
+
+msgid "Supported Capabilities (RFC)"
+msgstr "Capacidades soportadas (RFC)"
+
+msgid "Error:"
+msgstr "Error:"
+
+msgid "SMTP Outgoing Service"
+msgstr "Servicio saliente SMTP"
+
+msgid "MTA Engine"
+msgstr "Motor MTA"
+
+msgid "Standard ESMTP"
+msgstr "ESMTP estándar"
+
+msgid "Advertised Extensions (EHLO)"
+msgstr "Extensiones anunciadas (EHLO)"
+
+msgid "Primary Database"
+msgstr "Base de datos principal"
+
+msgid "Query Latency"
+msgstr "Latencia de consulta"
+
+msgid "Engine Vendor"
+msgstr "Proveedor del motor"
+
+msgid "Cache & Server Sessions"
+msgstr "Caché y sesiones del servidor"
+
+msgid "Read/Write Latency"
+msgstr "Latencia de lectura/escritura"
+
+msgid "Cache Engine"
+msgstr "Motor de caché"
+
+msgid "Runtime Environment & Security Indicators"
+msgstr "Entorno de ejecución e indicadores de seguridad"
+
+msgid "Django / Python Platform"
+msgstr "Plataforma Django / Python"
+
+msgid "Mail Accounts Driver"
+msgstr "Driver de cuentas de correo"
+
+msgid "Deployment Mail Domain"
+msgstr "Dominio de correo del despliegue"
+
+msgid "DEBUG Mode"
+msgstr "Modo DEBUG"
+
+msgid "Active (Disable in production)"
+msgstr "Activo (Desactivar en producción)"
+
+msgid "Disabled (Production safe)"
+msgstr "Desactivado (Seguro para producción)"
+
+msgid "Fernet Credential Encryption"
+msgstr "Cifrado de credenciales con Fernet"
+
+msgid "Configured"
+msgstr "Configurado"
+
+msgid "Development Default"
+msgstr "Predeterminado de desarrollo"
+
+msgid "Server Session Expiration"
+msgstr "Expiración de sesiones del servidor"
+
+msgid "seconds (Absolute timeout)"
+msgstr "segundos (Expiración absoluta)"
+
+msgid "Cookie Security Flags"
+msgstr "Banderas de seguridad de cookies"
+
+msgid "Check health"
+msgstr "Verificar salud"
+
+msgid "Full diagnostics report"
+msgstr "Reporte completo de diagnósticos"
+
+msgid "Managed Accounts"
+msgstr "Cuentas gestionadas"
+
+msgid "Account Driver"
+msgstr "Driver de cuentas"
+
+msgid "mailboxes"
+msgstr "buzones"
+
+#, python-format
+msgid "Last diagnostic probe executed at %(time)s on %(date)s."
+msgstr "Último diagnóstico ejecutado a las %(time)s el %(date)s."
+
+msgid "Mail"
+msgstr "Correo"
+
+msgid "Section"
+msgstr "Sección"
+
+msgid "Settings section"
+msgstr "Sección de ajustes"
+
+
+
 
 
 

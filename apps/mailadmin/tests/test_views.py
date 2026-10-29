@@ -93,6 +93,39 @@ def test_admin_index_accessible_by_admin(admin_client: Client) -> None:
         or "Administración del Servidor de Correo" in content
     )
     assert reverse("mailadmin:branding") in content
+    assert reverse("mail:index") in content
+
+
+@override_settings(MAIL_ADMIN_ACCOUNTS=["admin@example.com"])
+def test_header_branding_logic_variations(admin_client: Client) -> None:
+    # 1. Default (no logo, no organization name) -> renders DjWebmail brand classes
+    identity: Any = CorporateIdentity.get_solo()
+    identity.organization_name = ""
+    identity.logo_light_url = ""
+    identity.save()
+
+    resp_default: Any = admin_client.get(reverse("mailadmin:index"))
+    content_default = resp_default.content.decode("utf-8")
+    assert 'class="brand-dj"' in content_default
+    assert 'class="brand-webmail"' in content_default
+
+    # 2. Only organization name -> renders organization name, not DjWebmail wordmark
+    identity.organization_name = "Acme Corp International"
+    identity.save()
+
+    resp_org: Any = admin_client.get(reverse("mailadmin:index"))
+    content_org = resp_org.content.decode("utf-8")
+    assert "Acme Corp International" in content_org
+    assert 'class="brand-dj"' not in content_org
+
+    # 3. Logo configured -> renders only the logo image in the brand link
+    identity.logo_light_url = "https://example.com/logo.png"
+    identity.save()
+
+    resp_logo: Any = admin_client.get(reverse("mailadmin:index"))
+    content_logo = resp_logo.content.decode("utf-8")
+    assert 'src="https://example.com/logo.png"' in content_logo
+    assert 'class="brand-dj"' not in content_logo
 
 
 @override_settings(MAIL_ADMIN_ACCOUNTS=["admin@example.com"])

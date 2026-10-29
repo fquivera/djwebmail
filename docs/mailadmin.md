@@ -60,3 +60,29 @@ Mailbox provisioning and quota limits are managed through the `/mailadmin/accoun
 - **Password Policies**: Enforces OWASP/NIST minimum complexity rules (length, uppercase, lowercase, numbers, symbols, no username).
 - **Status Lifecycle**: Suspend, activate, or permanently delete mailboxes with native modal confirmation.
 
+## 4. Diagnostics & Service Health
+
+The diagnostics dashboard (`/mailadmin/diagnostics/`) provides automated latency probing and runtime verification for mail infrastructure:
+
+### Diagnostic Capabilities
+
+1. **IMAP Connectivity & Latency**:
+   - Opens a TCP/SSL socket connection to `DJANGO_MAIL_IMAP_HOST:DJANGO_MAIL_IMAP_PORT`.
+   - Reads the greeting banner, identifies the server daemon (Dovecot, GreenMail, Courier, etc.), and parses advertised capabilities (`IMAP4rev1`, `QUOTA`, `IDLE`, `MOVE`, `STARTTLS`).
+   - Measures exact round-trip network latency in milliseconds.
+
+2. **SMTP Submission Probe**:
+   - Tests connectivity to `DJANGO_MAIL_SMTP_HOST:DJANGO_MAIL_SMTP_PORT`.
+   - Sends `EHLO` handshake and discovers active extensions (`STARTTLS`, `AUTH`, `SIZE`, `8BITMIME`).
+   - Measures round-trip latency.
+
+3. **Core Services & Database**:
+   - Evaluates PostgreSQL / SQLite query latency with a ping query (`SELECT 1`).
+   - Validates Redis / cache backend read and write functionality.
+
+4. **Runtime Security & Environment**:
+   - Reports Python, Django, and DjWebmail versions.
+   - Audits cookie security flags (`HttpOnly`, `Secure`, `CSRF_COOKIE_SECURE`).
+   - Checks Fernet encryption availability and DEBUG mode status.
+
+

@@ -28,22 +28,34 @@
         <div class="flex-1 min-w-0">
           <a class="btn btn-ghost btn-sm sm:btn-md gap-2 px-1.5 sm:px-2 text-lg sm:text-xl font-semibold tracking-tight truncate max-w-full" href="{% url 'home' %}">
             {% if corporate_identity.effective_logo_light_url %}
-              <img src="{{ corporate_identity.effective_logo_light_url }}" alt="{{ corporate_identity.organization_name|default:'DjWebmail' }}" class="h-6 w-auto max-w-28 object-contain shrink-0">
+              <img src="{{ corporate_identity.effective_logo_light_url }}" alt="{{ corporate_identity.organization_name|default:'Logo' }}" class="h-6 sm:h-7 w-auto max-w-36 sm:max-w-48 object-contain shrink-0">
+            {% elif corporate_identity.organization_name %}
+              <svg class="size-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <span class="truncate">{{ corporate_identity.organization_name }}</span>
             {% else %}
               <svg class="size-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <rect width="20" height="16" x="2" y="4" rx="2"/>
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
               </svg>
-            {% endif %}
-            <span>DjWebmail</span>
-            {% if corporate_identity.organization_name %}
-              <span class="text-xs font-normal opacity-70 hidden sm:inline truncate">&middot; {{ corporate_identity.organization_name }}</span>
+              <span class="inline-flex tracking-tight font-bold">
+                <span class="brand-dj">Dj</span><span class="brand-webmail">Webmail</span>
+              </span>
             {% endif %}
           </a>
         </div>
         <div class="flex items-center gap-1 sm:gap-2 shrink-0">
           {% if request.session.mail_email %}
             {% include "partials/_navbar_identity.html" %}
+            <a class="btn btn-ghost btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 whitespace-nowrap" href="{% url 'mail:index' %}" title="{% translate 'Mail' %}">
+              <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <span class="hidden md:inline">{% translate "Mail" %}</span>
+            </a>
             {% if is_mail_admin %}
               <a class="btn btn-primary btn-soft btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 font-medium whitespace-nowrap" href="{% url 'mailadmin:index' %}" title="{% translate 'Administration' %}">
                 <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
