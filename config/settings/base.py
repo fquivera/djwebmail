@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "apps.compose",
     "apps.contacts",
     "apps.preferences",
+    "apps.mailadmin",
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,11 @@ MAIL_ACCOUNTS_FILE = env.str("DJANGO_MAIL_ACCOUNTS_FILE", default="")
 MAIL_POPPASSD_HOST = env.str("DJANGO_MAIL_POPPASSD_HOST", default="")
 MAIL_POPPASSD_PORT = env.int("DJANGO_MAIL_POPPASSD_PORT", default=106)
 MAIL_CHANGE_PASSWORD_ENABLED = env.bool("DJANGO_MAIL_CHANGE_PASSWORD_ENABLED", default=True)
+MAIL_ADMIN_ACCOUNTS = [
+    acc.strip().lower()
+    for acc in env.str("DJANGO_MAIL_ADMIN_ACCOUNTS", default="").split(",")
+    if acc.strip()
+]
 
 if SESSION_COOKIE_AGE <= 0:
     raise ImproperlyConfigured("DJANGO_SESSION_COOKIE_AGE must be positive")
