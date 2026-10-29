@@ -230,9 +230,7 @@ class ManagedMailbox(models.Model):
             null=True,
             blank=True,
             verbose_name=_("Storage quota (bytes)"),
-            help_text=str(
-                _("Storage space limit in bytes. Leave empty for unlimited quota.")
-            ),
+            help_text=str(_("Storage space limit in bytes. Leave empty for unlimited quota.")),
         ),
     )
     is_active = cast(
@@ -241,7 +239,10 @@ class ManagedMailbox(models.Model):
             default=True,  # pyright: ignore[reportArgumentType]
             verbose_name=_("Active"),
             help_text=str(
-                _("Designates whether this mailbox is allowed to authenticate and receive messages.")
+                _(
+                    "Designates whether this mailbox is allowed to "
+                    "authenticate and receive messages."
+                )
             ),
         ),
     )
