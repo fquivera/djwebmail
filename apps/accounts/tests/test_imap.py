@@ -11,7 +11,7 @@ from imapclient.exceptions import LoginError
 
 from apps.accounts.exceptions import ImapAuthError, ImapConnectionError, ImapProtocolError
 from apps.accounts.services.account import MailAccount
-from apps.accounts.services.imap import ImapService
+from apps.accounts.services.imap import ImapService, detect_imap_engine
 
 
 class FakeClient:
@@ -295,3 +295,60 @@ def test_fetch_summaries_empty_does_not_connect(account: MailAccount) -> None:
     service = ImapService(account, "user@example.com", "secret")
 
     assert service.fetch_summaries([]) == []
+
+
+def test_detect_imap_engine_from_id_data() -> None:
+    id_data = {b"name": b"Dovecot", b"version": b"2.4.1"}
+    assert detect_imap_engine(b"", id_data) == "Dovecot 2.4.1"
+
+    id_data_no_ver = {b"name": b"Cyrus"}
+    assert detect_imap_engine(b"", id_data_no_ver) == "Cyrus"
+
+
+def test_detect_imap_engine_from_banners() -> None:
+    assert detect_imap_engine(b"* OK [CAPABILITY IMAP4rev1] Dovecot (Debian) ready.") == "Dovecot"
+    assert (
+        detect_imap_engine(b"* OK [CAPABILITY IMAP4rev1] Dovecot 2.3.16 ready.") == "Dovecot 2.3.16"
+    )
+    assert detect_imap_engine(b"* OK GreenMail IMAP4rev1 service ready.") == "GreenMail"
+    assert (
+        detect_imap_engine(b"* OK [CAPABILITY IMAP4rev1] Cyrus IMAP 3.4.1 ready.")
+        == "Cyrus IMAP 3.4.1"
+    )
+    assert (
+        detect_imap_engine(b"* OK [CAPABILITY IMAP4rev1] Courier-IMAP 5.1.0 ready.")
+        == "Courier-IMAP 5.1.0"
+    )
+    assert (
+        detect_imap_engine(b"* OK Microsoft Exchange Server 2019 IMAP4 service ready.")
+        == "Microsoft Exchange 2019"
+    )
+    assert detect_imap_engine(b"* OK Zimbra 8.8.15 ready.") == "Zimbra 8.8.15"
+    assert detect_imap_engine(b"* OK Gimap ready for requests from 192.0.2.1") == "Gmail (Gimap)"
+    assert detect_imap_engine(b"* OK CustomMail 1.0 ready.") == "CustomMail 1.0"
+    assert detect_imap_engine(b"") == "IMAP4rev1"
+    assert detect_imap_engine(None) == "IMAP4rev1"
+
+
+def test_imap_service_detects_engine_and_invokes_callback(account: MailAccount) -> None:
+    client = FakeClient()
+    setattr(client, "welcome", b"* OK GreenMail IMAP4rev1 service ready.")  # noqa: B010
+    captured: list[tuple[str, str]] = []
+
+    def on_connect(engine: str, banner: str) -> None:
+        captured.append((engine, banner))
+
+    service = ImapService(
+        account,
+        "user@example.com",
+        "secret",
+        client_factory=factory_for(client),
+        on_connect=on_connect,
+    )
+    with service:
+        assert service.server_engine == "GreenMail"
+        assert "* OK GreenMail" in service.server_banner
+
+    assert len(captured) == 1
+    assert captured[0][0] == "GreenMail"
+    assert "* OK GreenMail" in captured[0][1]

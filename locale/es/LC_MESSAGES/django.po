@@ -1089,8 +1089,32 @@ msgstr "El mensaje se moverá a la papelera."
 msgid "Delete permanently"
 msgstr "Eliminar definitivamente"
 
-msgid "Permanently delete this message?"
-msgstr "¿Eliminar este mensaje definitivamente?"
+msgid "All rights reserved."
+msgstr "Todos los derechos reservados."
+
+msgid "About DjWebmail"
+msgstr "Acerca de DjWebmail"
+
+msgid "Modern, secure webmail client"
+msgstr "Cliente webmail moderno y seguro"
+
+msgid "Mail server engine"
+msgstr "Motor de servidor de correo"
+
+msgid "Available after sign in"
+msgstr "Disponible tras iniciar sesión"
+
+msgid "Protocol & security"
+msgstr "Protocolo y seguridad"
+
+msgid "Web framework"
+msgstr "Framework web"
+
+msgid "License"
+msgstr "Licencia"
+
+msgid "Engineered for security, privacy and speed."
+msgstr "Diseñado para la seguridad, privacidad y velocidad."
 
 
 

@@ -34,3 +34,15 @@ def test_base_template_loads_compiled_tailwind_css(client: Client) -> None:
     assert response.status_code == 200
     assert b"css/dist/styles.css" in response.content
     assert b"css/app.css" not in response.content
+
+
+def test_base_template_renders_footer_and_about_dialog(client: Client) -> None:
+    response: Any = client.get(reverse("home"))
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "DjWebmail" in content
+    assert "about-dialog" in content
+    assert 'data-dialog-open="about-dialog"' in content
+    assert "js/dialog.js" in content
+    assert "<dialog" in content
