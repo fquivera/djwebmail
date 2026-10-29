@@ -1,4 +1,4 @@
-{% load i18n tailwind_tags %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
+{% load i18n static tailwind_tags %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
 <html
   lang="{{ LANGUAGE_CODE }}"
   class="h-full"
@@ -80,6 +80,11 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    {% block footer %}
+      {% include "partials/_footer.html" %}
+    {% endblock %}
+    {% include "partials/_about_dialog.html" %}
+    <script defer src="{% static 'js/dialog.js' %}"></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

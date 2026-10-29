@@ -1,0 +1,65 @@
+{% load i18n %}
+<dialog
+  id="about-dialog"
+  class="modal"
+  aria-labelledby="about-dialog-title"
+>
+  <div class="modal-box max-w-md">
+    <div class="flex items-center gap-3 border-b border-base-300 pb-4">
+      <div class="rounded-xl bg-primary/10 p-2.5 text-primary">
+        <svg class="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="20" height="16" x="2" y="4" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+      </div>
+      <div>
+        <h2 id="about-dialog-title" class="text-lg font-bold tracking-tight">DjWebmail</h2>
+        <p class="text-xs text-base-content/60">
+          {% translate "Modern, secure webmail client" %} &middot; <span class="font-mono">v{{ djwebmail_version }}</span>
+        </p>
+      </div>
+    </div>
+
+    <dl class="mt-4 space-y-3 text-sm">
+      <div class="flex items-center justify-between gap-4 rounded-lg bg-base-200/60 px-3 py-2">
+        <dt class="text-xs text-base-content/70">{% translate "Mail server engine" %}</dt>
+        <dd class="font-semibold text-xs text-right">
+          {% if mail_server_engine %}
+            <span class="badge badge-primary badge-sm font-mono">{{ mail_server_engine }}</span>
+          {% else %}
+            <span class="text-base-content/50 italic text-xs">{% translate "Available after sign in" %}</span>
+          {% endif %}
+        </dd>
+      </div>
+
+      <div class="flex items-center justify-between gap-4 rounded-lg bg-base-200/60 px-3 py-2">
+        <dt class="text-xs text-base-content/70">{% translate "Protocol & security" %}</dt>
+        <dd class="font-mono text-xs">IMAP4rev1 / TLS</dd>
+      </div>
+
+      <div class="flex items-center justify-between gap-4 rounded-lg bg-base-200/60 px-3 py-2">
+        <dt class="text-xs text-base-content/70">{% translate "Web framework" %}</dt>
+        <dd class="font-mono text-xs">Django 5.2 &middot; HTMX &middot; Alpine</dd>
+      </div>
+
+      <div class="flex items-center justify-between gap-4 rounded-lg bg-base-200/60 px-3 py-2">
+        <dt class="text-xs text-base-content/70">{% translate "License" %}</dt>
+        <dd class="text-xs font-medium">MIT License</dd>
+      </div>
+    </dl>
+
+    <div class="mt-4 rounded-lg border border-base-300/80 p-3 text-center text-xs text-base-content/60">
+      <p>&copy; {{ current_year }} DjWebmail. {% translate "All rights reserved." %}</p>
+      <p class="mt-0.5 text-[11px] opacity-80">{% translate "Engineered for security, privacy and speed." %}</p>
+    </div>
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-sm">{% translate "Close" %}</button>
+      </form>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>{% translate "Close" %}</button>
+  </form>
+</dialog>

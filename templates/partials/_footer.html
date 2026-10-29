@@ -1,0 +1,25 @@
+{% load i18n %}
+<footer class="w-full border-t border-base-300 bg-base-100/80 px-4 py-2 text-xs text-base-content/70 shrink-0 select-none">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-1.5 font-medium">
+      <svg class="size-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="20" height="16" x="2" y="4" rx="2"/>
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+      </svg>
+      <span>DjWebmail</span>
+      <span>&copy; {{ current_year }}</span>
+      <span class="hidden sm:inline">&middot;</span>
+      <span class="hidden sm:inline">{% translate "All rights reserved." %}</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="link link-hover text-xs opacity-80 hover:opacity-100 transition-opacity"
+        data-dialog-open="about-dialog"
+      >
+        {% translate "About DjWebmail" %}
+      </button>
+      <span class="badge badge-ghost badge-xs font-mono font-normal">v{{ djwebmail_version }}</span>
+    </div>
+  </div>
+</footer>

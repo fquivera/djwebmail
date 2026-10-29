@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import time
 from typing import Any, cast
 
@@ -20,6 +21,8 @@ from apps.accounts.constants import (
     SESSION_LANGUAGE_KEY,
     SESSION_PAGE_SIZE_KEY,
     SESSION_REMOTE_IMAGES_KEY,
+    SESSION_SERVER_BANNER_KEY,
+    SESSION_SERVER_ENGINE_KEY,
     SESSION_SIGNATURE_KEY,
     SESSION_THEME_KEY,
     SESSION_TIMEZONE_KEY,
@@ -36,12 +39,22 @@ from apps.preferences.models import MailPreference
 def authenticate_mail_account(email: str, password: str) -> MailAccount:
     """Resolve the account and verify the credentials against IMAP."""
     account = resolve_mail_account(email)
-    with ImapService(account, account.email, password):
-        pass
+    with ImapService(account, account.email, password) as imap:
+        engine = imap.server_engine
+        banner = imap.server_banner
+    if engine or banner:
+        return dataclasses.replace(account, server_engine=engine, server_banner=banner)
     return account
 
 
-def start_mail_session(request: HttpRequest, account: MailAccount, password: str) -> MailPreference:
+def start_mail_session(
+    request: HttpRequest,
+    account: MailAccount,
+    password: str,
+    *,
+    server_engine: str = "",
+    server_banner: str = "",
+) -> MailPreference:
     """Rotate the session, store the credential, and initialize preferences."""
     session = _session(request)
     session.cycle_key()
@@ -76,6 +89,8 @@ def start_mail_session(request: HttpRequest, account: MailAccount, password: str
     session[SESSION_SIGNATURE_KEY] = preference.signature_html
     session[SESSION_DISPLAY_NAME_KEY] = preference.display_name
     session[SESSION_ACCOUNT_LABEL_KEY] = preference.account_label
+    session[SESSION_SERVER_ENGINE_KEY] = server_engine or account.server_engine
+    session[SESSION_SERVER_BANNER_KEY] = server_banner or account.server_banner
     setattr(request, "mail_account", account)  # noqa: B010
     translation.activate(language)
     return preference
@@ -182,7 +197,14 @@ def get_mail_account_label(request: HttpRequest) -> str:
 def get_mail_imap_service(request: HttpRequest) -> ImapService:
     """Build a request-scoped IMAP service from the server-side credential."""
     account, password = _mail_credentials(request)
-    return ImapService(account, account.email, password)
+    session = _session(request)
+
+    def _on_connect(engine: str, banner: str) -> None:
+        if not session.get(SESSION_SERVER_ENGINE_KEY):
+            session[SESSION_SERVER_ENGINE_KEY] = engine
+            session[SESSION_SERVER_BANNER_KEY] = banner
+
+    return ImapService(account, account.email, password, on_connect=_on_connect)
 
 
 def get_mail_smtp_service(request: HttpRequest) -> SmtpService:

@@ -8,6 +8,7 @@ singleton or cache.
 from __future__ import annotations
 
 import imaplib
+import re
 import ssl
 from collections.abc import Callable, Sequence
 from contextlib import suppress
@@ -84,6 +85,91 @@ class FetchedSummary:
     internaldate: datetime | None
 
 
+_ENGINE_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (
+        re.compile(
+            r"\bDovecot(?:\s*\([^)]+\))?(?:\s+v?([0-9]+(?:\.[0-9]+)+(?:[-_a-zA-Z0-9]+)?))?",
+            re.IGNORECASE,
+        ),
+        "Dovecot",
+    ),
+    (
+        re.compile(
+            r"\bGreenMail(?:\s+v?([0-9]+(?:\.[0-9]+)+(?:[-_a-zA-Z0-9]+)?))?",
+            re.IGNORECASE,
+        ),
+        "GreenMail",
+    ),
+    (
+        re.compile(
+            r"\bCyrus(?:\s+IMAP)?(?:\s+v?([0-9]+(?:\.[0-9]+)+(?:[-_a-zA-Z0-9]+)?))?",
+            re.IGNORECASE,
+        ),
+        "Cyrus IMAP",
+    ),
+    (
+        re.compile(
+            r"\bCourier(?:-IMAP)?(?:\s+v?([0-9]+(?:\.[0-9]+)+(?:[-_a-zA-Z0-9]+)?))?",
+            re.IGNORECASE,
+        ),
+        "Courier-IMAP",
+    ),
+    (
+        re.compile(
+            r"\b(?:Microsoft\s+)?Exchange(?:\s+Server)?(?:\s+([0-9]{4}|[0-9]+(?:\.[0-9]+)*))?",
+            re.IGNORECASE,
+        ),
+        "Microsoft Exchange",
+    ),
+    (
+        re.compile(
+            r"\bZimbra(?:\s+v?([0-9]+(?:\.[0-9]+)+(?:[-_a-zA-Z0-9]+)?))?",
+            re.IGNORECASE,
+        ),
+        "Zimbra",
+    ),
+    (re.compile(r"\bGimap\b", re.IGNORECASE), "Gmail (Gimap)"),
+)
+
+
+def detect_imap_engine(
+    welcome: bytes | str | None,
+    id_data: dict[Any, Any] | None = None,
+) -> str:
+    """Extract human-readable mail engine name and version from ID or greeting."""
+    if id_data:
+        name = ""
+        version = ""
+        for k, v in id_data.items():
+            k_str = _as_text(k).lower()
+            v_str = _as_text(v)
+            if k_str == "name":
+                name = v_str
+            elif k_str == "version":
+                version = v_str
+        if name:
+            return f"{name} {version}".strip() if version else name
+
+    if not welcome:
+        return "IMAP4rev1"
+
+    text = _as_text(welcome)
+    clean_text = re.sub(r"^\*\s+OK\s+(?:\[[^\]]*\]\s*)?", "", text, flags=re.IGNORECASE).strip()
+
+    for pat, label in _ENGINE_PATTERNS:
+        m = pat.search(clean_text)
+        if m:
+            ver = m.group(1) if m.lastindex and m.lastindex >= 1 else None
+            return f"{label} {ver}" if ver else label
+
+    if clean_text:
+        first_part = clean_text.split(" ready")[0].split(" service")[0].strip()
+        if 2 < len(first_part) < 40:
+            return first_part
+
+    return "IMAP4rev1"
+
+
 class ImapService:
     """Connection-scoped IMAP client for one authenticated account."""
 
@@ -94,12 +180,16 @@ class ImapService:
         password: str,
         *,
         client_factory: ClientFactory = IMAPClient,
+        on_connect: Callable[[str, str], None] | None = None,
     ) -> None:
         self.account = account
         self.username = username
         self._password = password
         self._client_factory = client_factory
+        self._on_connect = on_connect
         self._client: Any | None = None
+        self.server_engine: str = ""
+        self.server_banner: str = ""
 
     def __enter__(self) -> ImapService:
         self.connect()
@@ -165,6 +255,17 @@ class ImapService:
             raise ImapProtocolError("The IMAP server returned an error") from exc
 
         self._client = client
+        welcome = getattr(client, "welcome", b"")
+        id_data: dict[Any, Any] | None = None
+        if hasattr(client, "has_capability") and client.has_capability("ID"):
+            with suppress(Exception):
+                id_data = client.id_()
+
+        self.server_engine = detect_imap_engine(welcome, id_data)
+        self.server_banner = _as_text(welcome).strip()
+        if self._on_connect:
+            with suppress(Exception):
+                self._on_connect(self.server_engine, self.server_banner)
 
     def close(self) -> None:
         """Close the connection without masking the caller's exception."""
