@@ -1777,6 +1777,13 @@ msgstr "Probar sonido"
 msgid "New email"
 msgstr "Nuevo correo"
 
+msgid "user sieve script"
+msgstr "script de Sieve de usuario"
+
+msgid "user sieve scripts"
+msgstr "scripts de Sieve de usuario"
+
+
 
 
 
