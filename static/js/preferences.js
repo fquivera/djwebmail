@@ -144,6 +144,7 @@
     var select = document.getElementById("settings-section-selector");
     var prefSec = document.getElementById("section-preferences");
     var passSec = document.getElementById("section-password");
+    var filtSec = document.getElementById("section-filters");
     if (!select || !prefSec) {
       return;
     }
@@ -152,11 +153,15 @@
       if (val === "password" && passSec) {
         prefSec.classList.add("hidden");
         passSec.classList.remove("hidden");
+        if (filtSec) filtSec.classList.add("hidden");
+      } else if (val === "filters" && filtSec) {
+        prefSec.classList.add("hidden");
+        if (passSec) passSec.classList.add("hidden");
+        filtSec.classList.remove("hidden");
       } else {
         prefSec.classList.remove("hidden");
-        if (passSec) {
-          passSec.classList.add("hidden");
-        }
+        if (passSec) passSec.classList.add("hidden");
+        if (filtSec) filtSec.classList.add("hidden");
       }
     }
 
@@ -171,9 +176,14 @@
 
     var params = new URLSearchParams(window.location.search);
     var initialSection = params.get("section");
-    if (initialSection === "password" && passSec) {
-      select.value = "password";
-      applySection("password");
+    if (initialSection) {
+      if (initialSection === "password" && passSec) {
+        select.value = "password";
+        applySection("password");
+      } else if (initialSection === "filters" && filtSec) {
+        select.value = "filters";
+        applySection("filters");
+      }
     }
   }
 

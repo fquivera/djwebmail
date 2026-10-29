@@ -1795,3 +1795,180 @@ msgstr "scripts de Sieve de usuario"
 
 
 
+
+msgid "Note: filter rule changes are saved immediately"
+msgstr "Nota: los cambios en las reglas del filtro se guardan inmediatamente"
+
+msgid "Incoming email filters"
+msgstr "Filtros de correos entrantes"
+
+msgid "Outgoing email filters"
+msgstr "Filtros de correos salientes"
+
+msgid "Active filters"
+msgstr "Filtros activos"
+
+msgid "Available filters"
+msgstr "Filtros disponibles"
+
+msgid "« Add"
+msgstr "« Añadir"
+
+msgid "Remove »"
+msgstr "Quitar »"
+
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+msgid "No active filters"
+msgstr "No hay filtros activos"
+
+msgid "No available filters"
+msgstr "No hay filtros disponibles"
+
+msgid "Activate selected filter"
+msgstr "Activar filtro seleccionado"
+
+msgid "Deactivate selected filter"
+msgstr "Desactivar filtro seleccionado"
+
+msgid "Edit selected filter"
+msgstr "Editar filtro seleccionado"
+
+msgid "Apply and synchronize filter rules"
+msgstr "Aplicar y sincronizar reglas de filtro"
+
+msgid "Delete selected filter"
+msgstr "Eliminar filtro seleccionado"
+
+msgid "Create new filter"
+msgstr "Crear nuevo filtro"
+
+msgid "Edit filter"
+msgstr "Editar filtro"
+
+msgid "Filter name"
+msgstr "Nombre del filtro"
+
+msgid "Filter name is required."
+msgstr "El nombre del filtro es obligatorio."
+
+msgid "Active filter"
+msgstr "Filtro activo"
+
+msgid "Conditions"
+msgstr "Condiciones"
+
+msgid "If"
+msgstr "Si"
+
+msgid "Any"
+msgstr "Cualquiera"
+
+msgid "of the following conditions are met:"
+msgstr "de las siguientes condiciones se cumplen:"
+
+msgid "To or Cc"
+msgstr "Para o Cc"
+
+msgid "Size"
+msgstr "Tamaño"
+
+msgid "Contains"
+msgstr "Contiene"
+
+msgid "Does not contain"
+msgstr "No contiene"
+
+msgid "Is"
+msgstr "Es"
+
+msgid "Is not"
+msgstr "No es"
+
+msgid "Starts with"
+msgstr "Comienza con"
+
+msgid "Ends with"
+msgstr "Termina con"
+
+msgid "Over (KB)"
+msgstr "Mayor que (KB)"
+
+msgid "Under (KB)"
+msgstr "Menor que (KB)"
+
+msgid "Keywords or value"
+msgstr "Palabra clave o valor"
+
+msgid "Add condition"
+msgstr "Añadir condición"
+
+msgid "Remove condition"
+msgstr "Quitar condición"
+
+msgid "Perform the following actions:"
+msgstr "Realizar las siguientes acciones:"
+
+msgid "Keep in Inbox"
+msgstr "Mantener en bandeja de entrada"
+
+msgid "File into folder..."
+msgstr "Archivar en carpeta..."
+
+msgid "Discard"
+msgstr "Descartar"
+
+msgid "Redirect to..."
+msgstr "Reenviar a..."
+
+msgid "Mark as starred"
+msgstr "Marcar como destacado"
+
+msgid "Destination folder"
+msgstr "Carpeta de destino"
+
+msgid "Recipient email"
+msgstr "Correo del destinatario"
+
+msgid "Add action"
+msgstr "Añadir acción"
+
+msgid "Remove action"
+msgstr "Quitar acción"
+
+msgid "Do not process additional filters"
+msgstr "No procesar filtros adicionales"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Database Fallback"
+msgstr "Modo de respaldo en base de datos"
+
+msgid "Filter activated."
+msgstr "Filtro activado."
+
+msgid "Filter deactivated."
+msgstr "Filtro desactivado."
+
+msgid "Filter rule deleted."
+msgstr "Regla de filtro eliminada."
+
+msgid "Filter rules applied successfully."
+msgstr "Reglas de filtro aplicadas exitosamente."
+
+msgid "Filter rule saved."
+msgstr "Regla de filtro guardada."
+
+msgid "Synchronized with ManageSieve server"
+msgstr "Sincronizado con el servidor ManageSieve"
+
+msgid "Saved in database fallback mode"
+msgstr "Guardado en modo de respaldo en base de datos"

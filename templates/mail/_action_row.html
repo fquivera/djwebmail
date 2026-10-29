@@ -1,0 +1,36 @@
+{% load i18n %}
+<div class="action-row flex flex-wrap sm:flex-nowrap items-center gap-2">
+  <select name="action_type[]" class="select select-bordered select-sm w-full sm:w-56 text-xs" data-action-type-select aria-label="{% translate 'Action' %}">
+    <option value="keep" {% if act.action_type == "keep" %}selected{% endif %}>{% translate "Keep in Inbox" %}</option>
+    <option value="fileinto" {% if act.action_type == "fileinto" %}selected{% endif %}>{% translate "File into folder..." %}</option>
+    <option value="discard" {% if act.action_type == "discard" %}selected{% endif %}>{% translate "Discard" %}</option>
+    <option value="redirect" {% if act.action_type == "redirect" %}selected{% endif %}>{% translate "Redirect to..." %}</option>
+    <option value="mark_read" {% if act.action_type == "mark_read" %}selected{% endif %}>{% translate "Mark as read" %}</option>
+    <option value="mark_starred" {% if act.action_type == "mark_starred" %}selected{% endif %}>{% translate "Mark as starred" %}</option>
+  </select>
+
+  <input type="hidden" name="action_argument[]" value="{{ act.argument|default:'' }}" data-arg-value>
+
+  <div class="action-arg-container flex-1 min-w-[180px]">
+    <!-- Folder selector (shown if fileinto) -->
+    <select class="select select-bordered select-sm w-full text-xs {% if act.action_type != 'fileinto' %}hidden{% endif %}" data-arg-folder aria-label="{% translate 'Destination folder' %}">
+      {% for path, label in folder_choices %}
+        <option value="{{ path }}" {% if act.argument == path %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <!-- Email input (shown if redirect) -->
+    <input
+      type="email"
+      value="{% if act.action_type == 'redirect' %}{{ act.argument }}{% endif %}"
+      placeholder="{% translate 'Recipient email' %}"
+      class="input input-bordered input-sm w-full text-xs {% if act.action_type != 'redirect' %}hidden{% endif %}"
+      data-arg-email
+      aria-label="{% translate 'Recipient email' %}"
+    >
+  </div>
+
+  <div class="flex items-center gap-1 shrink-0">
+    <button type="button" class="btn btn-square btn-outline btn-primary btn-xs" data-add-action title="{% translate 'Add action' %}">+</button>
+    <button type="button" class="btn btn-square btn-outline btn-xs" data-remove-action title="{% translate 'Remove action' %}">−</button>
+  </div>
+</div>

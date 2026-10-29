@@ -1,0 +1,36 @@
+{% load i18n %}
+<div class="condition-row flex flex-wrap sm:flex-nowrap items-center gap-2">
+  <select name="condition_field[]" class="select select-bordered select-sm w-full sm:w-36 text-xs" aria-label="{% translate 'Field' %}">
+    <option value="subject" {% if cond.field == "subject" %}selected{% endif %}>{% translate "Subject" %}</option>
+    <option value="from" {% if cond.field == "from" %}selected{% endif %}>{% translate "From" %}</option>
+    <option value="to" {% if cond.field == "to" %}selected{% endif %}>{% translate "To" %}</option>
+    <option value="cc" {% if cond.field == "cc" %}selected{% endif %}>{% translate "Cc" %}</option>
+    <option value="to_or_cc" {% if cond.field == "to_or_cc" %}selected{% endif %}>{% translate "To or Cc" %}</option>
+    <option value="size" {% if cond.field == "size" %}selected{% endif %}>{% translate "Size" %}</option>
+  </select>
+
+  <select name="condition_comparator[]" class="select select-bordered select-sm w-full sm:w-36 text-xs" aria-label="{% translate 'Comparison' %}">
+    <option value="contains" {% if cond.comparator == "contains" %}selected{% endif %}>{% translate "Contains" %}</option>
+    <option value="not_contains" {% if cond.comparator == "not_contains" %}selected{% endif %}>{% translate "Does not contain" %}</option>
+    <option value="is" {% if cond.comparator == "is" %}selected{% endif %}>{% translate "Is" %}</option>
+    <option value="not_is" {% if cond.comparator == "not_is" %}selected{% endif %}>{% translate "Is not" %}</option>
+    <option value="starts_with" {% if cond.comparator == "starts_with" %}selected{% endif %}>{% translate "Starts with" %}</option>
+    <option value="ends_with" {% if cond.comparator == "ends_with" %}selected{% endif %}>{% translate "Ends with" %}</option>
+    <option value="over" {% if cond.comparator == "over" %}selected{% endif %}>{% translate "Over (KB)" %}</option>
+    <option value="under" {% if cond.comparator == "under" %}selected{% endif %}>{% translate "Under (KB)" %}</option>
+  </select>
+
+  <input
+    type="text"
+    name="condition_value[]"
+    value="{{ cond.value|default:'' }}"
+    placeholder="{% translate 'Keywords or value' %}"
+    class="input input-bordered input-sm flex-1 min-w-[140px] text-xs"
+    aria-label="{% translate 'Keywords or value' %}"
+  >
+
+  <div class="flex items-center gap-1 shrink-0">
+    <button type="button" class="btn btn-square btn-outline btn-primary btn-xs" data-add-condition title="{% translate 'Add condition' %}">+</button>
+    <button type="button" class="btn btn-square btn-outline btn-xs" data-remove-condition title="{% translate 'Remove condition' %}">−</button>
+  </div>
+</div>
