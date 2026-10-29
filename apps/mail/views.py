@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -16,6 +17,10 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.vary import vary_on_headers
 
+from apps.accounts.constants import (
+    SESSION_NOTIFICATION_SOUND_ENABLED_KEY,
+    SESSION_NOTIFICATIONS_ENABLED_KEY,
+)
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import ImapAuthError, MailError, MailSessionError
 from apps.accounts.services.session import (
@@ -47,6 +52,7 @@ from apps.mail.services.mailbox import (
     batch_delete_messages,
     batch_move_messages,
     batch_set_flags,
+    check_new_inbox_messages,
     create_user_folder,
     delete_message,
     is_archive_folder,
@@ -113,6 +119,49 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_mailbox_response.html", context)
     return render(request, "mail/index.html", context)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def notifications_check_view(request: HttpRequest) -> HttpResponse:
+    """Poll for new incoming messages in INBOX and return HTMX notification triggers."""
+    session = cast(Any, request).session
+    last_known_uid = session.get("mail_last_known_uid")
+    notifications_enabled = session.get(SESSION_NOTIFICATIONS_ENABLED_KEY, True)
+    sound_enabled = session.get(SESSION_NOTIFICATION_SOUND_ENABLED_KEY, True)
+
+    try:
+        with get_mail_imap_service(request) as imap:
+            highest_uid, new_message = check_new_inbox_messages(imap, last_known_uid)
+    except (MailSessionError, ImapAuthError, MailError):
+        return HttpResponse(status=204)
+
+    session["mail_last_known_uid"] = highest_uid
+
+    response = HttpResponse(status=204)
+    if new_message:
+        sender_display = new_message.sender or _("New email")
+        subject_display = new_message.subject or _("(No subject)")
+        message_url = reverse(
+            "mail:message",
+            kwargs={"folder_name": IMAP_INBOX, "uid": new_message.uid},
+        )
+        triggers = {
+            "mail:new-message": {
+                "sender": sender_display,
+                "subject": subject_display,
+                "uid": new_message.uid,
+                "folder": IMAP_INBOX,
+                "url": message_url,
+                "sound": bool(sound_enabled),
+                "notify": bool(notifications_enabled),
+            },
+            "mail:inbox-updated": True,
+        }
+        response["HX-Trigger"] = json.dumps(triggers)
+
+    return response
 
 
 @never_cache

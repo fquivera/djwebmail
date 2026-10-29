@@ -17,6 +17,7 @@ from apps.mail.views import (
     message_remote_images,
     message_view,
     messages_batch,
+    notifications_check_view,
     palette,
     search,
 )
@@ -25,6 +26,7 @@ app_name = "mail"
 
 urlpatterns = [
     path("", mailbox, name="index"),
+    path("notifications/check/", notifications_check_view, name="check_notifications"),
     path("folders/create/", folder_create, name="folder_create"),
     path("folder/<path:folder_name>/batch/", messages_batch, name="messages_batch"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),

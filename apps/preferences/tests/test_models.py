@@ -31,6 +31,8 @@ def test_defaults_come_from_settings():
     assert preference.density == Density.COMPACT
     assert preference.layout == Layout.SIDE
     assert preference.remote_images == RemoteImages.ASK
+    assert preference.notifications_enabled is True
+    assert preference.notification_sound_enabled is True
     assert preference.use_threads is False
     assert preference.html_allowed is True
     assert preference.special_folders == {}

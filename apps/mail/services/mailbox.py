@@ -472,3 +472,31 @@ def _as_aware(value: datetime | None) -> datetime | None:
     if value.tzinfo is None:
         return value.replace(tzinfo=UTC)
     return value
+
+
+def check_new_inbox_messages(
+    imap: ImapService,
+    last_known_uid: int | None,
+) -> tuple[int, MessageSummary | None]:
+    """Check INBOX for new unread messages arriving after last_known_uid.
+
+    Returns (highest_uid, latest_new_summary_if_any).
+    If last_known_uid is None, baseline is established and latest_new_summary is None.
+    """
+    imap.select(IMAP_INBOX, readonly=True)
+    all_uids = imap.search(["ALL"])
+    highest_uid = max(all_uids) if all_uids else 0
+
+    if last_known_uid is None or highest_uid <= last_known_uid:
+        return (highest_uid, None)
+
+    new_candidates = imap.search(["UID", f"{last_known_uid + 1}:*", "UNSEEN"])
+    new_uids = [uid for uid in new_candidates if uid > last_known_uid]
+
+    if not new_uids:
+        return (highest_uid, None)
+
+    target_uid = max(new_uids)
+    summaries = imap.fetch_summaries([target_uid])
+    summary = parse_summary(summaries[0], IMAP_INBOX) if summaries else None
+    return (highest_uid, summary)
