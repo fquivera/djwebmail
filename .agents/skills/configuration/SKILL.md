@@ -60,6 +60,10 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_MAIL_CHANGE_PASSWORD_ENABLED` | no | `True` | enable or disable self-service password changing |
 | `DJANGO_MAIL_ADMIN_ACCOUNTS` | no | empty | comma-separated list of admin email addresses allowed into mailadmin |
 | `DJANGO_MAIL_ADMIN_DRIVER` | no | `auto` | mailadmin accounts driver: `auto`, `database`, or `file` |
+| `DJANGO_MAIL_MANAGESIEVE_HOST` | no | empty | optional ManageSieve host (defaults to IMAP host) |
+| `DJANGO_MAIL_MANAGESIEVE_PORT` | no | `4190` | ManageSieve port RFC 5804 |
+| `DJANGO_MAIL_MANAGESIEVE_SECURITY` | no | `starttls` | ManageSieve TLS mode: `ssl`, `starttls`, or `none` |
+| `DJANGO_MAIL_MANAGESIEVE_ENABLED` | no | `True` | enable or disable ManageSieve network client |
 | `DJANGO_SESSION_COOKIE_AGE` | no | `28800` | absolute server-side session age |
 | `REDIS_URL` | production | — | cache and encrypted credential storage |
 | `FERNET_KEY` | production | — | encryption of transient IMAP credentials |

@@ -213,6 +213,12 @@ def get_mail_smtp_service(request: HttpRequest) -> SmtpService:
     return SmtpService(account, account.email, password)
 
 
+def get_mail_session_password(request: HttpRequest) -> str:
+    """Return the decrypted password for the active mail session."""
+    _account, password = _mail_credentials(request)
+    return password
+
+
 def _mail_credentials(request: HttpRequest) -> tuple[MailAccount, str]:
     """Return the authenticated account and its decrypted password."""
     account = getattr(request, "mail_account", None)
