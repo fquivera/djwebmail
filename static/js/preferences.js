@@ -89,7 +89,6 @@
       }
 
       if (!val) {
-        strengthBar.style.width = "0%";
         strengthBar.className = "h-full w-0 transition-all duration-300 bg-base-300";
         strengthLabel.textContent = "—";
         strengthLabel.className = "font-semibold text-base-content/60";
@@ -104,18 +103,15 @@
       if (hasSym) score += 1;
 
       if (score < 3) {
-        strengthBar.style.width = "25%";
-        strengthBar.className = "h-full transition-all duration-300 bg-error";
+        strengthBar.className = "h-full w-1/4 transition-all duration-300 bg-error";
         strengthLabel.textContent = "Débil";
         strengthLabel.className = "font-semibold text-error";
       } else if (score < 5) {
-        strengthBar.style.width = "60%";
-        strengthBar.className = "h-full transition-all duration-300 bg-warning";
+        strengthBar.className = "h-full w-3/5 transition-all duration-300 bg-warning";
         strengthLabel.textContent = "Media";
         strengthLabel.className = "font-semibold text-warning";
       } else {
-        strengthBar.style.width = "100%";
-        strengthBar.className = "h-full transition-all duration-300 bg-success";
+        strengthBar.className = "h-full w-full transition-all duration-300 bg-success";
         strengthLabel.textContent = "Fuerte";
         strengthLabel.className = "font-semibold text-success";
       }
@@ -140,55 +136,59 @@
     }
   });
 
-  function initSectionSelector() {
-    var select = document.getElementById("settings-section-selector");
+  function applySection(val) {
     var prefSec = document.getElementById("section-preferences");
     var passSec = document.getElementById("section-password");
     var filtSec = document.getElementById("section-filters");
-    if (!select || !prefSec) {
+    var select = document.getElementById("settings-section-selector");
+
+    if (select && select.value !== val) {
+      select.value = val;
+    }
+
+    if (val === "password" && passSec) {
+      if (prefSec) prefSec.classList.add("hidden");
+      passSec.classList.remove("hidden");
+      if (filtSec) filtSec.classList.add("hidden");
+    } else if (val === "filters" && filtSec) {
+      if (prefSec) prefSec.classList.add("hidden");
+      if (passSec) passSec.classList.add("hidden");
+      filtSec.classList.remove("hidden");
+    } else {
+      if (prefSec) prefSec.classList.remove("hidden");
+      if (passSec) passSec.classList.add("hidden");
+      if (filtSec) filtSec.classList.add("hidden");
+    }
+  }
+
+  document.addEventListener("change", function (event) {
+    var select = event.target.closest("#settings-section-selector");
+    if (!select) {
       return;
     }
-
-    function applySection(val) {
-      if (val === "password" && passSec) {
-        prefSec.classList.add("hidden");
-        passSec.classList.remove("hidden");
-        if (filtSec) filtSec.classList.add("hidden");
-      } else if (val === "filters" && filtSec) {
-        prefSec.classList.add("hidden");
-        if (passSec) passSec.classList.add("hidden");
-        filtSec.classList.remove("hidden");
-      } else {
-        prefSec.classList.remove("hidden");
-        if (passSec) passSec.classList.add("hidden");
-        if (filtSec) filtSec.classList.add("hidden");
-      }
+    applySection(select.value);
+    if (window.history && window.history.replaceState) {
+      var url = new URL(window.location.href);
+      url.searchParams.set("section", select.value);
+      window.history.replaceState({}, "", url.toString());
     }
+  });
 
-    select.addEventListener("change", function () {
-      applySection(select.value);
-      if (window.history && window.history.replaceState) {
-        var url = new URL(window.location.href);
-        url.searchParams.set("section", select.value);
-        window.history.replaceState({}, "", url.toString());
-      }
-    });
-
+  function initSectionSelector() {
+    var select = document.getElementById("settings-section-selector");
     var params = new URLSearchParams(window.location.search);
-    var initialSection = params.get("section");
+    var initialSection = params.get("section") || (select ? select.value : "preferences");
     if (initialSection) {
-      if (initialSection === "password" && passSec) {
-        select.value = "password";
-        applySection("password");
-      } else if (initialSection === "filters" && filtSec) {
-        select.value = "filters";
-        applySection("filters");
-      }
+      applySection(initialSection);
     }
   }
 
   function initAll() {
-    initPasswordMeter();
+    try {
+      initPasswordMeter();
+    } catch (e) {
+      // Prevent password meter from breaking section switching
+    }
     initSectionSelector();
   }
 
