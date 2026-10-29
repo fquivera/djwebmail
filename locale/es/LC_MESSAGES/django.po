@@ -1383,6 +1383,12 @@ msgstr "Cuota de almacenamiento (bytes)"
 msgid "Active"
 msgstr "Activa"
 
+msgid "Suspended"
+msgstr "Suspendida"
+
+msgid "Suspended mailboxes"
+msgstr "Buzones suspendidos"
+
 msgid "Designates whether this mailbox is allowed to authenticate and receive messages."
 msgstr "Indica si este buzón tiene permiso para autenticarse y recibir mensajes."
 
