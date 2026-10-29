@@ -20,4 +20,5 @@ urlpatterns = [
         name="account_toggle",
     ),
     path("accounts/<str:email>/delete/", views.AccountDeleteView.as_view(), name="account_delete"),
+    path("diagnostics/", views.DiagnosticsView.as_view(), name="diagnostics"),
 ]

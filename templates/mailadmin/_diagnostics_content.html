@@ -1,0 +1,365 @@
+{% load i18n %}
+
+<div class="space-y-6">
+  <!-- Overall Health Status Banner -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border
+    {% if overall_status == 'healthy' %}
+      bg-success/10 border-success/30 text-success-content
+    {% elif overall_status == 'degraded' %}
+      bg-warning/10 border-warning/30 text-warning-content
+    {% else %}
+      bg-error/10 border-error/30 text-error-content
+    {% endif %} shadow-xs"
+  >
+    <div class="flex items-center gap-3">
+      {% if overall_status == 'healthy' %}
+        <div class="size-10 rounded-full bg-success/20 text-success flex items-center justify-center shrink-0">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+      {% elif overall_status == 'degraded' %}
+        <div class="size-10 rounded-full bg-warning/20 text-warning flex items-center justify-center shrink-0">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" x2="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" x2="12.01" y1="17" x2="12" y2="17"/>
+          </svg>
+        </div>
+      {% else %}
+        <div class="size-10 rounded-full bg-error/20 text-error flex items-center justify-center shrink-0">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" x2="9" y1="9" y2="15"/>
+            <line x1="9" x2="15" y1="9" y2="15"/>
+          </svg>
+        </div>
+      {% endif %}
+      <div>
+        <h2 class="font-bold text-base text-base-content">{{ overall_label }}</h2>
+        <p class="text-xs text-base-content/70">
+          {% blocktranslate with time=checked_at|date:"H:i:s" date=checked_at|date:"Y-m-d" %}Last diagnostic probe executed at {{ time }} on {{ date }}.{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+    <div class="text-xs text-base-content/60 font-mono shrink-0">
+      {% if imap.is_online and smtp.is_online %}
+        <span class="badge badge-success badge-sm font-semibold">{% translate "Core services online" %}</span>
+      {% else %}
+        <span class="badge badge-error badge-sm font-semibold">{% translate "Service attention required" %}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Services Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- IMAP Probe Card -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs">
+      <div class="card-body p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+              IMAP
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-base-content">{% translate "IMAP Mail Service" %}</h3>
+              <p class="text-xs text-base-content/60 font-mono">{{ imap.endpoint }}</p>
+            </div>
+          </div>
+          {% if imap.is_online %}
+            <span class="badge badge-success badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-success"></span>
+              {{ imap.status_label }}
+            </span>
+          {% else %}
+            <span class="badge badge-error badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-error"></span>
+              {{ imap.status_label }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs bg-base-200/40 p-3 rounded-lg border border-base-200">
+          <div>
+            <span class="text-base-content/60 block">{% translate "Round-trip Latency" %}</span>
+            <span class="font-semibold text-sm text-base-content">{{ imap.latency_display }}</span>
+          </div>
+          <div>
+            <span class="text-base-content/60 block">{% translate "Daemon Engine" %}</span>
+            <span class="font-semibold text-sm text-base-content">
+              {{ imap.engine_detected|default:_("Standard IMAP4") }}
+            </span>
+          </div>
+        </div>
+
+        {% if imap.banner %}
+          <div class="space-y-1">
+            <span class="text-[11px] font-semibold text-base-content/60 uppercase tracking-wider">
+              {% translate "Greeting Banner" %}
+            </span>
+            <pre class="p-2 rounded-lg bg-base-200/60 text-[11px] font-mono text-base-content/80 overflow-x-auto whitespace-pre-wrap">{{ imap.banner }}</pre>
+          </div>
+        {% endif %}
+
+        {% if imap.capabilities %}
+          <div class="space-y-1.5">
+            <span class="text-[11px] font-semibold text-base-content/60 uppercase tracking-wider block">
+              {% translate "Supported Capabilities (RFC)" %}
+            </span>
+            <div class="flex flex-wrap gap-1">
+              {% for cap in imap.capabilities %}
+                <span class="badge badge-neutral badge-xs font-mono">{{ cap }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if imap.error_message %}
+          <div class="alert alert-error text-xs p-3" role="alert">
+            <span class="font-bold">{% translate "Error:" %}</span> {{ imap.error_message }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- SMTP Probe Card -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs">
+      <div class="card-body p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+              SMTP
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-base-content">{% translate "SMTP Outgoing Service" %}</h3>
+              <p class="text-xs text-base-content/60 font-mono">{{ smtp.endpoint }}</p>
+            </div>
+          </div>
+          {% if smtp.is_online %}
+            <span class="badge badge-success badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-success"></span>
+              {{ smtp.status_label }}
+            </span>
+          {% else %}
+            <span class="badge badge-error badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-error"></span>
+              {{ smtp.status_label }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs bg-base-200/40 p-3 rounded-lg border border-base-200">
+          <div>
+            <span class="text-base-content/60 block">{% translate "Round-trip Latency" %}</span>
+            <span class="font-semibold text-sm text-base-content">{{ smtp.latency_display }}</span>
+          </div>
+          <div>
+            <span class="text-base-content/60 block">{% translate "MTA Engine" %}</span>
+            <span class="font-semibold text-sm text-base-content">
+              {{ smtp.engine_detected|default:_("Standard ESMTP") }}
+            </span>
+          </div>
+        </div>
+
+        {% if smtp.banner %}
+          <div class="space-y-1">
+            <span class="text-[11px] font-semibold text-base-content/60 uppercase tracking-wider">
+              {% translate "Greeting Banner" %}
+            </span>
+            <pre class="p-2 rounded-lg bg-base-200/60 text-[11px] font-mono text-base-content/80 overflow-x-auto whitespace-pre-wrap">{{ smtp.banner }}</pre>
+          </div>
+        {% endif %}
+
+        {% if smtp.capabilities %}
+          <div class="space-y-1.5">
+            <span class="text-[11px] font-semibold text-base-content/60 uppercase tracking-wider block">
+              {% translate "Advertised Extensions (EHLO)" %}
+            </span>
+            <div class="flex flex-wrap gap-1">
+              {% for cap in smtp.capabilities %}
+                <span class="badge badge-neutral badge-xs font-mono">{{ cap }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        {% if smtp.error_message %}
+          <div class="alert alert-error text-xs p-3" role="alert">
+            <span class="font-bold">{% translate "Error:" %}</span> {{ smtp.error_message }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Database Card -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs">
+      <div class="card-body p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="size-8 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
+                <path d="M3 12A9 3 0 0 0 21 12"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-base-content">{% translate "Primary Database" %}</h3>
+              <p class="text-xs text-base-content/60 font-mono">{{ database.endpoint }}</p>
+            </div>
+          </div>
+          {% if database.is_online %}
+            <span class="badge badge-success badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-success"></span>
+              {{ database.status_label }}
+            </span>
+          {% else %}
+            <span class="badge badge-error badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-error"></span>
+              {{ database.status_label }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs bg-base-200/40 p-3 rounded-lg border border-base-200">
+          <div>
+            <span class="text-base-content/60 block">{% translate "Query Latency" %}</span>
+            <span class="font-semibold text-sm text-base-content">{{ database.latency_display }}</span>
+          </div>
+          <div>
+            <span class="text-base-content/60 block">{% translate "Engine Vendor" %}</span>
+            <span class="font-semibold text-sm text-base-content">{{ database.engine_detected }}</span>
+          </div>
+        </div>
+
+        {% if database.error_message %}
+          <div class="alert alert-error text-xs p-3" role="alert">
+            <span class="font-bold">{% translate "Error:" %}</span> {{ database.error_message }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Cache & Sessions Card -->
+    <div class="card bg-base-100 border border-base-300 shadow-xs">
+      <div class="card-body p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="size-8 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.29 7 12 12 20.71 7"/>
+                <line x1="12" x2="12" y1="22" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-base-content">{% translate "Cache & Server Sessions" %}</h3>
+              <p class="text-xs text-base-content/60 font-mono">{{ cache.endpoint }}</p>
+            </div>
+          </div>
+          {% if cache.is_online %}
+            <span class="badge badge-success badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-success"></span>
+              {{ cache.status_label }}
+            </span>
+          {% else %}
+            <span class="badge badge-error badge-soft badge-sm gap-1 font-semibold">
+              <span class="size-1.5 rounded-full bg-error"></span>
+              {{ cache.status_label }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs bg-base-200/40 p-3 rounded-lg border border-base-200">
+          <div>
+            <span class="text-base-content/60 block">{% translate "Read/Write Latency" %}</span>
+            <span class="font-semibold text-sm text-base-content">{{ cache.latency_display }}</span>
+          </div>
+          <div>
+            <span class="text-base-content/60 block">{% translate "Cache Engine" %}</span>
+            <span class="font-semibold text-sm text-base-content">{{ cache.engine_detected }}</span>
+          </div>
+        </div>
+
+        {% if cache.error_message %}
+          <div class="alert alert-error text-xs p-3" role="alert">
+            <span class="font-bold">{% translate "Error:" %}</span> {{ cache.error_message }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- System & Security Configuration Table -->
+  <div class="card bg-base-100 border border-base-300 shadow-xs">
+    <div class="card-body p-5 space-y-4">
+      <h3 class="text-sm font-bold text-base-content uppercase tracking-wider flex items-center gap-2">
+        <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        {% translate "Runtime Environment & Security Indicators" %}
+      </h3>
+
+      <div class="overflow-x-auto">
+        <table class="table table-sm table-zebra w-full text-xs">
+          <tbody>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70 w-1/3">{% translate "DjWebmail Version" %}</th>
+              <td class="font-mono font-semibold">v{{ system.djwebmail_version }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "Django / Python Platform" %}</th>
+              <td>Django {{ system.django_version }} / Python {{ system.python_version }} ({{ system.os_platform }})</td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "Mail Accounts Driver" %}</th>
+              <td class="font-mono font-semibold text-primary">{{ system.driver_class }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "Deployment Mail Domain" %}</th>
+              <td>{{ system.mail_domain }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "DEBUG Mode" %}</th>
+              <td>
+                {% if system.debug_mode %}
+                  <span class="badge badge-warning badge-sm font-semibold">
+                    {% translate "Active (Disable in production)" %}
+                  </span>
+                {% else %}
+                  <span class="badge badge-success badge-sm font-semibold">
+                    {% translate "Disabled (Production safe)" %}
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "Fernet Credential Encryption" %}</th>
+              <td>
+                {% if system.fernet_configured %}
+                  <span class="badge badge-success badge-sm font-semibold">{% translate "Configured" %}</span>
+                {% else %}
+                  <span class="badge badge-neutral badge-sm font-semibold">{% translate "Development Default" %}</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "Server Session Expiration" %}</th>
+              <td>{{ system.session_cookie_age }} {% translate "seconds (Absolute timeout)" %}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="font-medium text-base-content/70">{% translate "Cookie Security Flags" %}</th>
+              <td class="space-x-1">
+                <span class="badge badge-neutral badge-xs font-mono">HttpOnly: {{ system.session_cookie_httponly }}</span>
+                <span class="badge badge-neutral badge-xs font-mono">Secure: {{ system.session_cookie_secure }}</span>
+                <span class="badge badge-neutral badge-xs font-mono">CSRF Secure: {{ system.csrf_cookie_secure }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

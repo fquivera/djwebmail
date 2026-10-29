@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic import FormView, TemplateView, View
 
+from apps.mailadmin.diagnostics import run_full_diagnostics
 from apps.mailadmin.drivers import format_storage_bytes, get_account_driver
 from apps.mailadmin.exceptions import MailAdminError
 from apps.mailadmin.forms import (
@@ -32,6 +33,14 @@ class AdminIndexView(MailAdminRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context["identity"] = CorporateIdentity.get_solo()
         context["page_title"] = _("Mail Server Administration")
+
+        driver = get_account_driver()
+        try:
+            accounts = driver.list_accounts()
+            context["accounts_count"] = len(accounts)
+        except Exception:
+            context["accounts_count"] = 0
+        context["active_driver_name"] = driver.__class__.__name__
         return context
 
 
@@ -326,3 +335,26 @@ class AccountDeleteView(MailAdminRequiredMixin, View):
             response["HX-Redirect"] = reverse("mailadmin:accounts")
             return response
         return redirect("mailadmin:accounts")
+
+
+class DiagnosticsView(MailAdminRequiredMixin, TemplateView):
+    """View to probe and display service latency, server status, and diagnostics."""
+
+    template_name = "mailadmin/diagnostics.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        report = run_full_diagnostics()
+        context.update(report)
+        context["page_title"] = _("Diagnostics & Service Health")
+        return context
+
+    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any) -> HttpResponse:
+        if self.request.headers.get("HX-Request") == "true":
+            return render(
+                self.request,
+                "mailadmin/_diagnostics_content.html",
+                context,
+                **response_kwargs,
+            )
+        return super().render_to_response(context, **response_kwargs)

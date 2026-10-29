@@ -82,36 +82,43 @@
       </div>
     </a>
 
-    <!-- Module 3: Diagnostics & Service Health (PR 3) -->
-    <div class="card bg-base-100 border border-base-300 opacity-90">
+    <!-- Module 3: Diagnostics & Service Health -->
+    <a
+      href="{% url 'mailadmin:diagnostics' %}"
+      class="card bg-base-100 border border-base-300 hover:border-primary/50 hover:shadow-md transition-all group"
+    >
       <div class="card-body p-6 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="size-10 rounded-lg bg-base-200 text-base-content/80 flex items-center justify-center">
-            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
-          <span class="badge badge-neutral badge-sm font-medium">{% translate "Next: PR 3" %}</span>
+        <div class="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-content transition-colors">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
         </div>
-        <h2 class="card-title text-base font-bold text-base-content">
+        <h2 class="card-title text-base font-bold text-base-content group-hover:text-primary transition-colors">
           {% translate "Diagnostics & Service Health" %}
         </h2>
         <p class="text-xs text-base-content/70 leading-relaxed">
           {% translate "Monitor IMAP and SMTP latency, driver connectivity, service reachability and daemon health." %}
         </p>
         <div class="card-actions justify-end pt-2">
-          <span class="text-xs text-base-content/50 italic">{% translate "In progress" %}</span>
+          <span class="btn btn-primary btn-sm btn-ghost gap-1 text-xs">
+            {% translate "Check health" %} &rarr;
+          </span>
         </div>
       </div>
-    </div>
+    </a>
   </div>
 
   <!-- Server Summary Banner -->
   <section class="card bg-base-100 border border-base-300 shadow-sm">
     <div class="card-body p-5 space-y-4">
-      <h3 class="text-sm font-bold uppercase tracking-wider text-base-content/60">
-        {% translate "System Overview" %}
-      </h3>
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-base-content/60">
+          {% translate "System Overview" %}
+        </h3>
+        <a href="{% url 'mailadmin:diagnostics' %}" class="link link-primary text-xs font-semibold">
+          {% translate "Full diagnostics report" %} &rarr;
+        </a>
+      </div>
       <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
         <div class="rounded-lg bg-base-200/60 p-3">
           <dt class="text-base-content/60">{% translate "Corporate Identity" %}</dt>
@@ -121,9 +128,16 @@
         </div>
 
         <div class="rounded-lg bg-base-200/60 p-3">
-          <dt class="text-base-content/60">{% translate "Mail server engine" %}</dt>
+          <dt class="text-base-content/60">{% translate "Managed Accounts" %}</dt>
           <dd class="mt-1 font-semibold text-sm truncate">
-            {{ mail_server_engine|default:_("IMAP4rev1 Standard") }}
+            {{ accounts_count }} {% translate "mailboxes" %}
+          </dd>
+        </div>
+
+        <div class="rounded-lg bg-base-200/60 p-3">
+          <dt class="text-base-content/60">{% translate "Account Driver" %}</dt>
+          <dd class="mt-1 font-semibold text-sm font-mono truncate text-primary">
+            {{ active_driver_name }}
           </dd>
         </div>
 
@@ -131,13 +145,6 @@
           <dt class="text-base-content/60">{% translate "Webmail Version" %}</dt>
           <dd class="mt-1 font-semibold text-sm font-mono">
             v{{ djwebmail_version }}
-          </dd>
-        </div>
-
-        <div class="rounded-lg bg-base-200/60 p-3">
-          <dt class="text-base-content/60">{% translate "Environment" %}</dt>
-          <dd class="mt-1 font-semibold text-sm">
-            Django 5.2 / Python
           </dd>
         </div>
       </dl>
