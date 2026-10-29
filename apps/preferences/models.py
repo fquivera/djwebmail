@@ -90,6 +90,20 @@ class MailPreference(models.Model):
             default=RemoteImages.ASK,
         ),
     )
+    notifications_enabled = cast(
+        bool,
+        models.BooleanField(
+            default=True,  # pyright: ignore[reportArgumentType]
+            help_text=cast(str, gettext_lazy("Show desktop notifications when new emails arrive.")),
+        ),
+    )
+    notification_sound_enabled = cast(
+        bool,
+        models.BooleanField(
+            default=True,  # pyright: ignore[reportArgumentType]
+            help_text=cast(str, gettext_lazy("Play a sound when new emails arrive.")),
+        ),
+    )
     signature_html = cast(str, models.TextField(blank=True))
     special_folders = cast(dict[str, Any], models.JSONField(default=dict, blank=True))
     created_at = cast(datetime, models.DateTimeField(auto_now_add=True))

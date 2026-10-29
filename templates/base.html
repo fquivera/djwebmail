@@ -18,6 +18,8 @@
   <body
     class="flex min-h-screen flex-col bg-base-200 font-sans text-base-content antialiased {% block body_class %}{% endblock %}"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+    data-notifications-enabled="{{ request.session.mail_notifications_enabled|default:True|yesno:'true,false' }}"
+    data-notification-sound-enabled="{{ request.session.mail_notification_sound_enabled|default:True|yesno:'true,false' }}"
   >
     <a
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-base-100 focus:px-3 focus:py-2 focus:text-sm focus:shadow"
@@ -133,6 +135,17 @@
     {% endblock %}
     {% include "partials/_about_dialog.html" %}
     <script defer src="{% static 'js/dialog.js' %}"></script>
+    {% if request.session.mail_email %}
+      <div
+        id="notification-poller"
+        hx-get="{% url 'mail:check_notifications' %}"
+        hx-trigger="load, every 45s"
+        hx-swap="none"
+        class="hidden"
+        aria-hidden="true"
+      ></div>
+      <script defer src="{% static 'js/notifications.js' %}"></script>
+    {% endif %}
     {% block scripts %}{% endblock %}
   </body>
 </html>

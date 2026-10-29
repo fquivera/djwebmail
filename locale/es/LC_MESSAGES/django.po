@@ -1750,6 +1750,34 @@ msgstr "Sección"
 msgid "Settings section"
 msgstr "Sección de ajustes"
 
+msgid "Desktop notifications"
+msgstr "Notificaciones de escritorio"
+
+msgid "Notification sound"
+msgstr "Sonido de notificación"
+
+msgid "Show desktop notifications when new emails arrive in your inbox."
+msgstr "Muestra notificaciones de escritorio cuando lleguen nuevos correos a tu bandeja de entrada."
+
+msgid "Play an audio chime when new emails arrive."
+msgstr "Reproduce un timbre de audio cuando lleguen nuevos correos."
+
+msgid "Notifications"
+msgstr "Notificaciones"
+
+msgid "Enable in browser"
+msgstr "Habilitar en el navegador"
+
+msgid "Test notification"
+msgstr "Probar notificación"
+
+msgid "Test sound"
+msgstr "Probar sonido"
+
+msgid "New email"
+msgstr "Nuevo correo"
+
+
 
 
 

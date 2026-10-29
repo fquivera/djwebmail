@@ -52,6 +52,8 @@ def index(request: HttpRequest) -> HttpResponse:
                         "mail:preference-changed": {
                             "theme": preference.theme,
                             "density": preference.density,
+                            "notifications_enabled": preference.notifications_enabled,
+                            "notification_sound_enabled": preference.notification_sound_enabled,
                         }
                     }
                 )
