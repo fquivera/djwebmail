@@ -6,23 +6,32 @@
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-6">
   <!-- Header -->
-  <div class="border-b border-base-300 pb-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-base-300 pb-4">
     <div class="flex items-center gap-3">
-      <div class="rounded-xl bg-primary/10 p-3 text-primary">
+      <div class="rounded-xl bg-primary/10 p-3 text-primary shrink-0">
         <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
           <path d="m9 12 2 2 4-4"/>
         </svg>
       </div>
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-base-content">
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-base-content">
           {% translate "Mail Server Administration" %}
         </h1>
-        <p class="text-sm text-base-content/60">
+        <p class="text-xs sm:text-sm text-base-content/60">
           {% translate "Restricted management console for postmasters and system administrators." %}
         </p>
       </div>
     </div>
+    {% if request.session.mail_email %}
+      <a class="btn btn-outline btn-sm gap-2 shrink-0 self-start sm:self-auto" href="{% url 'mail:index' %}">
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="20" height="16" x="2" y="4" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+        <span>{% translate "Back to mail" %}</span>
+      </a>
+    {% endif %}
   </div>
 
   <!-- Operational Modules Grid -->

@@ -363,3 +363,20 @@ def test_password_change_succeeds_and_renders_success_alert(
     assert response.status_code == 200
     assert changed == {"current": "secret", "new": "NewStrongPassword!2026"}
     assert b"Password changed successfully." in response.content
+
+
+def test_settings_renders_section_dropdown_and_switches_section(
+    logged_in_client: Client,
+    preference: MailPreference,
+) -> None:
+    response: Any = logged_in_client.get(reverse("preferences:index"))
+    assert response.status_code == 200
+    assert b'id="settings-section-selector"' in response.content
+    assert b'id="section-preferences"' in response.content
+    assert b'id="section-password"' in response.content
+
+    resp_pass: Any = logged_in_client.get(reverse("preferences:index") + "?section=password")
+    assert resp_pass.status_code == 200
+    content = resp_pass.content.decode("utf-8")
+    assert 'id="settings-section-selector"' in content
+    assert 'value="password" selected' in content
