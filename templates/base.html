@@ -73,6 +73,23 @@
                 <span class="hidden md:inline">{% translate "Sign out" %}</span>
               </button>
             </form>
+          {% elif user.is_authenticated and is_mail_admin %}
+            <div class="flex items-center gap-1.5 sm:gap-2">
+              <span class="badge badge-neutral badge-sm font-medium hidden sm:inline-flex">{{ user.get_username }}</span>
+              <a class="btn btn-primary btn-soft btn-sm gap-1.5 px-2.5 sm:px-3 font-medium" href="{% url 'mailadmin:index' %}" title="{% translate 'Administration' %}">
+                <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span class="hidden md:inline">{% translate "Administration" %}</span>
+              </a>
+              <form action="{% url 'admin:logout' %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-ghost btn-sm gap-1.5 px-2.5 sm:px-3" type="submit" title="{% translate 'Sign out' %}">
+                  <span class="hidden md:inline">{% translate "Sign out" %}</span>
+                </button>
+              </form>
+            </div>
           {% else %}
             <a class="btn btn-primary btn-sm" href="{% url 'accounts:login' %}">{% translate "Sign in" %}</a>
           {% endif %}

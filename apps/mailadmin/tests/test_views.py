@@ -160,3 +160,20 @@ def test_branding_view_post_htmx(admin_client: Client) -> None:
     assert response["HX-Trigger"] == "brandingUpdated"
     content = response.content.decode("utf-8")
     assert "Corporación Alpha" in content
+
+
+def test_admin_index_accessible_by_django_superuser(client: Client) -> None:
+    from django.contrib.auth import get_user_model
+
+    user_model = get_user_model()
+    superuser = cast(Any, user_model).objects.create_superuser(
+        username="superadmin",
+        email="superadmin@example.com",
+        password="secretpassword123",
+    )
+    client.force_login(superuser)
+    response: Any = client.get(reverse("mailadmin:index"))
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "superadmin" in content
+    assert reverse("mailadmin:branding") in content
