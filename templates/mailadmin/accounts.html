@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Mail Accounts & Quotas" %} — DjWebmail{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl space-y-6">
+  <!-- Header & Navigation -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-base-300 pb-5">
+    <div class="space-y-1">
+      <div class="flex items-center gap-2 text-xs text-base-content/60">
+        <a href="{% url 'mailadmin:index' %}" class="link link-hover">{% translate "Administration" %}</a>
+        <span>&rsaquo;</span>
+        <span class="text-base-content font-medium">{% translate "Accounts & Quotas" %}</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-base-content">
+        {% translate "Mail Accounts & Storage Quotas" %}
+      </h1>
+      <p class="text-xs sm:text-sm text-base-content/70">
+        {% translate "Provision mailboxes, assign storage disk quotas, reset passwords, and manage user statuses." %}
+      </p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <a
+        href="{% url 'mailadmin:account_create' %}"
+        class="btn btn-primary btn-sm gap-2 font-medium shadow-xs"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" x2="19" y1="8" y2="14"/>
+          <line x1="22" x2="16" y1="11" y2="11"/>
+        </svg>
+        {% translate "New account" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Metric Badges -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-base-content/60 font-medium uppercase tracking-wider">
+        {% translate "Total accounts" %}
+      </div>
+      <div class="text-2xl font-bold text-base-content">
+        {{ total_count }}
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-success font-medium uppercase tracking-wider">
+        {% translate "Active mailboxes" %}
+      </div>
+      <div class="text-2xl font-bold text-success">
+        {{ active_count }}
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-base-content/60 font-medium uppercase tracking-wider">
+        {% translate "Suspended mailboxes" %}
+      </div>
+      <div class="text-2xl font-bold text-base-content/70">
+        {{ inactive_count }}
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-primary font-medium uppercase tracking-wider">
+        {% translate "Allocated quota" %}
+      </div>
+      <div class="text-2xl font-bold text-primary truncate">
+        {{ total_quota_display }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Live Search Bar -->
+  <div class="card bg-base-100 border border-base-300 p-4 shadow-xs space-y-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Search Input with HTMX -->
+      <div class="relative flex-1 max-w-md">
+        <input type="hidden" id="accounts-status-val" name="status" value="{{ status }}">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+        </svg>
+        <input
+          type="search"
+          name="q"
+          value="{{ q }}"
+          placeholder="{% translate 'Search by email or domain...' %}"
+          class="input input-sm w-full pl-9"
+          hx-get="{% url 'mailadmin:accounts' %}"
+          hx-trigger="keyup changed delay:300ms, search"
+          hx-target="#accounts-table"
+          hx-include="#accounts-status-val"
+          hx-push-url="true"
+          aria-label="{% translate 'Search mail accounts' %}"
+        >
+      </div>
+
+      <!-- Status Filter Tabs -->
+      <div class="join">
+        <a
+          href="{% url 'mailadmin:accounts' %}?status=all{% if q %}&q={{ q }}{% endif %}"
+          class="join-item btn btn-xs sm:btn-sm {% if status == 'all' or not status %}btn-active font-semibold{% else %}btn-ghost{% endif %}"
+          hx-get="{% url 'mailadmin:accounts' %}?status=all{% if q %}&q={{ q }}{% endif %}"
+          hx-target="#accounts-table"
+          hx-push-url="true"
+        >
+          {% translate "All" %} ({{ total_count }})
+        </a>
+        <a
+          href="{% url 'mailadmin:accounts' %}?status=active{% if q %}&q={{ q }}{% endif %}"
+          class="join-item btn btn-xs sm:btn-sm {% if status == 'active' %}btn-active font-semibold text-success{% else %}btn-ghost{% endif %}"
+          hx-get="{% url 'mailadmin:accounts' %}?status=active{% if q %}&q={{ q }}{% endif %}"
+          hx-target="#accounts-table"
+          hx-push-url="true"
+        >
+          {% translate "Active" %} ({{ active_count }})
+        </a>
+        <a
+          href="{% url 'mailadmin:accounts' %}?status=inactive{% if q %}&q={{ q }}{% endif %}"
+          class="join-item btn btn-xs sm:btn-sm {% if status == 'inactive' %}btn-active font-semibold{% else %}btn-ghost{% endif %}"
+          hx-get="{% url 'mailadmin:accounts' %}?status=inactive{% if q %}&q={{ q }}{% endif %}"
+          hx-target="#accounts-table"
+          hx-push-url="true"
+        >
+          {% translate "Suspended" %} ({{ inactive_count }})
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accounts Table Container -->
+  <div id="accounts-table">
+    {% include "mailadmin/_accounts_list.html" %}
+  </div>
+</div>
+{% endblock %}

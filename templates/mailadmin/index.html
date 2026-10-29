@@ -54,31 +54,33 @@
       </div>
     </a>
 
-    <!-- Module 2: Mail Accounts & Quotas (PR 2) -->
-    <div class="card bg-base-100 border border-base-300 opacity-90">
+    <!-- Module 2: Mail Accounts & Quotas -->
+    <a
+      href="{% url 'mailadmin:accounts' %}"
+      class="card bg-base-100 border border-base-300 hover:border-primary/50 hover:shadow-md transition-all group"
+    >
       <div class="card-body p-6 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="size-10 rounded-lg bg-base-200 text-base-content/80 flex items-center justify-center">
-            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <span class="badge badge-neutral badge-sm font-medium">{% translate "Next: PR 2" %}</span>
+        <div class="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-content transition-colors">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
         </div>
-        <h2 class="card-title text-base font-bold text-base-content">
+        <h2 class="card-title text-base font-bold text-base-content group-hover:text-primary transition-colors">
           {% translate "Mail Accounts & Quotas" %}
         </h2>
         <p class="text-xs text-base-content/70 leading-relaxed">
           {% translate "Manage server mailboxes, assign storage disk quotas (MB/GB), reset passwords and handle mailbox lifecycle." %}
         </p>
         <div class="card-actions justify-end pt-2">
-          <span class="text-xs text-base-content/50 italic">{% translate "In progress" %}</span>
+          <span class="btn btn-primary btn-sm btn-ghost gap-1 text-xs">
+            {% translate "Manage accounts" %} &rarr;
+          </span>
         </div>
       </div>
-    </div>
+    </a>
 
     <!-- Module 3: Diagnostics & Service Health (PR 3) -->
     <div class="card bg-base-100 border border-base-300 opacity-90">

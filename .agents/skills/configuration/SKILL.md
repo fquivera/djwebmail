@@ -59,6 +59,7 @@ Canonical names (`.env.example` is the source of truth):
 | `DJANGO_MAIL_POPPASSD_PORT` | no | `106` | poppassd daemon port |
 | `DJANGO_MAIL_CHANGE_PASSWORD_ENABLED` | no | `True` | enable or disable self-service password changing |
 | `DJANGO_MAIL_ADMIN_ACCOUNTS` | no | empty | comma-separated list of admin email addresses allowed into mailadmin |
+| `DJANGO_MAIL_ADMIN_DRIVER` | no | `auto` | mailadmin accounts driver: `auto`, `database`, or `file` |
 | `DJANGO_SESSION_COOKIE_AGE` | no | `28800` | absolute server-side session age |
 | `REDIS_URL` | production | — | cache and encrypted credential storage |
 | `FERNET_KEY` | production | — | encryption of transient IMAP credentials |
