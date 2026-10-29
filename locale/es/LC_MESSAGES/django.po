@@ -1116,6 +1116,183 @@ msgstr "Licencia"
 msgid "Engineered for security, privacy and speed."
 msgstr "Diseñado para la seguridad, privacidad y velocidad."
 
+msgid "Mail Administration"
+msgstr "Administración del Correo"
+
+msgid "Mail Server Administration"
+msgstr "Administración del Servidor de Correo"
+
+msgid "Corporate Identity & Branding"
+msgstr "Identidad Corporativa y Branding"
+
+msgid "Corporate Identity"
+msgstr "Identidad Corporativa"
+
+msgid "Organization & Identification"
+msgstr "Organización e Identificación"
+
+msgid "Name and official tax ID of the condominium or enterprise."
+msgstr "Nombre e identificación fiscal oficial del condominio o empresa."
+
+msgid "Organization name"
+msgstr "Nombre de la organización"
+
+msgid "The commercial or legal name of the organization or condominium."
+msgstr "Nombre comercial o legal de la organización o condominio."
+
+msgid "Tagline / Subtitle"
+msgstr "Lema / Subtítulo"
+
+msgid "A short descriptive phrase shown next to the identity."
+msgstr "Una frase corta descriptiva mostrada junto a la identidad."
+
+msgid "Fiscal ID (RIF / CIF / NIF / Tax ID)"
+msgstr "Identificación fiscal (RIF / CIF / NIF / Tax ID)"
+
+msgid "Official identification number for fiscal or legal purposes."
+msgstr "Número de identificación oficial para propósitos fiscales o legales."
+
+msgid "Fiscal / Physical address"
+msgstr "Dirección fiscal / física"
+
+msgid "Complete physical or legal headquarters address."
+msgstr "Dirección completa física o legal de la sede."
+
+msgid "Fiscal Address & Support Contact"
+msgstr "Dirección Fiscal y Contacto de Soporte"
+
+msgid "Physical headquarters location and customer assistance channels."
+msgstr "Ubicación de la sede física y canales de atención al usuario."
+
+msgid "Support email"
+msgstr "Correo de soporte"
+
+msgid "Primary address where users can request administrative assistance."
+msgstr "Dirección principal donde los usuarios solicitan asistencia administrativa."
+
+msgid "Support phone / WhatsApp"
+msgstr "Teléfono de soporte / WhatsApp"
+
+msgid "Telephone number or messaging link for assistance."
+msgstr "Número telefónico o enlace de mensajería para asistencia."
+
+msgid "Website & Legal Links"
+msgstr "Sitio Web y Enlaces Legales"
+
+msgid "Institutional portal, terms of service and privacy policies."
+msgstr "Portal institucional, términos de servicio y políticas de privacidad."
+
+msgid "Official website URL"
+msgstr "URL del sitio web oficial"
+
+msgid "External link to the organization's portal or homepage."
+msgstr "Enlace externo al portal o página principal de la organización."
+
+msgid "Terms of service URL"
+msgstr "URL de términos de servicio"
+
+msgid "Public link to terms and conditions."
+msgstr "Enlace público a términos y condiciones."
+
+msgid "Privacy policy URL"
+msgstr "URL de política de privacidad"
+
+msgid "Public link to data protection and privacy policy."
+msgstr "Enlace público a política de privacidad y protección de datos."
+
+msgid "Logos & Visual Assets"
+msgstr "Logotipos y Recursos Visuales"
+
+msgid "Image URLs for dark mode, light mode, and browser favicon."
+msgstr "URLs de imágenes para modo oscuro, modo claro y favicon del navegador."
+
+msgid "Light mode logo URL"
+msgstr "URL del logotipo para modo claro"
+
+msgid "Direct image URL to logo on light backgrounds."
+msgstr "URL directa a imagen de logotipo sobre fondos claros."
+
+msgid "Dark mode logo URL"
+msgstr "URL del logotipo para modo oscuro"
+
+msgid "Direct image URL to logo on dark backgrounds."
+msgstr "URL directa a imagen de logotipo sobre fondos oscuros."
+
+msgid "Favicon URL"
+msgstr "URL del favicon"
+
+msgid "Direct image or .ico URL for the browser tab icon."
+msgstr "URL directa de imagen o icono .ico para la pestaña del navegador."
+
+msgid "Save corporate identity"
+msgstr "Guardar identidad corporativa"
+
+msgid "Corporate identity settings saved successfully."
+msgstr "Configuración de identidad corporativa guardada exitosamente."
+
+msgid "Restricted management console for postmasters and system administrators."
+msgstr "Consola de gestión restringida para postmasters y administradores de sistemas."
+
+msgid "Configure institutional details, logos, legal information, and support contacts."
+msgstr "Configura detalles institucionales, logotipos, información legal y contactos de soporte."
+
+msgid "Back to Dashboard"
+msgstr "Volver al Panel"
+
+msgid "Live Brand Preview"
+msgstr "Vista Previa de Marca en Vivo"
+
+msgid "Navbar Header Preview"
+msgstr "Vista Previa de la Cabecera Superior"
+
+msgid "Institutional Data"
+msgstr "Datos Institucionales"
+
+msgid "Legal Links"
+msgstr "Enlaces Legales"
+
+msgid "System Overview"
+msgstr "Resumen del Sistema"
+
+msgid "Webmail Version"
+msgstr "Versión del Webmail"
+
+msgid "Environment"
+msgstr "Entorno"
+
+msgid "Next: PR 2"
+msgstr "Siguiente: PR 2"
+
+msgid "Next: PR 3"
+msgstr "Siguiente: PR 3"
+
+msgid "In progress"
+msgstr "En progreso"
+
+msgid "Configure"
+msgstr "Configurar"
+
+msgid "Administration"
+msgstr "Administración"
+
+msgid "Terms of service"
+msgstr "Términos de servicio"
+
+msgid "Privacy policy"
+msgstr "Política de privacidad"
+
+msgid "Fiscal ID"
+msgstr "Identificación fiscal"
+
+msgid "Address"
+msgstr "Dirección"
+
+msgid "Default Identity"
+msgstr "Identidad Predeterminada"
+
+msgid "Default (DjWebmail)"
+msgstr "Predeterminada (DjWebmail)"
+
 
 
 

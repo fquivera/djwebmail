@@ -22,18 +22,30 @@
     >{% translate "Skip to main content" %}</a>
     <header class="sticky top-0 z-30 border-b border-base-300 bg-base-100/95 backdrop-blur-sm shrink-0">
       <nav class="navbar min-h-12 w-full gap-1 sm:gap-2 px-2.5 sm:px-4" aria-label="{% translate 'Main navigation' %}">
-        <div class="flex-1">
-          <a class="btn btn-ghost btn-sm sm:btn-md gap-2 px-1.5 sm:px-2 text-lg sm:text-xl font-semibold tracking-tight" href="{% url 'home' %}">
-            <svg class="size-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <div class="flex-1 min-w-0">
+          <a class="btn btn-ghost btn-sm sm:btn-md gap-2 px-1.5 sm:px-2 text-lg sm:text-xl font-semibold tracking-tight truncate max-w-full" href="{% url 'home' %}">
+            <svg class="size-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect width="20" height="16" x="2" y="4" rx="2"/>
               <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
             </svg>
             <span>DjWebmail</span>
+            {% if corporate_identity.organization_name %}
+              <span class="text-xs font-normal opacity-70 hidden sm:inline truncate">&middot; {{ corporate_identity.organization_name }}</span>
+            {% endif %}
           </a>
         </div>
         <div class="flex items-center gap-1 sm:gap-2">
           {% if request.session.mail_email %}
             {% include "partials/_navbar_identity.html" %}
+            {% if is_mail_admin %}
+              <a class="btn btn-primary btn-soft btn-sm gap-1.5 px-2.5 sm:px-3 font-medium" href="{% url 'mailadmin:index' %}" title="{% translate 'Administration' %}">
+                <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span class="hidden md:inline">{% translate "Administration" %}</span>
+              </a>
+            {% endif %}
             <a class="btn btn-ghost btn-sm gap-1.5 px-2.5 sm:px-3" href="{% url 'contacts:index' %}" title="{% translate 'Contacts' %}">
               <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
