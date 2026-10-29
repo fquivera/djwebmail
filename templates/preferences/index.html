@@ -7,6 +7,7 @@
   <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
   <script defer src="{% static 'js/htmx-config.js' %}"></script>
   <script defer src="{% static 'js/preferences.js' %}"></script>
+  <script defer src="{% static 'js/filters.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -41,7 +42,7 @@
               class="select select-bordered select-sm font-medium w-40 sm:w-44"
               aria-label="{% translate 'Settings section' %}"
             >
-              <option value="preferences" {% if active_section != "password" %}selected{% endif %}>
+              <option value="preferences" {% if active_section == "preferences" or not active_section %}selected{% endif %}>
                 {% translate "Preferences" %}
               </option>
               {% if change_password_enabled %}
@@ -49,13 +50,16 @@
                   {% translate "Password" %}
                 </option>
               {% endif %}
+              <option value="filters" {% if active_section == "filters" %}selected{% endif %}>
+                {% translate "Filters" %}
+              </option>
             </select>
           </div>
           <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
         </div>
       </div>
 
-      <div id="section-preferences" class="space-y-4 {% if active_section == 'password' %}hidden{% endif %}">
+      <div id="section-preferences" class="space-y-4 {% if active_section and active_section != 'preferences' %}hidden{% endif %}">
         {% include "preferences/_settings_form.html" %}
       </div>
 
@@ -64,6 +68,10 @@
           {% include "preferences/_password_form.html" %}
         </div>
       {% endif %}
+
+      <div id="section-filters" class="space-y-4 {% if active_section != 'filters' %}hidden{% endif %}">
+        {% include "mail/_filters_panel.html" %}
+      </div>
     </div>
   </section>
 {% endblock %}

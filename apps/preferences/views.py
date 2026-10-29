@@ -16,6 +16,9 @@ from django.views.decorators.vary import vary_on_headers
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import MailSessionError, PasswordChangeError, PasswordValidationError
 from apps.accounts.services.password import change_account_password, is_password_change_configured
+from apps.accounts.services.session import load_mail_account
+from apps.mail.services.sieve_storage import load_sieve_rules
+from apps.mail.views import get_account_folder_choices
 from apps.preferences.forms import ChangePasswordForm, MailPreferenceForm
 from apps.preferences.models import MailPreference
 from apps.preferences.services import apply_mail_preference, get_mail_preference
@@ -84,6 +87,20 @@ def _render(
     status: int,
     saved: bool = False,
 ) -> HttpResponse:
+    incoming_rules = []
+    outgoing_rules = []
+    is_synced = False
+    folder_choices = []
+    if not htmx:
+        account = getattr(request, "mail_account", None) or load_mail_account(request)
+        if account:
+            incoming_rules, outgoing_rules, is_synced = load_sieve_rules(request, account)
+            folder_choices = get_account_folder_choices(request)
+    active_tab = request.GET.get("tab", "incoming")
+    if active_tab not in {"incoming", "outgoing"}:
+        active_tab = "incoming"
+    current_rules = incoming_rules if active_tab == "incoming" else outgoing_rules
+
     context = {
         "form": form,
         "password_form": ChangePasswordForm(email=preference.email),
@@ -94,6 +111,13 @@ def _render(
         "account_label": preference.account_label,
         "saved": saved,
         "active_section": request.GET.get("section", "preferences"),
+        "incoming_rules": incoming_rules,
+        "outgoing_rules": outgoing_rules,
+        "active_tab": active_tab,
+        "active_rules": [r for r in current_rules if r.active],
+        "available_rules": [r for r in current_rules if not r.active],
+        "is_synced": is_synced,
+        "folder_choices": folder_choices,
     }
     template = "preferences/_settings_form.html" if htmx else "preferences/index.html"
     return render(request, template, context, status=status)

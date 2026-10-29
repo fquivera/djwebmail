@@ -1,0 +1,132 @@
+{% load i18n %}
+<dialog id="filter-modal" class="modal modal-open" aria-labelledby="filter-modal-title">
+  <div class="modal-box max-w-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-base-300 pb-3">
+      <h2 id="filter-modal-title" class="text-base font-bold text-base-content">
+        {% if is_edit %}{% translate "Edit filter" %}{% else %}{% translate "Create new filter" %}{% endif %}
+      </h2>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs btn-circle"
+        data-filter-modal-close
+        aria-label="{% translate 'Close' %}"
+      >✕</button>
+    </div>
+
+    <form
+      id="filter-form"
+      method="post"
+      action="{% url 'mail:filter_save' %}"
+      hx-post="{% url 'mail:filter_save' %}"
+      hx-target="#filters-panel"
+      class="space-y-4"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <input type="hidden" name="rule_id" value="{{ rule.id }}">
+
+      <div>
+        <label for="filter-rule-name" class="block text-xs font-semibold text-base-content/80 mb-1">
+          {% translate "Filter name" %}*
+        </label>
+        <input
+          id="filter-rule-name"
+          name="name"
+          type="text"
+          required
+          value="{{ rule.name }}"
+          placeholder="{% translate 'Filter name' %}"
+          class="input input-bordered input-sm w-full"
+        >
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input
+          id="filter-rule-active"
+          name="active"
+          type="checkbox"
+          class="checkbox checkbox-primary checkbox-sm"
+          {% if rule.active %}checked{% endif %}
+        >
+        <label for="filter-rule-active" class="text-xs font-medium text-base-content cursor-pointer">
+          {% translate "Active filter" %}
+        </label>
+      </div>
+
+      <div class="space-y-2 border-t border-base-300 pt-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-base-content">
+          {% translate "Conditions" %}
+        </h3>
+        <div class="flex items-center gap-2 text-xs text-base-content/80 flex-wrap">
+          <span>{% translate "If" %}</span>
+          <select name="conjunction" class="select select-bordered select-xs font-semibold" aria-label="{% translate 'Conjunction' %}">
+            <option value="anyof" {% if rule.conjunction == "anyof" %}selected{% endif %}>
+              {% translate "Any" %}
+            </option>
+            <option value="allof" {% if rule.conjunction == "allof" %}selected{% endif %}>
+              {% translate "All" %}
+            </option>
+          </select>
+          <span>{% translate "of the following conditions are met:" %}</span>
+        </div>
+
+        <div id="filter-conditions-list" class="space-y-2">
+          {% for cond in rule.conditions %}
+            {% include "mail/_condition_row.html" with cond=cond %}
+          {% empty %}
+            {% include "mail/_condition_row.html" %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="space-y-2 border-t border-base-300 pt-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-base-content">
+          {% translate "Actions" %}
+        </h3>
+        <p class="text-xs text-base-content/80">
+          {% translate "Perform the following actions:" %}
+        </p>
+
+        <div id="filter-actions-list" class="space-y-2">
+          {% for act in rule.actions %}
+            {% include "mail/_action_row.html" with act=act folder_choices=folder_choices %}
+          {% empty %}
+            {% include "mail/_action_row.html" with folder_choices=folder_choices %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-base-300 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            name="stop"
+            type="checkbox"
+            class="checkbox checkbox-primary checkbox-sm"
+            {% if rule.stop %}checked{% endif %}
+          >
+          <span class="text-xs font-medium text-base-content">
+            {% translate "Do not process additional filters" %}
+          </span>
+        </label>
+
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" class="btn btn-ghost btn-sm" data-filter-modal-close>
+            {% translate "Cancel" %}
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm px-6">
+            {% if is_edit %}{% translate "Save" %}{% else %}{% translate "Create" %}{% endif %}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-backdrop" data-filter-modal-close></div>
+
+  <!-- Templates for cloning new rows dynamically -->
+  <template id="tpl-condition-row">
+    {% include "mail/_condition_row.html" %}
+  </template>
+  <template id="tpl-action-row">
+    {% include "mail/_action_row.html" with folder_choices=folder_choices %}
+  </template>
+</dialog>
