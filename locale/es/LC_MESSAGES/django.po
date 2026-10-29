@@ -1089,8 +1089,699 @@ msgstr "El mensaje se moverá a la papelera."
 msgid "Delete permanently"
 msgstr "Eliminar definitivamente"
 
-msgid "Permanently delete this message?"
-msgstr "¿Eliminar este mensaje definitivamente?"
+msgid "All rights reserved."
+msgstr "Todos los derechos reservados."
+
+msgid "About DjWebmail"
+msgstr "Acerca de DjWebmail"
+
+msgid "Modern, secure webmail client"
+msgstr "Cliente webmail moderno y seguro"
+
+msgid "Mail server engine"
+msgstr "Motor de servidor de correo"
+
+msgid "Available after sign in"
+msgstr "Disponible tras iniciar sesión"
+
+msgid "Protocol & security"
+msgstr "Protocolo y seguridad"
+
+msgid "Web framework"
+msgstr "Framework web"
+
+msgid "License"
+msgstr "Licencia"
+
+msgid "Engineered for security, privacy and speed."
+msgstr "Diseñado para la seguridad, privacidad y velocidad."
+
+msgid "Mail Administration"
+msgstr "Administración del Correo"
+
+msgid "Mail Server Administration"
+msgstr "Administración del Servidor de Correo"
+
+msgid "Corporate Identity & Branding"
+msgstr "Identidad Corporativa y Branding"
+
+msgid "Corporate Identity"
+msgstr "Identidad Corporativa"
+
+msgid "Organization & Identification"
+msgstr "Organización e Identificación"
+
+msgid "Name and official tax ID of the condominium or enterprise."
+msgstr "Nombre e identificación fiscal oficial del condominio o empresa."
+
+msgid "Organization name"
+msgstr "Nombre de la organización"
+
+msgid "The commercial or legal name of the organization or condominium."
+msgstr "Nombre comercial o legal de la organización o condominio."
+
+msgid "Tagline / Subtitle"
+msgstr "Lema / Subtítulo"
+
+msgid "A short descriptive phrase shown next to the identity."
+msgstr "Una frase corta descriptiva mostrada junto a la identidad."
+
+msgid "Fiscal ID (RIF / CIF / NIF / Tax ID)"
+msgstr "Identificación fiscal (RIF / CIF / NIF / Tax ID)"
+
+msgid "Official identification number for fiscal or legal purposes."
+msgstr "Número de identificación oficial para propósitos fiscales o legales."
+
+msgid "Fiscal / Physical address"
+msgstr "Dirección fiscal / física"
+
+msgid "Complete physical or legal headquarters address."
+msgstr "Dirección completa física o legal de la sede."
+
+msgid "Fiscal Address & Support Contact"
+msgstr "Dirección Fiscal y Contacto de Soporte"
+
+msgid "Physical headquarters location and customer assistance channels."
+msgstr "Ubicación de la sede física y canales de atención al usuario."
+
+msgid "Support email"
+msgstr "Correo de soporte"
+
+msgid "Primary address where users can request administrative assistance."
+msgstr "Dirección principal donde los usuarios solicitan asistencia administrativa."
+
+msgid "Support phone / WhatsApp"
+msgstr "Teléfono de soporte / WhatsApp"
+
+msgid "Telephone number or messaging link for assistance."
+msgstr "Número telefónico o enlace de mensajería para asistencia."
+
+msgid "Website & Legal Links"
+msgstr "Sitio Web y Enlaces Legales"
+
+msgid "Institutional portal, terms of service and privacy policies."
+msgstr "Portal institucional, términos de servicio y políticas de privacidad."
+
+msgid "Official website URL"
+msgstr "URL del sitio web oficial"
+
+msgid "External link to the organization's portal or homepage."
+msgstr "Enlace externo al portal o página principal de la organización."
+
+msgid "Terms of service URL"
+msgstr "URL de términos de servicio"
+
+msgid "Public link to terms and conditions."
+msgstr "Enlace público a términos y condiciones."
+
+msgid "Privacy policy URL"
+msgstr "URL de política de privacidad"
+
+msgid "Public link to data protection and privacy policy."
+msgstr "Enlace público a política de privacidad y protección de datos."
+
+msgid "Logos & Visual Assets"
+msgstr "Logotipos y Recursos Visuales"
+
+msgid "Image URLs for dark mode, light mode, and browser favicon."
+msgstr "URLs de imágenes para modo oscuro, modo claro y favicon del navegador."
+
+msgid "Light mode logo URL"
+msgstr "URL del logotipo para modo claro"
+
+msgid "Direct image URL to logo on light backgrounds."
+msgstr "URL directa a imagen de logotipo sobre fondos claros."
+
+msgid "Dark mode logo URL"
+msgstr "URL del logotipo para modo oscuro"
+
+msgid "Direct image URL to logo on dark backgrounds."
+msgstr "URL directa a imagen de logotipo sobre fondos oscuros."
+
+msgid "Favicon URL"
+msgstr "URL del favicon"
+
+msgid "Direct image or .ico URL for the browser tab icon."
+msgstr "URL directa de imagen o icono .ico para la pestaña del navegador."
+
+msgid "Save corporate identity"
+msgstr "Guardar identidad corporativa"
+
+msgid "Corporate identity settings saved successfully."
+msgstr "Configuración de identidad corporativa guardada exitosamente."
+
+msgid "Restricted management console for postmasters and system administrators."
+msgstr "Consola de gestión restringida para postmasters y administradores de sistemas."
+
+msgid "Configure institutional details, logos, legal information, and support contacts."
+msgstr "Configura detalles institucionales, logotipos, información legal y contactos de soporte."
+
+msgid "Back to Dashboard"
+msgstr "Volver al Panel"
+
+msgid "Live Brand Preview"
+msgstr "Vista Previa de Marca en Vivo"
+
+msgid "Navbar Header Preview"
+msgstr "Vista Previa de la Cabecera Superior"
+
+msgid "Institutional Data"
+msgstr "Datos Institucionales"
+
+msgid "Legal Links"
+msgstr "Enlaces Legales"
+
+msgid "System Overview"
+msgstr "Resumen del Sistema"
+
+msgid "Webmail Version"
+msgstr "Versión del Webmail"
+
+msgid "Environment"
+msgstr "Entorno"
+
+msgid "Next: PR 2"
+msgstr "Siguiente: PR 2"
+
+msgid "Next: PR 3"
+msgstr "Siguiente: PR 3"
+
+msgid "In progress"
+msgstr "En progreso"
+
+msgid "Configure"
+msgstr "Configurar"
+
+msgid "Administration"
+msgstr "Administración"
+
+msgid "Terms of service"
+msgstr "Términos de servicio"
+
+msgid "Privacy policy"
+msgstr "Política de privacidad"
+
+msgid "Fiscal ID"
+msgstr "Identificación fiscal"
+
+msgid "Address"
+msgstr "Dirección"
+
+msgid "Default Identity"
+msgstr "Identidad Predeterminada"
+
+msgid "Default (DjWebmail)"
+msgstr "Predeterminada (DjWebmail)"
+
+msgid "Database table is not available. Please run migrations."
+msgstr "La tabla de la base de datos no está disponible. Ejecute las migraciones."
+
+msgid "Choose either a file or a URL for the light mode logo, not both."
+msgstr "Elija un archivo o una URL para el logotipo en modo claro, no ambos."
+
+msgid "Choose either a file or a URL for the dark mode logo, not both."
+msgstr "Elija un archivo o una URL para el logotipo en modo oscuro, no ambos."
+
+msgid "Choose either a file or a URL for the favicon, not both."
+msgstr "Elija un archivo o una URL para el favicon, no ambos."
+
+msgid "Choose either an image file or a URL for %(asset)s, not both."
+msgstr "Elija un archivo de imagen o una URL para %(asset)s, no ambos."
+
+msgid "light mode logo"
+msgstr "el logotipo de modo claro"
+
+msgid "dark mode logo"
+msgstr "el logotipo de modo oscuro"
+
+msgid "favicon"
+msgstr "el favicon"
+
+msgid "Light mode logo file"
+msgstr "Archivo de logotipo para modo claro"
+
+msgid "Dark mode logo file"
+msgstr "Archivo de logotipo para modo oscuro"
+
+msgid "Favicon file"
+msgstr "Archivo de favicon"
+
+msgid "Upload image files or enter external URLs (mutually exclusive per asset)."
+msgstr "Cargue archivos de imagen o introduzca URLs externas (mutuamente excluyentes por recurso)."
+
+msgid "File OR URL (one option only)"
+msgstr "Archivo O URL (solo una opción)"
+
+msgid "Option 1: Upload image file"
+msgstr "Opción 1: Cargar archivo de imagen"
+
+msgid "Option 2: External image URL"
+msgstr "Opción 2: URL de imagen externa"
+
+msgid "Option 1: Upload icon file"
+msgstr "Opción 1: Cargar archivo de ícono"
+
+msgid "Option 2: External icon URL"
+msgstr "Opción 2: URL de ícono externa"
+
+msgid "Delete uploaded file"
+msgstr "Eliminar archivo cargado"
+
+msgid "Visual Assets"
+msgstr "Recursos visuales"
+
+msgid "Light Logo"
+msgstr "Logotipo claro"
+
+msgid "Dark Logo"
+msgstr "Logotipo oscuro"
+
+msgid "No logo"
+msgstr "Sin logotipo"
+
+msgid "Sign in to access your mail account."
+msgstr "Inicie sesión para acceder a su cuenta de correo."
+
+msgid "Need help?"
+msgstr "¿Necesita ayuda?"
+
+msgid "Managed mailbox"
+msgstr "Buzón gestionado"
+
+msgid "Managed mailboxes"
+msgstr "Buzones gestionados"
+
+msgid "Email address"
+msgstr "Dirección de correo electrónico"
+
+msgid "Password hash"
+msgstr "Hash de contraseña"
+
+msgid "Storage quota (bytes)"
+msgstr "Cuota de almacenamiento (bytes)"
+
+msgid "Active"
+msgstr "Activa"
+
+msgid "Suspended"
+msgstr "Suspendida"
+
+msgid "Suspended mailboxes"
+msgstr "Buzones suspendidos"
+
+msgid "Designates whether this mailbox is allowed to authenticate and receive messages."
+msgstr "Indica si este buzón tiene permiso para autenticarse y recibir mensajes."
+
+msgid "Storage space limit in bytes. Leave empty for unlimited quota."
+msgstr "Límite de espacio de almacenamiento en bytes. Dejar en blanco para cuota ilimitada."
+
+msgid "Full email address of the account (e.g. user@domain.com)."
+msgstr "Dirección de correo completa de la cuenta (ej. usuario@dominio.com)."
+
+msgid "Unlimited"
+msgstr "Ilimitado"
+
+msgid "Mail accounts table"
+msgstr "Tabla de cuentas de correo"
+
+msgid "Account / Mailbox"
+msgstr "Cuenta / Buzón"
+
+msgid "Assigned quota"
+msgstr "Cuota asignada"
+
+msgid "Actions"
+msgstr "Acciones"
+
+msgid "Edit mailbox"
+msgstr "Editar buzón"
+
+msgid "Suspend account"
+msgstr "Suspender cuenta"
+
+msgid "Activate account"
+msgstr "Activar cuenta"
+
+msgid "Suspend"
+msgstr "Suspender"
+
+msgid "Activate"
+msgstr "Activar"
+
+msgid "Delete account"
+msgstr "Eliminar cuenta"
+
+msgid "Confirm Account Deletion"
+msgstr "Confirmar eliminación de cuenta"
+
+#, python-format
+msgid "Are you sure you want to permanently delete the mailbox <strong>%(email)s</strong>? All stored emails and configurations for this account may be lost."
+msgstr "¿Está seguro de que desea eliminar permanentemente el buzón <strong>%(email)s</strong>? Todos los correos y configuraciones de esta cuenta podrían perderse."
+
+msgid "Yes, delete account"
+msgstr "Sí, eliminar cuenta"
+
+msgid "No mail accounts found matching your query."
+msgstr "No se encontraron cuentas de correo que coincidan con su búsqueda."
+
+msgid "Clear search"
+msgstr "Limpiar búsqueda"
+
+msgid "Mail Accounts & Quotas"
+msgstr "Cuentas y cuotas de correo"
+
+msgid "Accounts & Quotas"
+msgstr "Cuentas y cuotas"
+
+msgid "Mail Accounts & Storage Quotas"
+msgstr "Cuentas de correo y cuotas de almacenamiento"
+
+msgid "Provision mailboxes, assign storage disk quotas, reset passwords, and manage user statuses."
+msgstr "Aprovisione buzones, asigne cuotas de disco, restablezca contraseñas y gestione estados de usuario."
+
+msgid "New account"
+msgstr "Nueva cuenta"
+
+msgid "Total accounts"
+msgstr "Total cuentas"
+
+msgid "Active mailboxes"
+msgstr "Buzones activos"
+
+msgid "Allocated quota"
+msgstr "Cuota asignada"
+
+msgid "Search by email or domain..."
+msgstr "Buscar por correo o dominio..."
+
+msgid "Search mail accounts"
+msgstr "Buscar cuentas de correo"
+
+msgid "All"
+msgstr "Todas"
+
+msgid "Create Mail Account"
+msgstr "Crear cuenta de correo"
+
+#, python-format
+msgid "Edit %(email)s"
+msgstr "Editar %(email)s"
+
+msgid "Create New Mail Account"
+msgstr "Crear nueva cuenta de correo"
+
+#, python-format
+msgid "Edit Account: %(email)s"
+msgstr "Editar cuenta: %(email)s"
+
+msgid "Provision a new mailbox on the mail server with secure password and storage quota."
+msgstr "Aprovisione un nuevo buzón en el servidor con contraseña segura y cuota de almacenamiento."
+
+msgid "Update account quota limit, active status, or reset user password."
+msgstr "Actualice el límite de cuota, el estado activo o restablezca la contraseña del usuario."
+
+msgid "Must be a complete address including domain (e.g. user@yourdomain.com)."
+msgstr "Debe ser una dirección completa incluyendo el dominio (ej. usuario@sudominio.com)."
+
+msgid "Password Credentials"
+msgstr "Credenciales de contraseña"
+
+msgid "Reset Password (Optional)"
+msgstr "Restablecer contraseña (opcional)"
+
+msgid "Security guidelines (NIST/OWASP):"
+msgstr "Directrices de seguridad (NIST/OWASP):"
+
+msgid "Minimum 8 characters length."
+msgstr "Mínimo 8 caracteres de longitud."
+
+msgid "Must contain uppercase, lowercase, numbers, and symbols."
+msgstr "Debe contener mayúsculas, minúsculas, números y símbolos."
+
+msgid "Cannot contain username or repetitive sequences."
+msgstr "No puede contener el nombre de usuario ni secuencias repetitivas."
+
+msgid "Disk Storage Quota"
+msgstr "Cuota de almacenamiento en disco"
+
+msgid "Quota limit"
+msgstr "Límite de cuota"
+
+msgid "Select 'Unlimited' for unrestricted storage or specify a numerical limit in MB or GB."
+msgstr "Seleccione 'Ilimitado' para almacenamiento sin restricción o especifique un límite numérico en MB o GB."
+
+msgid "If disabled, the user cannot log in or authenticate over IMAP/SMTP."
+msgstr "Si está desactivado, el usuario no podrá iniciar sesión ni autenticarse en IMAP/SMTP."
+
+msgid "Create Mailbox"
+msgstr "Crear buzón"
+
+msgid "Save Changes"
+msgstr "Guardar cambios"
+
+msgid "Manage accounts"
+msgstr "Gestionar cuentas"
+
+msgid "Enter a valid email address with domain."
+msgstr "Ingrese una dirección de correo válida con dominio."
+
+msgid "An account with this email address already exists."
+msgstr "Ya existe una cuenta con esta dirección de correo electrónico."
+
+msgid "Passwords do not match."
+msgstr "Las contraseñas no coinciden."
+
+#, python-format
+msgid "Mail account '%(email)s' created successfully."
+msgstr "Cuenta de correo '%(email)s' creada exitosamente."
+
+#, python-format
+msgid "Mail account '%(email)s' not found."
+msgstr "Cuenta de correo '%(email)s' no encontrada."
+
+#, python-format
+msgid "Mail account '%(email)s' updated successfully."
+msgstr "Cuenta de correo '%(email)s' actualizada exitosamente."
+
+msgid "activated"
+msgstr "activada"
+
+msgid "suspended"
+msgstr "suspendida"
+
+#, python-format
+msgid "Mail account '%(email)s' has been %(status)s."
+msgstr "La cuenta de correo '%(email)s' ha sido %(status)s."
+
+#, python-format
+msgid "Mail account '%(email)s' deleted successfully."
+msgstr "Cuenta de correo '%(email)s' eliminada exitosamente."
+
+#, python-format
+msgid "Mail account '%(email)s' was not found."
+msgstr "No se encontró la cuenta de correo '%(email)s'."
+
+msgid "Online"
+msgstr "En línea"
+
+msgid "Offline"
+msgstr "Fuera de línea"
+
+msgid "IMAP host is not configured in settings."
+msgstr "El host IMAP no está configurado en los ajustes."
+
+msgid "SMTP host is not configured in settings."
+msgstr "El host SMTP no está configurado en los ajustes."
+
+msgid "Database"
+msgstr "Base de datos"
+
+msgid "Cache & Sessions"
+msgstr "Caché y sesiones"
+
+msgid "Cache read-back mismatch."
+msgstr "Discrepancia en lectura/escritura de caché."
+
+msgid "Not configured"
+msgstr "No configurado"
+
+msgid "All systems operational"
+msgstr "Todos los sistemas operando con normalidad"
+
+msgid "Degraded connectivity"
+msgstr "Conectividad degradada"
+
+msgid "System issues detected"
+msgstr "Problemas del sistema detectados"
+
+msgid "Diagnostics & Service Health"
+msgstr "Diagnósticos y salud del servicio"
+
+msgid "Diagnostics & Health"
+msgstr "Diagnósticos y salud"
+
+msgid "Monitor IMAP and SMTP round-trip latencies, inspect protocol capabilities, and check core infrastructure."
+msgstr "Monitoree latencias de ida y vuelta de IMAP y SMTP, inspeccione capacidades de protocolo y verifique la infraestructura central."
+
+msgid "Run Diagnostics"
+msgstr "Ejecutar diagnósticos"
+
+msgid "Core services online"
+msgstr "Servicios centrales en línea"
+
+msgid "Service attention required"
+msgstr "Se requiere atención en los servicios"
+
+msgid "IMAP Mail Service"
+msgstr "Servicio de correo IMAP"
+
+msgid "Round-trip Latency"
+msgstr "Latencia de ida y vuelta"
+
+msgid "Daemon Engine"
+msgstr "Motor del demonio"
+
+msgid "Standard IMAP4"
+msgstr "IMAP4 estándar"
+
+msgid "Greeting Banner"
+msgstr "Banner de saludo"
+
+msgid "Supported Capabilities (RFC)"
+msgstr "Capacidades soportadas (RFC)"
+
+msgid "Error:"
+msgstr "Error:"
+
+msgid "SMTP Outgoing Service"
+msgstr "Servicio saliente SMTP"
+
+msgid "MTA Engine"
+msgstr "Motor MTA"
+
+msgid "Standard ESMTP"
+msgstr "ESMTP estándar"
+
+msgid "Advertised Extensions (EHLO)"
+msgstr "Extensiones anunciadas (EHLO)"
+
+msgid "Primary Database"
+msgstr "Base de datos principal"
+
+msgid "Query Latency"
+msgstr "Latencia de consulta"
+
+msgid "Engine Vendor"
+msgstr "Proveedor del motor"
+
+msgid "Cache & Server Sessions"
+msgstr "Caché y sesiones del servidor"
+
+msgid "Read/Write Latency"
+msgstr "Latencia de lectura/escritura"
+
+msgid "Cache Engine"
+msgstr "Motor de caché"
+
+msgid "Runtime Environment & Security Indicators"
+msgstr "Entorno de ejecución e indicadores de seguridad"
+
+msgid "Django / Python Platform"
+msgstr "Plataforma Django / Python"
+
+msgid "Mail Accounts Driver"
+msgstr "Driver de cuentas de correo"
+
+msgid "Deployment Mail Domain"
+msgstr "Dominio de correo del despliegue"
+
+msgid "DEBUG Mode"
+msgstr "Modo DEBUG"
+
+msgid "Active (Disable in production)"
+msgstr "Activo (Desactivar en producción)"
+
+msgid "Disabled (Production safe)"
+msgstr "Desactivado (Seguro para producción)"
+
+msgid "Fernet Credential Encryption"
+msgstr "Cifrado de credenciales con Fernet"
+
+msgid "Configured"
+msgstr "Configurado"
+
+msgid "Development Default"
+msgstr "Predeterminado de desarrollo"
+
+msgid "Server Session Expiration"
+msgstr "Expiración de sesiones del servidor"
+
+msgid "seconds (Absolute timeout)"
+msgstr "segundos (Expiración absoluta)"
+
+msgid "Cookie Security Flags"
+msgstr "Banderas de seguridad de cookies"
+
+msgid "Check health"
+msgstr "Verificar salud"
+
+msgid "Full diagnostics report"
+msgstr "Reporte completo de diagnósticos"
+
+msgid "Managed Accounts"
+msgstr "Cuentas gestionadas"
+
+msgid "Account Driver"
+msgstr "Driver de cuentas"
+
+msgid "mailboxes"
+msgstr "buzones"
+
+#, python-format
+msgid "Last diagnostic probe executed at %(time)s on %(date)s."
+msgstr "Último diagnóstico ejecutado a las %(time)s el %(date)s."
+
+msgid "Mail"
+msgstr "Correo"
+
+msgid "Section"
+msgstr "Sección"
+
+msgid "Settings section"
+msgstr "Sección de ajustes"
+
+msgid "Desktop notifications"
+msgstr "Notificaciones de escritorio"
+
+msgid "Notification sound"
+msgstr "Sonido de notificación"
+
+msgid "Show desktop notifications when new emails arrive in your inbox."
+msgstr "Muestra notificaciones de escritorio cuando lleguen nuevos correos a tu bandeja de entrada."
+
+msgid "Play an audio chime when new emails arrive."
+msgstr "Reproduce un timbre de audio cuando lleguen nuevos correos."
+
+msgid "Notifications"
+msgstr "Notificaciones"
+
+msgid "Enable in browser"
+msgstr "Habilitar en el navegador"
+
+msgid "Test notification"
+msgstr "Probar notificación"
+
+msgid "Test sound"
+msgstr "Probar sonido"
+
+msgid "New email"
+msgstr "Nuevo correo"
+
+msgid "user sieve script"
+msgstr "script de Sieve de usuario"
+
+msgid "user sieve scripts"
+msgstr "scripts de Sieve de usuario"
 
 
 
@@ -1099,3 +1790,185 @@ msgstr "¿Eliminar este mensaje definitivamente?"
 
 
 
+
+
+
+
+
+
+msgid "Note: filter rule changes are saved immediately"
+msgstr "Nota: los cambios en las reglas del filtro se guardan inmediatamente"
+
+msgid "Incoming email filters"
+msgstr "Filtros de correos entrantes"
+
+msgid "Outgoing email filters"
+msgstr "Filtros de correos salientes"
+
+msgid "Active filters"
+msgstr "Filtros activos"
+
+msgid "Available filters"
+msgstr "Filtros disponibles"
+
+msgid "« Add"
+msgstr "« Añadir"
+
+msgid "Remove »"
+msgstr "Quitar »"
+
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+msgid "No active filters"
+msgstr "No hay filtros activos"
+
+msgid "No available filters"
+msgstr "No hay filtros disponibles"
+
+msgid "Activate selected filter"
+msgstr "Activar filtro seleccionado"
+
+msgid "Deactivate selected filter"
+msgstr "Desactivar filtro seleccionado"
+
+msgid "Edit selected filter"
+msgstr "Editar filtro seleccionado"
+
+msgid "Apply and synchronize filter rules"
+msgstr "Aplicar y sincronizar reglas de filtro"
+
+msgid "Delete selected filter"
+msgstr "Eliminar filtro seleccionado"
+
+msgid "Create new filter"
+msgstr "Crear nuevo filtro"
+
+msgid "Edit filter"
+msgstr "Editar filtro"
+
+msgid "Filter name"
+msgstr "Nombre del filtro"
+
+msgid "Filter name is required."
+msgstr "El nombre del filtro es obligatorio."
+
+msgid "Active filter"
+msgstr "Filtro activo"
+
+msgid "Conditions"
+msgstr "Condiciones"
+
+msgid "If"
+msgstr "Si"
+
+msgid "Any"
+msgstr "Cualquiera"
+
+msgid "of the following conditions are met:"
+msgstr "de las siguientes condiciones se cumplen:"
+
+msgid "To or Cc"
+msgstr "Para o Cc"
+
+msgid "Size"
+msgstr "Tamaño"
+
+msgid "Contains"
+msgstr "Contiene"
+
+msgid "Does not contain"
+msgstr "No contiene"
+
+msgid "Is"
+msgstr "Es"
+
+msgid "Is not"
+msgstr "No es"
+
+msgid "Starts with"
+msgstr "Comienza con"
+
+msgid "Ends with"
+msgstr "Termina con"
+
+msgid "Over (KB)"
+msgstr "Mayor que (KB)"
+
+msgid "Under (KB)"
+msgstr "Menor que (KB)"
+
+msgid "Keywords or value"
+msgstr "Palabra clave o valor"
+
+msgid "Add condition"
+msgstr "Añadir condición"
+
+msgid "Remove condition"
+msgstr "Quitar condición"
+
+msgid "Perform the following actions:"
+msgstr "Realizar las siguientes acciones:"
+
+msgid "Keep in Inbox"
+msgstr "Mantener en bandeja de entrada"
+
+msgid "File into folder..."
+msgstr "Archivar en carpeta..."
+
+msgid "Discard"
+msgstr "Descartar"
+
+msgid "Redirect to..."
+msgstr "Reenviar a..."
+
+msgid "Mark as starred"
+msgstr "Marcar como destacado"
+
+msgid "Destination folder"
+msgstr "Carpeta de destino"
+
+msgid "Recipient email"
+msgstr "Correo del destinatario"
+
+msgid "Add action"
+msgstr "Añadir acción"
+
+msgid "Remove action"
+msgstr "Quitar acción"
+
+msgid "Do not process additional filters"
+msgstr "No procesar filtros adicionales"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Database Fallback"
+msgstr "Modo de respaldo en base de datos"
+
+msgid "Filter activated."
+msgstr "Filtro activado."
+
+msgid "Filter deactivated."
+msgstr "Filtro desactivado."
+
+msgid "Filter rule deleted."
+msgstr "Regla de filtro eliminada."
+
+msgid "Filter rules applied successfully."
+msgstr "Reglas de filtro aplicadas exitosamente."
+
+msgid "Filter rule saved."
+msgstr "Regla de filtro guardada."
+
+msgid "Synchronized with ManageSieve server"
+msgstr "Sincronizado con el servidor ManageSieve"
+
+msgid "Saved in database fallback mode"
+msgstr "Guardado en modo de respaldo en base de datos"

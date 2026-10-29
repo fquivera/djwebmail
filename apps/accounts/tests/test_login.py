@@ -250,3 +250,22 @@ def test_mail_login_required_mixin_allows_mail_session():
 
     assert response.status_code == 200
     assert response.content == b"ok"
+
+
+def test_login_page_renders_corporate_identity(client: Any) -> None:
+    from apps.mailadmin.models import CorporateIdentity
+
+    identity = cast(Any, CorporateIdentity.get_solo())
+    identity.organization_name = "Condominio Bella Vista"
+    identity.tagline = "Portal de Correo Residencial"
+    identity.support_email = "soporte@bellavista.test"
+    identity.terms_url = "https://bellavista.test/terminos"
+    identity.save()
+
+    response = client.get(reverse("accounts:login"))
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Condominio Bella Vista" in content
+    assert "Portal de Correo Residencial" in content
+    assert "soporte@bellavista.test" in content
+    assert "https://bellavista.test/terminos" in content

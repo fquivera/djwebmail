@@ -26,6 +26,15 @@ def test_timezone_choices_include_utc() -> None:
     assert ("UTC", "UTC") in timezone_choices()
 
 
+def test_form_contains_notifications_fields() -> None:
+    preference = make_preference()
+    form = MailPreferenceForm(instance=preference)
+    assert "notifications_enabled" in form.fields
+    assert "notification_sound_enabled" in form.fields
+    assert form.fields["notifications_enabled"].required is False
+    assert form.fields["notification_sound_enabled"].required is False
+
+
 def test_form_renders_language_and_timezone_choices() -> None:
     form = MailPreferenceForm(
         instance=MailPreference(language="es", timezone="Europe/Madrid"),

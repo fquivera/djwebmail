@@ -1,3 +1,20 @@
+## v0.5.0 (2026-10-29)
+
+### Feat
+
+- **mail**: add Carbonio-style Sieve filters UI in settings and modal builder (#57)
+- **mail**: add Sieve RFC 5228 engine, ManageSieve client and database fallback (#56)
+- **mail**: add visual and audio notifications for new incoming emails (#55)
+- **mailadmin**: add diagnostics dashboard and service health probes (#54)
+- **mailadmin**: add mail accounts and storage quotas management (#53)
+- **mailadmin**: add corporate identity branding and admin security (#52)
+- **common**: make header and footer sticky with responsive mobile layout (#51)
+- **common**: add global footer and about modal with imap engine detection (#49)
+
+### Fix
+
+- **i18n**: recompile spanish mo catalog without mojibake and add guard test (#50)
+
 ## v0.4.2 (2026-10-28)
 
 ### Feat

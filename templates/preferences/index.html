@@ -7,15 +7,16 @@
   <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
   <script defer src="{% static 'js/htmx-config.js' %}"></script>
   <script defer src="{% static 'js/preferences.js' %}"></script>
+  <script defer src="{% static 'js/filters.js' %}"></script>
 {% endblock %}
 
 {% block content %}
   <section class="flex-1 overflow-y-auto px-4 py-6">
     <div class="mx-auto max-w-3xl space-y-4">
-      <div class="flex items-center justify-between gap-3 border-b border-base-300 pb-3">
-        <div class="flex items-center gap-2.5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-base-300 pb-3">
+        <div class="flex items-center gap-2.5 min-w-0">
           <a
-            class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-base-content"
+            class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-base-content shrink-0"
             href="{% url 'mail:index' %}"
             title="{% translate 'Back to mail' %}"
             aria-label="{% translate 'Back to mail' %}"
@@ -25,19 +26,52 @@
               <path d="M19 12H5"></path>
             </svg>
           </a>
-          <div>
+          <div class="min-w-0">
             <h1 class="text-lg font-bold tracking-tight text-base-content">{% translate "Settings" %}</h1>
-            <p class="text-xs text-base-content/60">{% translate "Customize your webmail language, appearance, and reading layout." %}</p>
+            <p class="text-xs text-base-content/60 truncate">{% translate "Customize your webmail language, appearance, and reading layout." %}</p>
           </div>
         </div>
-        <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
+
+        <div class="flex items-center gap-2.5 self-start sm:self-auto shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+          <div class="flex items-center gap-2">
+            <label for="settings-section-selector" class="text-xs font-medium text-base-content/70 shrink-0">
+              {% translate "Section" %}:
+            </label>
+            <select
+              id="settings-section-selector"
+              class="select select-bordered select-sm font-medium w-40 sm:w-44"
+              aria-label="{% translate 'Settings section' %}"
+            >
+              <option value="preferences" {% if active_section == "preferences" or not active_section %}selected{% endif %}>
+                {% translate "Preferences" %}
+              </option>
+              {% if change_password_enabled %}
+                <option value="password" {% if active_section == "password" %}selected{% endif %}>
+                  {% translate "Password" %}
+                </option>
+              {% endif %}
+              <option value="filters" {% if active_section == "filters" %}selected{% endif %}>
+                {% translate "Filters" %}
+              </option>
+            </select>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
+        </div>
       </div>
 
-      {% include "preferences/_settings_form.html" %}
+      <div id="section-preferences" class="space-y-4 {% if active_section and active_section != 'preferences' %}hidden{% endif %}">
+        {% include "preferences/_settings_form.html" %}
+      </div>
 
       {% if change_password_enabled %}
-        {% include "preferences/_password_form.html" %}
+        <div id="section-password" class="space-y-4 {% if active_section != 'password' %}hidden{% endif %}">
+          {% include "preferences/_password_form.html" %}
+        </div>
       {% endif %}
+
+      <div id="section-filters" class="space-y-4 {% if active_section != 'filters' %}hidden{% endif %}">
+        {% include "mail/_filters_panel.html" %}
+      </div>
     </div>
   </section>
 {% endblock %}

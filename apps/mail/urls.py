@@ -6,6 +6,10 @@ from apps.mail.views import (
     attachment_inline_view,
     attachment_preview_view,
     attachment_view,
+    filter_modal,
+    filter_save,
+    filters_action,
+    filters_panel,
     folder_create,
     image_proxy,
     inline_view,
@@ -17,6 +21,7 @@ from apps.mail.views import (
     message_remote_images,
     message_view,
     messages_batch,
+    notifications_check_view,
     palette,
     search,
 )
@@ -25,6 +30,11 @@ app_name = "mail"
 
 urlpatterns = [
     path("", mailbox, name="index"),
+    path("notifications/check/", notifications_check_view, name="check_notifications"),
+    path("filters/", filters_panel, name="filters_panel"),
+    path("filters/action/", filters_action, name="filters_action"),
+    path("filters/modal/", filter_modal, name="filter_modal"),
+    path("filters/save/", filter_save, name="filter_save"),
     path("folders/create/", folder_create, name="folder_create"),
     path("folder/<path:folder_name>/batch/", messages_batch, name="messages_batch"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),

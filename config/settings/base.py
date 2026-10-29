@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "apps.compose",
     "apps.contacts",
     "apps.preferences",
+    "apps.mailadmin",
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
+                "common.context_processors.system_info",
             ],
         },
     },
@@ -157,9 +159,22 @@ MAIL_MAX_ATTACHMENTS_TOTAL_BYTES = env.int(
 MAIL_MAX_ATTACHMENTS = env.int("DJANGO_MAIL_MAX_ATTACHMENTS", default=10)
 MAIL_COMPOSE_TTL_SECONDS = env.int("DJANGO_MAIL_COMPOSE_TTL_SECONDS", default=3600)
 MAIL_ACCOUNTS_FILE = env.str("DJANGO_MAIL_ACCOUNTS_FILE", default="")
+MAIL_ADMIN_DRIVER = env.str("DJANGO_MAIL_ADMIN_DRIVER", default="auto")
 MAIL_POPPASSD_HOST = env.str("DJANGO_MAIL_POPPASSD_HOST", default="")
 MAIL_POPPASSD_PORT = env.int("DJANGO_MAIL_POPPASSD_PORT", default=106)
 MAIL_CHANGE_PASSWORD_ENABLED = env.bool("DJANGO_MAIL_CHANGE_PASSWORD_ENABLED", default=True)
+MAIL_MANAGESIEVE_HOST = env.str("DJANGO_MAIL_MANAGESIEVE_HOST", default="")
+MAIL_MANAGESIEVE_PORT = env.int(
+    "DJANGO_MAIL_MANAGESIEVE_PORT",
+    default=4190,  # hardcode-ok: standard ManageSieve port RFC 5804
+)
+MAIL_MANAGESIEVE_SECURITY = env.str("DJANGO_MAIL_MANAGESIEVE_SECURITY", default="starttls")
+MAIL_MANAGESIEVE_ENABLED = env.bool("DJANGO_MAIL_MANAGESIEVE_ENABLED", default=True)
+MAIL_ADMIN_ACCOUNTS = [
+    acc.strip().lower()
+    for acc in env.str("DJANGO_MAIL_ADMIN_ACCOUNTS", default="").split(",")
+    if acc.strip()
+]
 
 if SESSION_COOKIE_AGE <= 0:
     raise ImproperlyConfigured("DJANGO_SESSION_COOKIE_AGE must be positive")
@@ -181,6 +196,12 @@ if MAIL_COMPOSE_TTL_SECONDS <= 0:
     raise ImproperlyConfigured("DJANGO_MAIL_COMPOSE_TTL_SECONDS must be positive")
 if MAIL_POPPASSD_PORT <= 0 or MAIL_POPPASSD_PORT > 65535:
     raise ImproperlyConfigured("DJANGO_MAIL_POPPASSD_PORT must be between 1 and 65535")
+if MAIL_MANAGESIEVE_PORT <= 0 or MAIL_MANAGESIEVE_PORT > 65535:
+    raise ImproperlyConfigured("DJANGO_MAIL_MANAGESIEVE_PORT must be between 1 and 65535")
+if MAIL_MANAGESIEVE_SECURITY not in {"ssl", "starttls", "none"}:
+    raise ImproperlyConfigured(
+        "DJANGO_MAIL_MANAGESIEVE_SECURITY must be 'ssl', 'starttls', or 'none'"
+    )
 
 X_FRAME_OPTIONS = "DENY"
 

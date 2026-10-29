@@ -12,6 +12,8 @@ from apps.accounts.constants import (
     SESSION_DENSITY_KEY,
     SESSION_DISPLAY_NAME_KEY,
     SESSION_LANGUAGE_KEY,
+    SESSION_NOTIFICATION_SOUND_ENABLED_KEY,
+    SESSION_NOTIFICATIONS_ENABLED_KEY,
     SESSION_PAGE_SIZE_KEY,
     SESSION_REMOTE_IMAGES_KEY,
     SESSION_SIGNATURE_KEY,
@@ -46,6 +48,8 @@ def apply_mail_preference(request: HttpRequest, preference: MailPreference) -> N
     session[SESSION_SIGNATURE_KEY] = preference.signature_html
     session[SESSION_DISPLAY_NAME_KEY] = preference.display_name
     session[SESSION_ACCOUNT_LABEL_KEY] = preference.account_label
+    session[SESSION_NOTIFICATIONS_ENABLED_KEY] = preference.notifications_enabled
+    session[SESSION_NOTIFICATION_SOUND_ENABLED_KEY] = preference.notification_sound_enabled
     translation.activate(preference.language)
     setattr(request, "LANGUAGE_CODE", preference.language)  # noqa: B010
     try:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Sequence
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -13,9 +15,13 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_sameorigin
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.decorators.vary import vary_on_headers
 
+from apps.accounts.constants import (
+    SESSION_NOTIFICATION_SOUND_ENABLED_KEY,
+    SESSION_NOTIFICATIONS_ENABLED_KEY,
+)
 from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import ImapAuthError, MailError, MailSessionError
 from apps.accounts.services.session import (
@@ -23,6 +29,7 @@ from apps.accounts.services.session import (
     get_mail_imap_service,
     get_mail_page_size,
     get_mail_remote_images,
+    load_mail_account,
 )
 from apps.mail.constants import (
     ATTACHMENT_INLINE_ALLOWED_CONTENT_TYPES,
@@ -47,6 +54,7 @@ from apps.mail.services.mailbox import (
     batch_delete_messages,
     batch_move_messages,
     batch_set_flags,
+    check_new_inbox_messages,
     create_user_folder,
     delete_message,
     is_archive_folder,
@@ -66,6 +74,8 @@ from apps.mail.services.message import (
     rewrite_images,
 )
 from apps.mail.services.search import SearchFilters, search_messages
+from apps.mail.services.sieve_generator import FilterAction, FilterCondition, FilterRule
+from apps.mail.services.sieve_storage import load_sieve_rules, save_sieve_rules
 from apps.preferences.constants import RemoteImages
 
 
@@ -113,6 +123,49 @@ def mailbox(request: HttpRequest, folder_name: str = IMAP_INBOX) -> HttpResponse
     if request.META.get("HTTP_HX_REQUEST") == "true":
         return render(request, "mail/_mailbox_response.html", context)
     return render(request, "mail/index.html", context)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def notifications_check_view(request: HttpRequest) -> HttpResponse:
+    """Poll for new incoming messages in INBOX and return HTMX notification triggers."""
+    session = cast(Any, request).session
+    last_known_uid = session.get("mail_last_known_uid")
+    notifications_enabled = session.get(SESSION_NOTIFICATIONS_ENABLED_KEY, True)
+    sound_enabled = session.get(SESSION_NOTIFICATION_SOUND_ENABLED_KEY, True)
+
+    try:
+        with get_mail_imap_service(request) as imap:
+            highest_uid, new_message = check_new_inbox_messages(imap, last_known_uid)
+    except (MailSessionError, ImapAuthError, MailError):
+        return HttpResponse(status=204)
+
+    session["mail_last_known_uid"] = highest_uid
+
+    response = HttpResponse(status=204)
+    if new_message:
+        sender_display = new_message.sender or _("New email")
+        subject_display = new_message.subject or _("(No subject)")
+        message_url = reverse(
+            "mail:message",
+            kwargs={"folder_name": IMAP_INBOX, "uid": new_message.uid},
+        )
+        triggers = {
+            "mail:new-message": {
+                "sender": sender_display,
+                "subject": subject_display,
+                "uid": new_message.uid,
+                "folder": IMAP_INBOX,
+                "url": message_url,
+                "sound": bool(sound_enabled),
+                "notify": bool(notifications_enabled),
+            },
+            "mail:inbox-updated": True,
+        }
+        response["HX-Trigger"] = json.dumps(triggers)
+
+    return response
 
 
 @never_cache
@@ -837,3 +890,252 @@ def _error_response(request: HttpRequest) -> HttpResponse:
         # HTMX swaps 2xx responses; keep the error visible in the list target.
         return render(request, "mail/_error.html", context)
     return render(request, "mail/error.html", context, status=503)
+
+
+def get_account_folder_choices(request: HttpRequest) -> list[tuple[str, str]]:
+    """Return selectable folders as (path, label) for Sieve action destinations."""
+    try:
+        with get_mail_imap_service(request) as imap:
+            nodes = list_folders(imap)
+            choices: list[tuple[str, str]] = []
+
+            def visit(items: Sequence[FolderNode], depth: int = 0) -> None:
+                for node in items:
+                    if node.selectable and node.name:
+                        indent = "— " * depth if depth > 0 else ""
+                        choices.append((node.name, f"{indent}{node.label}"))
+                    visit(node.children, depth + 1)
+
+            visit(nodes)
+            return choices
+    except Exception:
+        return [
+            (IMAP_INBOX, _("Inbox")),
+            ("Archive", _("Archive")),
+            ("Trash", _("Trash")),
+            ("Junk", _("Junk")),
+        ]
+
+
+@never_cache
+@require_http_methods(["GET"])
+@mail_login_required
+def filters_panel(request: HttpRequest) -> HttpResponse:
+    """Render the Carbonio-inspired filters management panel."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    tab = str(request.GET.get("tab") or "incoming")
+    if tab not in {"incoming", "outgoing"}:
+        tab = "incoming"
+
+    incoming_rules, outgoing_rules, is_synced = load_sieve_rules(request, account)
+    current_rules = incoming_rules if tab == "incoming" else outgoing_rules
+    folder_choices = get_account_folder_choices(request)
+
+    context = {
+        "incoming_rules": incoming_rules,
+        "outgoing_rules": outgoing_rules,
+        "active_tab": tab,
+        "active_rules": [r for r in current_rules if r.active],
+        "available_rules": [r for r in current_rules if not r.active],
+        "is_synced": is_synced,
+        "folder_choices": folder_choices,
+    }
+    return render(request, "mail/_filters_panel.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def filters_action(request: HttpRequest) -> HttpResponse:
+    """Handle list-level actions: add, remove, delete, and apply."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    post_dict = request.POST
+    tab = str(post_dict.get("tab") or "incoming")
+    if tab not in {"incoming", "outgoing"}:
+        tab = "incoming"
+    action = str(post_dict.get("action") or "")
+    rule_id = str(post_dict.get("rule_id") or "").strip()
+
+    incoming_rules, outgoing_rules, _synced = load_sieve_rules(request, account)
+    rules_list = incoming_rules if tab == "incoming" else outgoing_rules
+    status_message = None
+
+    if action == "add" and rule_id:
+        for r in rules_list:
+            if r.id == rule_id:
+                r.active = True
+                status_message = _("Filter activated.")
+                break
+    elif action == "remove" and rule_id:
+        for r in rules_list:
+            if r.id == rule_id:
+                r.active = False
+                status_message = _("Filter deactivated.")
+                break
+    elif action == "delete" and rule_id:
+        if tab == "incoming":
+            incoming_rules = [r for r in incoming_rules if r.id != rule_id]
+        else:
+            outgoing_rules = [r for r in outgoing_rules if r.id != rule_id]
+        status_message = _("Filter rule deleted.")
+    elif action == "apply":
+        status_message = _("Filter rules applied successfully.")
+
+    is_synced = save_sieve_rules(request, account, incoming_rules, outgoing_rules)
+    current_rules = incoming_rules if tab == "incoming" else outgoing_rules
+    folder_choices = get_account_folder_choices(request)
+
+    context = {
+        "incoming_rules": incoming_rules,
+        "outgoing_rules": outgoing_rules,
+        "active_tab": tab,
+        "active_rules": [r for r in current_rules if r.active],
+        "available_rules": [r for r in current_rules if not r.active],
+        "is_synced": is_synced,
+        "folder_choices": folder_choices,
+        "status_message": status_message,
+    }
+    return render(request, "mail/_filters_panel.html", context)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def filter_modal(request: HttpRequest) -> HttpResponse:
+    """Render the create/edit filter modal dialog."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    tab = str(request.GET.get("tab") or "incoming")
+    rule_id = str(request.GET.get("rule_id") or "").strip()
+
+    incoming_rules, outgoing_rules, _synced = load_sieve_rules(request, account)
+    rules_list = incoming_rules if tab == "incoming" else outgoing_rules
+
+    rule = None
+    if rule_id:
+        for r in rules_list:
+            if r.id == rule_id:
+                rule = r
+                break
+
+    if rule is None:
+        rule = FilterRule(
+            id="",
+            name="",
+            active=True,
+            conjunction="anyof",
+            conditions=[FilterCondition(field="subject", comparator="contains", value="")],
+            actions=[FilterAction(action_type="keep", argument="")],
+            stop=True,
+        )
+
+    folder_choices = get_account_folder_choices(request)
+
+    context = {
+        "rule": rule,
+        "is_edit": bool(rule_id),
+        "tab": tab,
+        "folder_choices": folder_choices,
+    }
+    return render(request, "mail/_filter_modal.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def filter_save(request: HttpRequest) -> HttpResponse:
+    """Save a created or edited filter rule."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    post_dict = request.POST
+    tab = str(post_dict.get("tab") or "incoming")
+    rule_id = str(post_dict.get("rule_id") or "").strip()
+    name = str(post_dict.get("name") or "").strip()
+
+    if not name:
+        return HttpResponse(_("Filter name is required."), status=422)
+
+    active = post_dict.get("active") in {"on", "true", "1"}
+    stop = post_dict.get("stop") in {"on", "true", "1"}
+    conjunction = str(post_dict.get("conjunction") or "anyof")
+    if conjunction not in {"anyof", "allof"}:
+        conjunction = "anyof"
+
+    fields: list[str] = [str(x) for x in (post_dict.getlist("condition_field[]") or [])]
+    comparators: list[str] = [str(x) for x in (post_dict.getlist("condition_comparator[]") or [])]
+    values: list[str] = [str(x) for x in (post_dict.getlist("condition_value[]") or [])]
+
+    conditions: list[FilterCondition] = []
+    for f, c, v in zip(fields, comparators, values, strict=False):
+        val = v.strip()
+        if val:
+            conditions.append(FilterCondition(field=f, comparator=c, value=val))
+    if not conditions:
+        conditions = [FilterCondition(field="subject", comparator="contains", value="")]
+
+    act_types: list[str] = [str(x) for x in (post_dict.getlist("action_type[]") or [])]
+    act_args: list[str] = [str(x) for x in (post_dict.getlist("action_argument[]") or [])]
+
+    actions: list[FilterAction] = []
+    for t, a in zip(act_types, act_args, strict=False):
+        actions.append(FilterAction(action_type=t, argument=a.strip()))
+    if not actions:
+        actions = [FilterAction(action_type="keep", argument="")]
+
+    incoming_rules, outgoing_rules, _synced = load_sieve_rules(request, account)
+    rules_list = incoming_rules if tab == "incoming" else outgoing_rules
+
+    if rule_id:
+        existing = next((r for r in rules_list if r.id == rule_id), None)
+        if existing:
+            existing.name = name
+            existing.active = active
+            existing.stop = stop
+            existing.conjunction = conjunction
+            existing.conditions = conditions
+            existing.actions = actions
+        else:
+            new_rule = FilterRule(
+                id=rule_id,
+                name=name,
+                active=active,
+                stop=stop,
+                conjunction=conjunction,
+                conditions=conditions,
+                actions=actions,
+            )
+            rules_list.append(new_rule)
+    else:
+        new_rule = FilterRule(
+            name=name,
+            active=active,
+            stop=stop,
+            conjunction=conjunction,
+            conditions=conditions,
+            actions=actions,
+        )
+        rules_list.append(new_rule)
+
+    is_synced = save_sieve_rules(request, account, incoming_rules, outgoing_rules)
+    current_rules = incoming_rules if tab == "incoming" else outgoing_rules
+    folder_choices = get_account_folder_choices(request)
+
+    context = {
+        "incoming_rules": incoming_rules,
+        "outgoing_rules": outgoing_rules,
+        "active_tab": tab,
+        "active_rules": [r for r in current_rules if r.active],
+        "available_rules": [r for r in current_rules if not r.active],
+        "is_synced": is_synced,
+        "folder_choices": folder_choices,
+        "status_message": _("Filter rule saved."),
+    }
+    response = render(request, "mail/_filters_panel.html", context)
+    response["HX-Trigger"] = json.dumps({"mail:filter-saved": True})
+    return response

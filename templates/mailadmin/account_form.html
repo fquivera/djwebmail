@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+  {% if is_create %}
+    {% translate "Create Mail Account" %}
+  {% else %}
+    {% blocktranslate with email=account.email %}Edit {{ email }}{% endblocktranslate %}
+  {% endif %} — DjWebmail
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-6">
+  <!-- Breadcrumbs & Title -->
+  <div class="space-y-1 border-b border-base-300 pb-4">
+    <div class="flex items-center gap-2 text-xs text-base-content/60">
+      <a href="{% url 'mailadmin:index' %}" class="link link-hover">{% translate "Administration" %}</a>
+      <span>&rsaquo;</span>
+      <a href="{% url 'mailadmin:accounts' %}" class="link link-hover">{% translate "Accounts & Quotas" %}</a>
+      <span>&rsaquo;</span>
+      <span class="text-base-content font-medium">
+        {% if is_create %}{% translate "New account" %}{% else %}{% translate "Edit" %}{% endif %}
+      </span>
+    </div>
+    <h1 class="text-2xl font-bold tracking-tight text-base-content">
+      {% if is_create %}
+        {% translate "Create New Mail Account" %}
+      {% else %}
+        {% blocktranslate with email=account.email %}Edit Account: {{ email }}{% endblocktranslate %}
+      {% endif %}
+    </h1>
+    <p class="text-xs sm:text-sm text-base-content/70">
+      {% if is_create %}
+        {% translate "Provision a new mailbox on the mail server with secure password and storage quota." %}
+      {% else %}
+        {% translate "Update account quota limit, active status, or reset user password." %}
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card bg-base-100 border border-base-300 shadow-sm">
+    <form method="post" class="card-body p-6 space-y-6">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error text-xs" role="alert">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Email Field -->
+      {% if is_create %}
+        <div class="space-y-1.5">
+          <label class="block text-xs font-semibold text-base-content" for="{{ form.email.id_for_label }}">
+            {{ form.email.label }} <span class="text-error">*</span>
+          </label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <p class="text-xs text-error mt-1">{{ form.email.errors.0 }}</p>
+          {% else %}
+            <p class="text-[11px] text-base-content/60">
+              {% translate "Must be a complete address including domain (e.g. user@yourdomain.com)." %}
+            </p>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="space-y-1.5">
+          <span class="block text-xs font-semibold text-base-content/70">
+            {% translate "Email address" %}
+          </span>
+          <div class="flex items-center gap-2 p-2.5 rounded-lg bg-base-200/50 border border-base-300 text-sm font-semibold text-base-content">
+            <svg class="size-4 text-base-content/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <span>{{ account.email }}</span>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Password Section -->
+      <div class="space-y-4 rounded-xl border border-base-200 bg-base-200/20 p-4">
+        <div class="flex items-center gap-2">
+          <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <h2 class="text-sm font-bold text-base-content">
+            {% if is_create %}{% translate "Password Credentials" %}{% else %}{% translate "Reset Password (Optional)" %}{% endif %}
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-base-content" for="{{ form.password.id_for_label }}">
+              {{ form.password.label }} {% if is_create %}<span class="text-error">*</span>{% endif %}
+            </label>
+            {{ form.password }}
+            {% if form.password.errors %}
+              <p class="text-xs text-error mt-1">{{ form.password.errors.0 }}</p>
+            {% endif %}
+          </div>
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-base-content" for="{{ form.confirm_password.id_for_label }}">
+              {{ form.confirm_password.label }} {% if is_create %}<span class="text-error">*</span>{% endif %}
+            </label>
+            {{ form.confirm_password }}
+            {% if form.confirm_password.errors %}
+              <p class="text-xs text-error mt-1">{{ form.confirm_password.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="text-[11px] text-base-content/70 space-y-1 bg-base-100 p-3 rounded-lg border border-base-300">
+          <p class="font-semibold text-base-content">{% translate "Security guidelines (NIST/OWASP):" %}</p>
+          <ul class="list-disc list-inside space-y-0.5 opacity-90">
+            <li>{% translate "Minimum 8 characters length." %}</li>
+            <li>{% translate "Must contain uppercase, lowercase, numbers, and symbols." %}</li>
+            <li>{% translate "Cannot contain username or repetitive sequences." %}</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Storage Quota Section -->
+      <div class="space-y-3 rounded-xl border border-base-200 bg-base-200/20 p-4">
+        <div class="flex items-center gap-2">
+          <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
+            <path d="M3 12A9 3 0 0 0 21 12"/>
+          </svg>
+          <h2 class="text-sm font-bold text-base-content">
+            {% translate "Disk Storage Quota" %}
+          </h2>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="space-y-1">
+            <label class="block text-xs font-semibold text-base-content" for="{{ form.quota_amount.id_for_label }}">
+              {{ form.quota_amount.label }}
+            </label>
+            <div class="flex items-center gap-2">
+              {{ form.quota_amount }}
+              {{ form.quota_unit }}
+            </div>
+            {% if form.quota_amount.errors %}
+              <p class="text-xs text-error mt-1">{{ form.quota_amount.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <p class="text-[11px] text-base-content/60">
+          {% translate "Select 'Unlimited' for unrestricted storage or specify a numerical limit in MB or GB." %}
+        </p>
+      </div>
+
+      <!-- Account Status Checkbox -->
+      <div class="flex items-center gap-3 p-3 rounded-lg bg-base-200/30 border border-base-200">
+        {{ form.is_active }}
+        <label for="{{ form.is_active.id_for_label }}" class="text-xs font-semibold text-base-content cursor-pointer">
+          {{ form.is_active.label }}
+          <span class="block text-[11px] font-normal text-base-content/60">
+            {% translate "If disabled, the user cannot log in or authenticate over IMAP/SMTP." %}
+          </span>
+        </label>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-base-200">
+        <a href="{% url 'mailadmin:accounts' %}" class="btn btn-ghost btn-sm">
+          {% translate "Cancel" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-sm font-semibold">
+          {% if is_create %}{% translate "Create Mailbox" %}{% else %}{% translate "Save Changes" %}{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

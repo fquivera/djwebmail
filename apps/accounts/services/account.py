@@ -34,6 +34,8 @@ class MailAccount:
     smtp_security: str
     verify_tls: bool = True
     timeout: int = 30
+    server_engine: str = ""
+    server_banner: str = ""
 
     def __post_init__(self) -> None:
         if self.imap_security not in IMAP_SECURITY_VALUES:

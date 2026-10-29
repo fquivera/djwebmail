@@ -1,0 +1,162 @@
+{% load i18n %}
+
+<div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-xs">
+  <table class="table table-zebra w-full" aria-label="{% translate 'Mail accounts table' %}">
+    <thead>
+      <tr class="bg-base-200/50 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+        <th scope="col" class="py-3 px-4">{% translate "Account / Mailbox" %}</th>
+        <th scope="col" class="py-3 px-4">{% translate "Status" %}</th>
+        <th scope="col" class="py-3 px-4">{% translate "Assigned quota" %}</th>
+        <th scope="col" class="py-3 px-4 text-right">{% translate "Actions" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for account in accounts %}
+        <tr class="hover:bg-base-200/40 transition-colors">
+          <td class="py-3.5 px-4">
+            <div class="flex items-center gap-3">
+              <div class="avatar placeholder shrink-0">
+                <div class="size-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                  {{ account.username|slice:":2"|upper }}
+                </div>
+              </div>
+              <div class="min-w-0">
+                <div class="font-medium text-sm text-base-content truncate">
+                  {{ account.email }}
+                </div>
+                <div class="text-xs text-base-content/60 truncate">
+                  {{ account.domain }}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            {% if account.is_active %}
+              <span class="badge badge-success badge-soft badge-sm gap-1 font-medium">
+                <span class="size-1.5 rounded-full bg-success"></span>
+                {% translate "Active" %}
+              </span>
+            {% else %}
+              <span class="badge badge-neutral badge-soft badge-sm gap-1 font-medium opacity-80">
+                <span class="size-1.5 rounded-full bg-base-content/40"></span>
+                {% translate "Suspended" %}
+              </span>
+            {% endif %}
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <svg class="size-4 text-base-content/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M3 5V19A9 3 0 0 0 21 19V5"/>
+                <path d="M3 12A9 3 0 0 0 21 12"/>
+              </svg>
+              <span class="text-sm font-medium text-base-content">
+                {{ account.quota_display }}
+              </span>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap text-right">
+            <div class="flex items-center justify-end gap-1">
+              <a
+                href="{% url 'mailadmin:account_edit' account.email %}"
+                class="btn btn-ghost btn-xs gap-1 font-medium"
+                title="{% translate 'Edit mailbox' %}"
+              >
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                  <path d="m15 5 4 4"/>
+                </svg>
+                <span class="hidden sm:inline">{% translate "Edit" %}</span>
+              </a>
+
+              <form action="{% url 'mailadmin:account_toggle' account.email %}" method="post" class="inline">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="btn btn-ghost btn-xs text-base-content/70 hover:text-base-content"
+                  title="{% if account.is_active %}{% translate 'Suspend account' %}{% else %}{% translate 'Activate account' %}{% endif %}"
+                >
+                  {% if account.is_active %}
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="10" x2="10" y1="15" y2="9"/>
+                      <line x1="14" x2="14" y1="15" y2="9"/>
+                    </svg>
+                    <span class="hidden sm:inline">{% translate "Suspend" %}</span>
+                  {% else %}
+                    <svg class="size-3.5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polygon points="10 8 16 12 10 16 10 8"/>
+                    </svg>
+                    <span class="hidden sm:inline">{% translate "Activate" %}</span>
+                  {% endif %}
+                </button>
+              </form>
+
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                title="{% translate 'Delete account' %}"
+                onclick="document.getElementById('delete-modal-{{ forloop.counter }}').showModal()"
+              >
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 6h18"/>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                </svg>
+              </button>
+
+              <!-- Deletion Confirmation Dialog -->
+              <dialog id="delete-modal-{{ forloop.counter }}" class="modal">
+                <div class="modal-box text-left max-w-md">
+                  <h3 class="font-bold text-lg text-error flex items-center gap-2">
+                    <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                      <line x1="12" x2="12" y1="9" y2="13"/>
+                      <line x1="12" x2="12.01" y1="17" y2="17"/>
+                    </svg>
+                    {% translate "Confirm Account Deletion" %}
+                  </h3>
+                  <p class="py-4 text-sm text-base-content/80 leading-relaxed">
+                    {% blocktranslate with email=account.email %}Are you sure you want to permanently delete the mailbox <strong>{{ email }}</strong>? All stored emails and configurations for this account may be lost.{% endblocktranslate %}
+                  </p>
+                  <div class="modal-action">
+                    <form method="dialog">
+                      <button class="btn btn-ghost btn-sm">{% translate "Cancel" %}</button>
+                    </form>
+                    <form action="{% url 'mailadmin:account_delete' account.email %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-error btn-sm font-semibold">
+                        {% translate "Yes, delete account" %}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                  <button>{% translate "close" %}</button>
+                </form>
+              </dialog>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" class="py-12 text-center text-base-content/60">
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <svg class="size-8 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <p class="text-sm font-medium">{% translate "No mail accounts found matching your query." %}</p>
+              {% if q %}
+                <a href="{% url 'mailadmin:accounts' %}" class="btn btn-ghost btn-xs text-primary">
+                  {% translate "Clear search" %}
+                </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

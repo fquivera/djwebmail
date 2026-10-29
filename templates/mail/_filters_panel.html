@@ -1,0 +1,201 @@
+{% load i18n %}
+<div id="filters-panel" class="card bg-base-100 border border-base-300 shadow-sm">
+  <div class="card-body p-4 sm:p-6 space-y-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-base-300 pb-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-bold text-base-content">{% translate "Filters" %}</h2>
+          {% if is_synced %}
+            <span class="badge badge-success badge-sm gap-1" title="{% translate 'Synchronized with ManageSieve server' %}">
+              <span class="size-1.5 rounded-full bg-base-100"></span>
+              ManageSieve
+            </span>
+          {% else %}
+            <span class="badge badge-warning badge-sm gap-1" title="{% translate 'Saved in database fallback mode' %}">
+              <span class="size-1.5 rounded-full bg-base-100"></span>
+              {% translate "Database Fallback" %}
+            </span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-base-content/60 mt-0.5">
+          {% translate "Note: filter rule changes are saved immediately" %}
+        </p>
+      </div>
+
+      {% if status_message %}
+        <div class="alert alert-success py-1 px-3 text-xs w-auto">
+          <span>{{ status_message }}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs tabs-bordered">
+      <button
+        type="button"
+        class="tab {% if active_tab == 'incoming' %}tab-active font-semibold text-primary border-primary{% endif %}"
+        hx-get="{% url 'mail:filters_panel' %}?tab=incoming"
+        hx-target="#filters-panel"
+      >
+        {% translate "Incoming email filters" %}
+      </button>
+      <button
+        type="button"
+        class="tab {% if active_tab == 'outgoing' %}tab-active font-semibold text-primary border-primary{% endif %}"
+        hx-get="{% url 'mail:filters_panel' %}?tab=outgoing"
+        hx-target="#filters-panel"
+      >
+        {% translate "Outgoing email filters" %}
+      </button>
+    </div>
+
+    <!-- Main Two-Column Layout with Center Buttons -->
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
+      <!-- Left Column: Filtros activos -->
+      <div class="space-y-1.5 flex flex-col">
+        <div class="text-xs font-semibold uppercase tracking-wider text-base-content/70">
+          {% translate "Active filters" %}
+        </div>
+        <div
+          class="filter-listbox border border-base-300 rounded-box p-1.5 h-72 overflow-y-auto bg-base-100/50 flex flex-col gap-1 focus:outline-none focus:border-primary"
+          tabindex="0"
+          data-filter-column="active"
+          aria-label="{% translate 'Active filters' %}"
+        >
+          {% for rule in active_rules %}
+            <button
+              type="button"
+              class="filter-item text-left px-3 py-2 rounded-btn text-xs hover:bg-base-200 transition-colors w-full flex items-center justify-between border border-transparent"
+              data-rule-id="{{ rule.id }}"
+              data-rule-name="{{ rule.name }}"
+              data-rule-column="active"
+            >
+              <span class="font-medium truncate">{{ rule.name }}</span>
+              <span class="badge badge-xs badge-success shrink-0">{% translate "Active" %}</span>
+            </button>
+          {% empty %}
+            <div class="p-6 text-center text-xs text-base-content/40 italic flex-1 flex items-center justify-center">
+              {% translate "No active filters" %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Center Column: Actions -->
+      <div class="flex flex-row md:flex-col justify-center items-center gap-2 py-2 shrink-0">
+        <button
+          type="button"
+          id="btn-filter-add"
+          class="btn btn-outline btn-primary btn-sm w-full md:w-32"
+          disabled
+          data-action-btn="add"
+          title="{% translate 'Activate selected filter' %}"
+        >
+          « {% translate "Add" %}
+        </button>
+
+        <button
+          type="button"
+          id="btn-filter-remove"
+          class="btn btn-outline btn-error btn-sm w-full md:w-32"
+          disabled
+          data-action-btn="remove"
+          title="{% translate 'Deactivate selected filter' %}"
+        >
+          {% translate "Remove" %} »
+        </button>
+
+        <button
+          type="button"
+          id="btn-filter-edit"
+          class="btn btn-outline btn-sm w-full md:w-32"
+          disabled
+          data-action-btn="edit"
+          title="{% translate 'Edit selected filter' %}"
+        >
+          {% translate "Edit" %}
+        </button>
+
+        <button
+          type="button"
+          id="btn-filter-apply"
+          class="btn btn-outline btn-sm w-full md:w-32"
+          data-action-btn="apply"
+          title="{% translate 'Apply and synchronize filter rules' %}"
+        >
+          {% translate "Apply" %}
+        </button>
+
+        <button
+          type="button"
+          id="btn-filter-delete"
+          class="btn btn-outline btn-sm w-full md:w-32 text-error hover:bg-error hover:text-error-content"
+          disabled
+          data-action-btn="delete"
+          title="{% translate 'Delete selected filter' %}"
+        >
+          {% translate "Delete" %}
+        </button>
+
+        <button
+          type="button"
+          id="btn-filter-create"
+          class="btn btn-primary btn-sm w-full md:w-32"
+          data-action-btn="create"
+          title="{% translate 'Create new filter' %}"
+        >
+          {% translate "Create" %}
+        </button>
+      </div>
+
+      <!-- Right Column: Filtros disponibles -->
+      <div class="space-y-1.5 flex flex-col">
+        <div class="text-xs font-semibold uppercase tracking-wider text-base-content/70">
+          {% translate "Available filters" %}
+        </div>
+        <div
+          class="filter-listbox border border-base-300 rounded-box p-1.5 h-72 overflow-y-auto bg-base-100/50 flex flex-col gap-1 focus:outline-none focus:border-primary"
+          tabindex="0"
+          data-filter-column="available"
+          aria-label="{% translate 'Available filters' %}"
+        >
+          {% for rule in available_rules %}
+            <button
+              type="button"
+              class="filter-item text-left px-3 py-2 rounded-btn text-xs hover:bg-base-200 transition-colors w-full flex items-center justify-between border border-transparent"
+              data-rule-id="{{ rule.id }}"
+              data-rule-name="{{ rule.name }}"
+              data-rule-column="available"
+            >
+              <span class="truncate">{{ rule.name }}</span>
+              <span class="badge badge-xs badge-ghost shrink-0">{% translate "Disabled" %}</span>
+            </button>
+          {% empty %}
+            <div class="p-6 text-center text-xs text-base-content/40 italic flex-1 flex items-center justify-center">
+              {% translate "No available filters" %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden form for dispatching list actions -->
+    <form
+      id="filters-action-form"
+      method="post"
+      action="{% url 'mail:filters_action' %}"
+      hx-post="{% url 'mail:filters_action' %}"
+      hx-target="#filters-panel"
+      class="hidden"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="tab" value="{{ active_tab }}">
+      <input type="hidden" name="action" id="filter-action-type" value="">
+      <input type="hidden" name="rule_id" id="filter-selected-rule-id" value="">
+    </form>
+
+    <!-- Modal Host -->
+    <div id="filter-modal-container"></div>
+  </div>
+</div>

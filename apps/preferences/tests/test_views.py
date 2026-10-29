@@ -78,6 +78,8 @@ def valid_data(**overrides: str) -> dict[str, str]:
         "theme": Theme.DARK,
         "density": Density.COMFORTABLE,
         "page_size": "25",
+        "notifications_enabled": "on",
+        "notification_sound_enabled": "on",
     }
     data.update(overrides)
     return data
@@ -104,6 +106,8 @@ def test_settings_renders_full_page(
     assert b'name="theme"' in response.content
     assert b'name="density"' in response.content
     assert b'name="page_size"' in response.content
+    assert b'name="notifications_enabled"' in response.content
+    assert b'name="notification_sound_enabled"' in response.content
     assert b'aria-describedby="id_page_size_help"' in response.content
     assert b'id="id_page_size_help"' in response.content
 
@@ -176,6 +180,8 @@ def test_settings_htmx_save_returns_partial_and_trigger(
     assert trigger["mail:preference-changed"] == {
         "theme": Theme.DARK,
         "density": Density.COMFORTABLE,
+        "notifications_enabled": True,
+        "notification_sound_enabled": True,
     }
     assert response["HX-Refresh"] == "true"
 
@@ -192,6 +198,8 @@ def test_settings_save_updates_session(
     assert session["mail_density"] == Density.COMFORTABLE
     assert session["mail_timezone"] == "Europe/Madrid"
     assert session["mail_page_size"] == 25
+    assert session["mail_notifications_enabled"] is True
+    assert session["mail_notification_sound_enabled"] is True
 
 
 def test_settings_invalid_htmx_save_returns_200_with_errors(
@@ -363,3 +371,20 @@ def test_password_change_succeeds_and_renders_success_alert(
     assert response.status_code == 200
     assert changed == {"current": "secret", "new": "NewStrongPassword!2026"}
     assert b"Password changed successfully." in response.content
+
+
+def test_settings_renders_section_dropdown_and_switches_section(
+    logged_in_client: Client,
+    preference: MailPreference,
+) -> None:
+    response: Any = logged_in_client.get(reverse("preferences:index"))
+    assert response.status_code == 200
+    assert b'id="settings-section-selector"' in response.content
+    assert b'id="section-preferences"' in response.content
+    assert b'id="section-password"' in response.content
+
+    resp_pass: Any = logged_in_client.get(reverse("preferences:index") + "?section=password")
+    assert resp_pass.status_code == 200
+    content = resp_pass.content.decode("utf-8")
+    assert 'id="settings-section-selector"' in content
+    assert 'value="password" selected' in content

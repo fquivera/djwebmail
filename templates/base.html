@@ -1,4 +1,4 @@
-{% load i18n tailwind_tags %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
+{% load i18n static tailwind_tags %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
 <html
   lang="{{ LANGUAGE_CODE }}"
   class="h-full"
@@ -9,58 +9,108 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}DjWebmail{% endblock %}</title>
+    {% if corporate_identity.effective_favicon_url %}
+      <link rel="icon" href="{{ corporate_identity.effective_favicon_url }}">
+    {% endif %}
     {% tailwind_css %}
     {% block head %}{% endblock %}
   </head>
   <body
     class="flex min-h-screen flex-col bg-base-200 font-sans text-base-content antialiased {% block body_class %}{% endblock %}"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+    data-notifications-enabled="{{ request.session.mail_notifications_enabled|default:True|yesno:'true,false' }}"
+    data-notification-sound-enabled="{{ request.session.mail_notification_sound_enabled|default:True|yesno:'true,false' }}"
   >
     <a
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-base-100 focus:px-3 focus:py-2 focus:text-sm focus:shadow"
       href="#main-content"
     >{% translate "Skip to main content" %}</a>
-    <header class="border-b border-base-300 bg-base-100 shrink-0">
-      <nav class="navbar w-full gap-2 px-3 sm:px-4" aria-label="{% translate 'Main navigation' %}">
-        <div class="flex-1">
-          <a class="btn btn-ghost gap-2 px-2 text-xl font-semibold tracking-tight" href="{% url 'home' %}">
-            <svg class="size-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect width="20" height="16" x="2" y="4" rx="2"/>
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-            </svg>
-            <span>DjWebmail</span>
+    <header class="sticky top-0 z-30 border-b border-base-300 bg-base-100/95 backdrop-blur-sm shrink-0">
+      <nav class="navbar min-h-12 w-full gap-1 sm:gap-2 px-2.5 sm:px-4" aria-label="{% translate 'Main navigation' %}">
+        <div class="flex-1 min-w-0">
+          <a class="btn btn-ghost btn-sm sm:btn-md gap-2 px-1.5 sm:px-2 text-lg sm:text-xl font-semibold tracking-tight truncate max-w-full" href="{% url 'home' %}">
+            {% if corporate_identity.effective_logo_light_url %}
+              <img src="{{ corporate_identity.effective_logo_light_url }}" alt="{{ corporate_identity.organization_name|default:'Logo' }}" class="h-6 sm:h-7 w-auto max-w-36 sm:max-w-48 object-contain shrink-0">
+            {% elif corporate_identity.organization_name %}
+              <svg class="size-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <span class="truncate">{{ corporate_identity.organization_name }}</span>
+            {% else %}
+              <svg class="size-5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <span class="inline-flex tracking-tight font-bold">
+                <span class="brand-dj">Dj</span><span class="brand-webmail">Webmail</span>
+              </span>
+            {% endif %}
           </a>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
           {% if request.session.mail_email %}
             {% include "partials/_navbar_identity.html" %}
-            <a class="btn btn-ghost btn-sm gap-1.5" href="{% url 'contacts:index' %}" title="{% translate 'Contacts' %}">
-              <svg class="size-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <a class="btn btn-ghost btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 whitespace-nowrap" href="{% url 'mail:index' %}" title="{% translate 'Mail' %}">
+              <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <span class="hidden md:inline">{% translate "Mail" %}</span>
+            </a>
+            {% if is_mail_admin %}
+              <a class="btn btn-primary btn-soft btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 font-medium whitespace-nowrap" href="{% url 'mailadmin:index' %}" title="{% translate 'Administration' %}">
+                <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span class="hidden md:inline">{% translate "Administration" %}</span>
+              </a>
+            {% endif %}
+            <a class="btn btn-ghost btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 whitespace-nowrap" href="{% url 'contacts:index' %}" title="{% translate 'Contacts' %}">
+              <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
-              <span class="hidden sm:inline">{% translate "Contacts" %}</span>
+              <span class="hidden md:inline">{% translate "Contacts" %}</span>
             </a>
-            <a class="btn btn-ghost btn-sm gap-1.5" href="{% url 'preferences:index' %}" title="{% translate 'Settings' %}">
-              <svg class="size-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <a class="btn btn-ghost btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 whitespace-nowrap" href="{% url 'preferences:index' %}" title="{% translate 'Settings' %}">
+              <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span class="hidden sm:inline">{% translate "Settings" %}</span>
+              <span class="hidden md:inline">{% translate "Settings" %}</span>
             </a>
-            <form action="{% url 'accounts:logout' %}" method="post">
+            <form action="{% url 'accounts:logout' %}" method="post" class="inline-flex shrink-0">
               {% csrf_token %}
-              <button class="btn btn-ghost btn-sm gap-1.5" type="submit" title="{% translate 'Sign out' %}">
-                <svg class="size-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <button class="btn btn-ghost btn-sm shrink-0 gap-1.5 px-2.5 sm:px-3 whitespace-nowrap" type="submit" title="{% translate 'Sign out' %}">
+                <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" x2="9" y1="12" y2="12"/>
                 </svg>
-                <span class="hidden sm:inline">{% translate "Sign out" %}</span>
+                <span class="hidden md:inline">{% translate "Sign out" %}</span>
               </button>
             </form>
+          {% elif user.is_authenticated and is_mail_admin %}
+            <div class="flex items-center gap-1.5 sm:gap-2">
+              <span class="badge badge-neutral badge-sm font-medium hidden sm:inline-flex">{{ user.get_username }}</span>
+              <a class="btn btn-primary btn-soft btn-sm gap-1.5 px-2.5 sm:px-3 font-medium" href="{% url 'mailadmin:index' %}" title="{% translate 'Administration' %}">
+                <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span class="hidden md:inline">{% translate "Administration" %}</span>
+              </a>
+              <form action="{% url 'admin:logout' %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-ghost btn-sm gap-1.5 px-2.5 sm:px-3" type="submit" title="{% translate 'Sign out' %}">
+                  <span class="hidden md:inline">{% translate "Sign out" %}</span>
+                </button>
+              </form>
+            </div>
           {% else %}
             <a class="btn btn-primary btn-sm" href="{% url 'accounts:login' %}">{% translate "Sign in" %}</a>
           {% endif %}
@@ -80,6 +130,22 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    {% block footer %}
+      {% include "partials/_footer.html" %}
+    {% endblock %}
+    {% include "partials/_about_dialog.html" %}
+    <script defer src="{% static 'js/dialog.js' %}"></script>
+    {% if request.session.mail_email %}
+      <div
+        id="notification-poller"
+        hx-get="{% url 'mail:check_notifications' %}"
+        hx-trigger="load, every 45s"
+        hx-swap="none"
+        class="hidden"
+        aria-hidden="true"
+      ></div>
+      <script defer src="{% static 'js/notifications.js' %}"></script>
+    {% endif %}
     {% block scripts %}{% endblock %}
   </body>
 </html>
