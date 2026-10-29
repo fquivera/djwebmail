@@ -33,3 +33,15 @@ def test_corporate_identity_save_enforces_pk_1() -> None:
     identity.save()
     assert identity.pk == 1
     assert str(identity) == "Test Enterprise"
+
+
+def test_corporate_identity_get_solo_db_error_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    from django.db import ProgrammingError
+
+    def mock_get_or_create(*args: Any, **kwargs: Any) -> Any:
+        raise ProgrammingError('relation "mailadmin_corporateidentity" does not exist')
+
+    monkeypatch.setattr(cast(Any, CorporateIdentity).objects, "get_or_create", mock_get_or_create)
+    identity = CorporateIdentity.get_solo()
+    assert identity.pk == 1
+    assert identity.organization_name == ""

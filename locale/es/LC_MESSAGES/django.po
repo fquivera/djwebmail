@@ -1293,6 +1293,9 @@ msgstr "Identidad Predeterminada"
 msgid "Default (DjWebmail)"
 msgstr "Predeterminada (DjWebmail)"
 
+msgid "Database table is not available. Please run migrations."
+msgstr "La tabla de la base de datos no está disponible. Ejecute las migraciones."
+
 
 
 

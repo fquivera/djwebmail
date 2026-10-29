@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from django.db import models
+from django.db import DatabaseError, OperationalError, ProgrammingError, models
 from django.utils.translation import gettext_lazy as _
 
 
@@ -109,6 +109,13 @@ class CorporateIdentity(models.Model):
 
     @classmethod
     def get_solo(cls) -> CorporateIdentity:
-        """Retrieve the singleton instance or create a default one."""
-        instance, _ = cast(Any, cls).objects.get_or_create(pk=1)
-        return cast(CorporateIdentity, instance)
+        """Retrieve the singleton instance or create a default one.
+
+        Falls back gracefully to an unsaved default instance if the database table
+        has not been migrated yet (e.g. during initial setup or rolling deploys).
+        """
+        try:
+            instance, _ = cast(Any, cls).objects.get_or_create(pk=1)
+            return cast(CorporateIdentity, instance)
+        except (DatabaseError, ProgrammingError, OperationalError):
+            return cls(pk=1)

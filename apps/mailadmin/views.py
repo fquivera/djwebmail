@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from django.contrib import messages
+from django.db import DatabaseError, OperationalError, ProgrammingError
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -46,8 +47,13 @@ class CorporateIdentityView(MailAdminRequiredMixin, FormView):
         return context
 
     def form_valid(self, form: CorporateIdentityForm) -> HttpResponse:
-        form.save()
-        messages.success(self.request, _("Corporate identity settings saved successfully."))
+        try:
+            form.save()
+            messages.success(self.request, _("Corporate identity settings saved successfully."))
+            saved = True
+        except (DatabaseError, ProgrammingError, OperationalError):
+            form.add_error(None, _("Database table is not available. Please run migrations."))
+            saved = False
 
         if self.request.headers.get("HX-Request") == "true":
             response = render(
@@ -56,11 +62,16 @@ class CorporateIdentityView(MailAdminRequiredMixin, FormView):
                 {
                     "form": form,
                     "identity": form.instance,
-                    "saved": True,
+                    "saved": saved,
                 },
+                status=200 if saved else 422,
             )
-            response["HX-Trigger"] = "brandingUpdated"
+            if saved:
+                response["HX-Trigger"] = "brandingUpdated"
             return response
+
+        if not saved:
+            return self.form_invalid(form)
 
         return cast(HttpResponse, super().form_valid(form))
 
