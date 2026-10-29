@@ -34,31 +34,31 @@
         <div class="flex items-center gap-1 sm:gap-2">
           {% if request.session.mail_email %}
             {% include "partials/_navbar_identity.html" %}
-            <a class="btn btn-ghost btn-sm btn-square sm:btn-auto sm:px-3 gap-1.5" href="{% url 'contacts:index' %}" title="{% translate 'Contacts' %}">
-              <svg class="size-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <a class="btn btn-ghost btn-sm gap-1.5 px-2.5 sm:px-3" href="{% url 'contacts:index' %}" title="{% translate 'Contacts' %}">
+              <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
-              <span class="hidden sm:inline">{% translate "Contacts" %}</span>
+              <span class="hidden md:inline">{% translate "Contacts" %}</span>
             </a>
-            <a class="btn btn-ghost btn-sm btn-square sm:btn-auto sm:px-3 gap-1.5" href="{% url 'preferences:index' %}" title="{% translate 'Settings' %}">
-              <svg class="size-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <a class="btn btn-ghost btn-sm gap-1.5 px-2.5 sm:px-3" href="{% url 'preferences:index' %}" title="{% translate 'Settings' %}">
+              <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span class="hidden sm:inline">{% translate "Settings" %}</span>
+              <span class="hidden md:inline">{% translate "Settings" %}</span>
             </a>
             <form action="{% url 'accounts:logout' %}" method="post">
               {% csrf_token %}
-              <button class="btn btn-ghost btn-sm btn-square sm:btn-auto sm:px-3 gap-1.5" type="submit" title="{% translate 'Sign out' %}">
-                <svg class="size-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <button class="btn btn-ghost btn-sm gap-1.5 px-2.5 sm:px-3" type="submit" title="{% translate 'Sign out' %}">
+                <svg class="size-4 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" x2="9" y1="12" y2="12"/>
                 </svg>
-                <span class="hidden sm:inline">{% translate "Sign out" %}</span>
+                <span class="hidden md:inline">{% translate "Sign out" %}</span>
               </button>
             </form>
           {% else %}
