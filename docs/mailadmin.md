@@ -30,3 +30,33 @@ Corporate branding is represented by the `CorporateIdentity` singleton model (`a
 - Header: Displays `organization_name` next to the DjWebmail brand.
 - Admin button: Rendered conditionally for administrators in the top navigation bar.
 - Footer: Kept strictly exclusive to the DjWebmail project copyright.
+
+## 3. Mail Accounts & Storage Quotas
+
+Mailbox provisioning and quota limits are managed through the `/mailadmin/accounts/` interface, backed by interchangeable drivers (`apps.mailadmin.drivers`):
+
+### Supported Storage Drivers
+
+1. **Database Driver (`DatabaseMailAccountDriver`)**:
+   - Stores mailboxes in the `ManagedMailbox` model.
+   - Computes `{SHA512-CRYPT}` password hashes matching Dovecot / Linux crypt standards.
+   - Ideal for standalone or containerized deployments managing accounts in PostgreSQL or SQLite.
+
+2. **File Driver (`FileMailAccountDriver`)**:
+   - Manages accounts directly in `postfix-accounts.cf` and `dovecot-quotas.cf` (compatible with `docker-mailserver` and standard Dovecot setups).
+   - Supports atomic writes using `NamedTemporaryFile` + `os.replace`.
+   - Handles account suspension by commenting entries (`#user@domain.com|{SHA512-CRYPT}...`).
+
+### Configuration
+
+- `DJANGO_MAIL_ADMIN_DRIVER`: Driver mode: `"auto"` (default), `"database"`, or `"file"`.
+  - In `"auto"` mode, uses `FileMailAccountDriver` if `DJANGO_MAIL_ACCOUNTS_FILE` is set and the file exists; otherwise defaults to `DatabaseMailAccountDriver`.
+- `DJANGO_MAIL_ACCOUNTS_FILE`: Absolute path to `postfix-accounts.cf`.
+
+### Features & Capabilities
+
+- **Account Listing & Search**: Real-time search by email or domain with live HTMX filtering.
+- **Quota Management**: Storage limits configurable in MB, GB, or Unlimited, formatted cleanly across all views.
+- **Password Policies**: Enforces OWASP/NIST minimum complexity rules (length, uppercase, lowercase, numbers, symbols, no username).
+- **Status Lifecycle**: Suspend, activate, or permanently delete mailboxes with native modal confirmation.
+

@@ -7,6 +7,8 @@ from typing import Any
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from apps.accounts.services.password import validate_password_rules
+from apps.mailadmin.drivers.factory import get_account_driver
 from apps.mailadmin.models import CorporateIdentity
 
 
@@ -188,5 +190,191 @@ class CorporateIdentityForm(forms.ModelForm):
                 }
                 self.add_error(file_key, msg)
                 self.add_error(url_key, msg)
+
+        return cleaned_data
+
+
+class MailboxCreateForm(forms.Form):
+    """Form to provision a new email account with credentials and quota."""
+
+    email = forms.EmailField(
+        label=_("Email address"),
+        widget=forms.EmailInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": "user@example.com",
+                "autocomplete": "off",
+            }
+        ),
+    )
+    password = forms.CharField(
+        label=_("Password"),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": "••••••••••••",
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+    confirm_password = forms.CharField(
+        label=_("Confirm password"),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": "••••••••••••",
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+    quota_amount = forms.IntegerField(
+        label=_("Quota limit"),
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "input w-32",
+                "placeholder": "2",
+            }
+        ),
+    )
+    quota_unit = forms.ChoiceField(
+        label=_("Unit"),
+        choices=[
+            ("MB", "MB"),
+            ("GB", "GB"),
+            ("UNLIMITED", _("Unlimited")),
+        ],
+        initial="GB",
+        widget=forms.Select(attrs={"class": "select"}),
+    )
+    is_active = forms.BooleanField(
+        label=_("Active account"),
+        initial=True,
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+    )
+
+    def clean_email(self) -> str:
+        email = self.cleaned_data["email"].strip().lower()
+        if "@" not in email:
+            raise forms.ValidationError(_("Enter a valid email address with domain."))
+
+        driver = get_account_driver()
+        if driver.get_account(email) is not None:
+            raise forms.ValidationError(_("An account with this email address already exists."))
+        return email
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        email = cleaned_data.get("email") or ""
+        password = cleaned_data.get("password") or ""
+        confirm = cleaned_data.get("confirm_password") or ""
+
+        if password:
+            errors = validate_password_rules(password, email=email)
+            if errors:
+                self.add_error("password", errors[0])
+
+            if password != confirm:
+                self.add_error("confirm_password", _("Passwords do not match."))
+
+        unit = cleaned_data.get("quota_unit")
+        amount = cleaned_data.get("quota_amount")
+        if unit == "UNLIMITED":
+            cleaned_data["quota_bytes"] = None
+        elif amount:
+            if unit == "MB":
+                cleaned_data["quota_bytes"] = amount * 1024 * 1024
+            elif unit == "GB":
+                cleaned_data["quota_bytes"] = amount * 1024 * 1024 * 1024
+        else:
+            cleaned_data["quota_bytes"] = None
+
+        return cleaned_data
+
+
+class MailboxEditForm(forms.Form):
+    """Form to edit quota, active status, or reset password of an existing mailbox."""
+
+    password = forms.CharField(
+        label=_("New password (optional)"),
+        required=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": _("Leave blank to keep unchanged"),
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+    confirm_password = forms.CharField(
+        label=_("Confirm new password"),
+        required=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": _("Leave blank to keep unchanged"),
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+    quota_amount = forms.IntegerField(
+        label=_("Quota limit"),
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "input w-32",
+                "placeholder": "2",
+            }
+        ),
+    )
+    quota_unit = forms.ChoiceField(
+        label=_("Unit"),
+        choices=[
+            ("MB", "MB"),
+            ("GB", "GB"),
+            ("UNLIMITED", _("Unlimited")),
+        ],
+        widget=forms.Select(attrs={"class": "select"}),
+    )
+    is_active = forms.BooleanField(
+        label=_("Active account"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+    )
+
+    def __init__(self, *args: Any, email: str = "", **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.target_email = email
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password") or ""
+        confirm = cleaned_data.get("confirm_password") or ""
+
+        if password:
+            errors = validate_password_rules(password, email=self.target_email)
+            if errors:
+                self.add_error("password", errors[0])
+
+            if password != confirm:
+                self.add_error("confirm_password", _("Passwords do not match."))
+
+        unit = cleaned_data.get("quota_unit")
+        amount = cleaned_data.get("quota_amount")
+        if unit == "UNLIMITED":
+            cleaned_data["quota_bytes"] = None
+            cleaned_data["clear_quota"] = True
+        elif amount:
+            if unit == "MB":
+                cleaned_data["quota_bytes"] = amount * 1024 * 1024
+            elif unit == "GB":
+                cleaned_data["quota_bytes"] = amount * 1024 * 1024 * 1024
+            cleaned_data["clear_quota"] = False
+        else:
+            cleaned_data["quota_bytes"] = None
+            cleaned_data["clear_quota"] = True
 
         return cleaned_data

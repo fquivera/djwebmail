@@ -1365,6 +1365,217 @@ msgstr "Inicie sesión para acceder a su cuenta de correo."
 msgid "Need help?"
 msgstr "¿Necesita ayuda?"
 
+msgid "Managed mailbox"
+msgstr "Buzón gestionado"
+
+msgid "Managed mailboxes"
+msgstr "Buzones gestionados"
+
+msgid "Email address"
+msgstr "Dirección de correo electrónico"
+
+msgid "Password hash"
+msgstr "Hash de contraseña"
+
+msgid "Storage quota (bytes)"
+msgstr "Cuota de almacenamiento (bytes)"
+
+msgid "Active"
+msgstr "Activa"
+
+msgid "Designates whether this mailbox is allowed to authenticate and receive messages."
+msgstr "Indica si este buzón tiene permiso para autenticarse y recibir mensajes."
+
+msgid "Storage space limit in bytes. Leave empty for unlimited quota."
+msgstr "Límite de espacio de almacenamiento en bytes. Dejar en blanco para cuota ilimitada."
+
+msgid "Full email address of the account (e.g. user@domain.com)."
+msgstr "Dirección de correo completa de la cuenta (ej. usuario@dominio.com)."
+
+msgid "Unlimited"
+msgstr "Ilimitado"
+
+msgid "Mail accounts table"
+msgstr "Tabla de cuentas de correo"
+
+msgid "Account / Mailbox"
+msgstr "Cuenta / Buzón"
+
+msgid "Assigned quota"
+msgstr "Cuota asignada"
+
+msgid "Actions"
+msgstr "Acciones"
+
+msgid "Edit mailbox"
+msgstr "Editar buzón"
+
+msgid "Suspend account"
+msgstr "Suspender cuenta"
+
+msgid "Activate account"
+msgstr "Activar cuenta"
+
+msgid "Suspend"
+msgstr "Suspender"
+
+msgid "Activate"
+msgstr "Activar"
+
+msgid "Delete account"
+msgstr "Eliminar cuenta"
+
+msgid "Confirm Account Deletion"
+msgstr "Confirmar eliminación de cuenta"
+
+#, python-format
+msgid "Are you sure you want to permanently delete the mailbox <strong>%(email)s</strong>? All stored emails and configurations for this account may be lost."
+msgstr "¿Está seguro de que desea eliminar permanentemente el buzón <strong>%(email)s</strong>? Todos los correos y configuraciones de esta cuenta podrían perderse."
+
+msgid "Yes, delete account"
+msgstr "Sí, eliminar cuenta"
+
+msgid "No mail accounts found matching your query."
+msgstr "No se encontraron cuentas de correo que coincidan con su búsqueda."
+
+msgid "Clear search"
+msgstr "Limpiar búsqueda"
+
+msgid "Mail Accounts & Quotas"
+msgstr "Cuentas y cuotas de correo"
+
+msgid "Accounts & Quotas"
+msgstr "Cuentas y cuotas"
+
+msgid "Mail Accounts & Storage Quotas"
+msgstr "Cuentas de correo y cuotas de almacenamiento"
+
+msgid "Provision mailboxes, assign storage disk quotas, reset passwords, and manage user statuses."
+msgstr "Aprovisione buzones, asigne cuotas de disco, restablezca contraseñas y gestione estados de usuario."
+
+msgid "New account"
+msgstr "Nueva cuenta"
+
+msgid "Total accounts"
+msgstr "Total cuentas"
+
+msgid "Active mailboxes"
+msgstr "Buzones activos"
+
+msgid "Allocated quota"
+msgstr "Cuota asignada"
+
+msgid "Search by email or domain..."
+msgstr "Buscar por correo o dominio..."
+
+msgid "Search mail accounts"
+msgstr "Buscar cuentas de correo"
+
+msgid "All"
+msgstr "Todas"
+
+msgid "Create Mail Account"
+msgstr "Crear cuenta de correo"
+
+#, python-format
+msgid "Edit %(email)s"
+msgstr "Editar %(email)s"
+
+msgid "Create New Mail Account"
+msgstr "Crear nueva cuenta de correo"
+
+#, python-format
+msgid "Edit Account: %(email)s"
+msgstr "Editar cuenta: %(email)s"
+
+msgid "Provision a new mailbox on the mail server with secure password and storage quota."
+msgstr "Aprovisione un nuevo buzón en el servidor con contraseña segura y cuota de almacenamiento."
+
+msgid "Update account quota limit, active status, or reset user password."
+msgstr "Actualice el límite de cuota, el estado activo o restablezca la contraseña del usuario."
+
+msgid "Must be a complete address including domain (e.g. user@yourdomain.com)."
+msgstr "Debe ser una dirección completa incluyendo el dominio (ej. usuario@sudominio.com)."
+
+msgid "Password Credentials"
+msgstr "Credenciales de contraseña"
+
+msgid "Reset Password (Optional)"
+msgstr "Restablecer contraseña (opcional)"
+
+msgid "Security guidelines (NIST/OWASP):"
+msgstr "Directrices de seguridad (NIST/OWASP):"
+
+msgid "Minimum 8 characters length."
+msgstr "Mínimo 8 caracteres de longitud."
+
+msgid "Must contain uppercase, lowercase, numbers, and symbols."
+msgstr "Debe contener mayúsculas, minúsculas, números y símbolos."
+
+msgid "Cannot contain username or repetitive sequences."
+msgstr "No puede contener el nombre de usuario ni secuencias repetitivas."
+
+msgid "Disk Storage Quota"
+msgstr "Cuota de almacenamiento en disco"
+
+msgid "Quota limit"
+msgstr "Límite de cuota"
+
+msgid "Select 'Unlimited' for unrestricted storage or specify a numerical limit in MB or GB."
+msgstr "Seleccione 'Ilimitado' para almacenamiento sin restricción o especifique un límite numérico en MB o GB."
+
+msgid "If disabled, the user cannot log in or authenticate over IMAP/SMTP."
+msgstr "Si está desactivado, el usuario no podrá iniciar sesión ni autenticarse en IMAP/SMTP."
+
+msgid "Create Mailbox"
+msgstr "Crear buzón"
+
+msgid "Save Changes"
+msgstr "Guardar cambios"
+
+msgid "Manage accounts"
+msgstr "Gestionar cuentas"
+
+msgid "Enter a valid email address with domain."
+msgstr "Ingrese una dirección de correo válida con dominio."
+
+msgid "An account with this email address already exists."
+msgstr "Ya existe una cuenta con esta dirección de correo electrónico."
+
+msgid "Passwords do not match."
+msgstr "Las contraseñas no coinciden."
+
+#, python-format
+msgid "Mail account '%(email)s' created successfully."
+msgstr "Cuenta de correo '%(email)s' creada exitosamente."
+
+#, python-format
+msgid "Mail account '%(email)s' not found."
+msgstr "Cuenta de correo '%(email)s' no encontrada."
+
+#, python-format
+msgid "Mail account '%(email)s' updated successfully."
+msgstr "Cuenta de correo '%(email)s' actualizada exitosamente."
+
+msgid "activated"
+msgstr "activada"
+
+msgid "suspended"
+msgstr "suspendida"
+
+#, python-format
+msgid "Mail account '%(email)s' has been %(status)s."
+msgstr "La cuenta de correo '%(email)s' ha sido %(status)s."
+
+#, python-format
+msgid "Mail account '%(email)s' deleted successfully."
+msgstr "Cuenta de correo '%(email)s' eliminada exitosamente."
+
+#, python-format
+msgid "Mail account '%(email)s' was not found."
+msgstr "No se encontró la cuenta de correo '%(email)s'."
+
+
 
 
 

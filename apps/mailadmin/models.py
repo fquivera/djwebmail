@@ -201,3 +201,89 @@ class CorporateIdentity(models.Model):
             return cast(CorporateIdentity, instance)
         except (DatabaseError, ProgrammingError, OperationalError):
             return cls(pk=1)
+
+
+class ManagedMailbox(models.Model):
+    """Managed email account and storage quota in the administration database."""
+
+    objects: Any = models.Manager()
+
+    email = cast(
+        str,
+        models.EmailField(
+            unique=True,
+            verbose_name=_("Email address"),
+            help_text=_("Full email address of the account (e.g. user@domain.com)."),
+        ),
+    )
+    password_hash = cast(
+        str,
+        models.CharField(
+            max_length=255,
+            verbose_name=_("Password hash"),
+            help_text=_("Cryptographic password hash (e.g. {SHA512-CRYPT})."),
+        ),
+    )
+    quota_bytes = cast(
+        int | None,
+        models.BigIntegerField(
+            null=True,
+            blank=True,
+            verbose_name=_("Storage quota (bytes)"),
+            help_text=str(
+                _("Storage space limit in bytes. Leave empty for unlimited quota.")
+            ),
+        ),
+    )
+    is_active = cast(
+        bool,
+        models.BooleanField(
+            default=True,  # pyright: ignore[reportArgumentType]
+            verbose_name=_("Active"),
+            help_text=str(
+                _("Designates whether this mailbox is allowed to authenticate and receive messages.")
+            ),
+        ),
+    )
+    created_at = cast(
+        Any,
+        models.DateTimeField(
+            auto_now_add=True,
+            verbose_name=_("Created at"),
+        ),
+    )
+    updated_at = cast(
+        Any,
+        models.DateTimeField(
+            auto_now=True,
+            verbose_name=_("Updated at"),
+        ),
+    )
+
+    class Meta:
+        verbose_name = _("Managed mailbox")
+        verbose_name_plural = _("Managed mailboxes")
+        ordering = ["email"]
+
+    def __str__(self) -> str:
+        return self.email
+
+    @property
+    def username(self) -> str:
+        return self.email.split("@")[0]
+
+    @property
+    def domain(self) -> str:
+        return self.email.split("@")[1] if "@" in self.email else ""
+
+    @property
+    def quota_display(self) -> str:
+        if self.quota_bytes is None:
+            return str(_("Unlimited"))
+        if self.quota_bytes >= 1024 * 1024 * 1024:
+            val = self.quota_bytes / (1024 * 1024 * 1024)
+            return f"{val:.1f} GB".replace(".0 GB", " GB")
+        if self.quota_bytes >= 1024 * 1024:
+            val = self.quota_bytes / (1024 * 1024)
+            return f"{val:.1f} MB".replace(".0 MB", " MB")
+        return f"{self.quota_bytes} B"
