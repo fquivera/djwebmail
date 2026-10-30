@@ -220,6 +220,16 @@ def test_apply_signature_adds_signature_block() -> None:
     assert "-- \nBest regards,\nUser" in initial["body"]
 
 
+def test_apply_signature_adds_html_signature_block() -> None:
+    html_sig = '<p><b>Alice</b><br><a href="https://example.com">Site</a></p>'
+    initial = apply_signature({"to": "bob@example.com"}, html_sig)
+
+    assert initial["to"] == "bob@example.com"
+    assert 'class="mail-signature"' in initial["body"]
+    assert "<b>Alice</b>" in initial["body"]
+    assert "-- <br>" in initial["body"]
+
+
 def test_append_to_sent_writes_to_sent_folder() -> None:
     class FakeImap:
         def __init__(self) -> None:

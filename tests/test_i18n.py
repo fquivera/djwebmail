@@ -30,6 +30,8 @@ def test_spanish_common_translations_rendered_accurately() -> None:
         assert translation.gettext("Preferences") == "Preferencias"
         assert translation.gettext("Out of office") == "Fuera de la oficina"
         assert translation.gettext("Save vacation settings") == "Guardar configuración de ausencia"
+        assert translation.gettext("Signatures") == "Firmas"
+        assert translation.gettext("Add signature") == "Añadir firma"
         assert (
             translation.gettext("Enter a valid email address.")
             == "Introduzca una dirección de correo electrónico válida."

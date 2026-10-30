@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any, cast
 
 from django.conf import settings
 from django.contrib import messages
@@ -10,7 +11,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.decorators.vary import vary_on_headers
 
 from apps.accounts.decorators import login_redirect, mail_login_required
@@ -20,9 +21,14 @@ from apps.accounts.services.session import load_mail_account
 from apps.mail.services.sieve_generator import VacationRule
 from apps.mail.services.sieve_storage import load_sieve_rules, load_vacation_rule
 from apps.mail.views import get_account_folder_choices
-from apps.preferences.forms import ChangePasswordForm, MailPreferenceForm
-from apps.preferences.models import MailPreference
-from apps.preferences.services import apply_mail_preference, get_mail_preference
+from apps.preferences.forms import AccountSignatureForm, ChangePasswordForm, MailPreferenceForm
+from apps.preferences.models import AccountSignature, MailPreference
+from apps.preferences.services import (
+    apply_mail_preference,
+    get_account_signatures,
+    get_mail_preference,
+    sync_default_signature_to_session,
+)
 
 
 @never_cache
@@ -94,12 +100,18 @@ def _render(
     folder_choices = []
     vacation_rule = VacationRule()
     vacation_synced = False
+    signatures = []
     if not htmx:
         account = getattr(request, "mail_account", None) or load_mail_account(request)
         if account:
             incoming_rules, outgoing_rules, is_synced = load_sieve_rules(request, account)
             vacation_rule, vacation_synced = load_vacation_rule(request, account)
             folder_choices = get_account_folder_choices(request)
+            signatures = get_account_signatures(
+                account.account_key,
+                email=account.email,
+                seed_from_pref=preference.signature_html,
+            )
     active_tab = request.GET.get("tab", "incoming")
     if active_tab not in {"incoming", "outgoing"}:
         active_tab = "incoming"
@@ -124,6 +136,7 @@ def _render(
         "vacation_rule": vacation_rule,
         "vacation_synced": vacation_synced,
         "folder_choices": folder_choices,
+        "signatures": signatures,
     }
     template = "preferences/_settings_form.html" if htmx else "preferences/index.html"
     return render(request, template, context, status=status)
@@ -172,3 +185,185 @@ def password_change_view(request: HttpRequest) -> HttpResponse:
     status = 200 if (saved or _is_htmx(request)) else 422
     template = "preferences/_password_form.html" if _is_htmx(request) else "preferences/index.html"
     return render(request, template, context, status=status)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def signatures_panel(request: HttpRequest) -> HttpResponse:
+    """Render the signatures management panel partial."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    pref = get_mail_preference(request)
+    signatures = get_account_signatures(
+        account.account_key,
+        email=account.email,
+        seed_from_pref=pref.signature_html,
+    )
+    context = {"signatures": signatures}
+    return render(request, "preferences/_signatures_panel.html", context)
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def signature_modal(request: HttpRequest) -> HttpResponse:
+    """Render the create or edit signature modal dialog."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    sig_id = request.GET.get("sig_id")
+    signature = None
+    if sig_id:
+        signature = (
+            cast(Any, AccountSignature)
+            .objects.filter(
+                account_key=account.account_key,
+                pk=sig_id,
+            )
+            .first()
+        )
+
+    form = AccountSignatureForm(instance=signature)
+    context = {
+        "form": form,
+        "signature": signature,
+        "is_edit": signature is not None,
+    }
+    return render(request, "preferences/_signature_modal.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def signature_save(request: HttpRequest) -> HttpResponse:
+    """Save a created or edited signature."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    sig_id = request.POST.get("sig_id")
+    instance = None
+    if sig_id:
+        instance = (
+            cast(Any, AccountSignature)
+            .objects.filter(
+                account_key=account.account_key,
+                pk=sig_id,
+            )
+            .first()
+        )
+
+    form = AccountSignatureForm(request.POST, instance=instance)
+    if not form.is_valid():
+        return render(
+            request,
+            "preferences/_signature_modal.html",
+            {"form": form, "signature": instance, "is_edit": instance is not None},
+            status=422 if not _is_htmx(request) else 200,
+        )
+
+    sig = form.save(commit=False)
+    sig.account_key = account.account_key
+    sig.email = account.email
+    existing_count = (
+        cast(Any, AccountSignature)
+        .objects.filter(
+            account_key=account.account_key,
+        )
+        .exclude(pk=sig.pk or 0)
+        .count()
+    )
+    if existing_count == 0:
+        sig.is_default = True
+    sig.save()
+    sync_default_signature_to_session(request)
+
+    signatures = get_account_signatures(account.account_key)
+    context = {
+        "signatures": signatures,
+        "status_message": _("Signature saved successfully."),
+    }
+    response = render(request, "preferences/_signatures_panel.html", context)
+    response["HX-Trigger"] = json.dumps({"mail:signature-saved": True})
+    return response
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def signature_set_default(request: HttpRequest, sig_id: int) -> HttpResponse:
+    """Mark a signature as the default for outgoing messages."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    sig = (
+        cast(Any, AccountSignature)
+        .objects.filter(
+            account_key=account.account_key,
+            pk=sig_id,
+        )
+        .first()
+    )
+    if sig:
+        sig.is_default = True
+        sig.is_active = True
+        sig.save()
+        sync_default_signature_to_session(request)
+
+    signatures = get_account_signatures(account.account_key)
+    context = {
+        "signatures": signatures,
+        "status_message": _("Default signature updated."),
+    }
+    return render(request, "preferences/_signatures_panel.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def signature_toggle_active(request: HttpRequest, sig_id: int) -> HttpResponse:
+    """Toggle the active status of a signature."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    sig = (
+        cast(Any, AccountSignature)
+        .objects.filter(
+            account_key=account.account_key,
+            pk=sig_id,
+        )
+        .first()
+    )
+    if sig:
+        sig.is_active = not sig.is_active
+        if not sig.is_active and sig.is_default:
+            sig.is_default = False
+        sig.save()
+        sync_default_signature_to_session(request)
+
+    signatures = get_account_signatures(account.account_key)
+    context = {"signatures": signatures}
+    return render(request, "preferences/_signatures_panel.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def signature_delete(request: HttpRequest, sig_id: int) -> HttpResponse:
+    """Delete a signature."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    cast(Any, AccountSignature).objects.filter(
+        account_key=account.account_key,
+        pk=sig_id,
+    ).delete()
+    sync_default_signature_to_session(request)
+
+    signatures = get_account_signatures(account.account_key)
+    context = {
+        "signatures": signatures,
+        "status_message": _("Signature deleted."),
+    }
+    return render(request, "preferences/_signatures_panel.html", context)

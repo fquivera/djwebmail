@@ -201,6 +201,13 @@ def append_to_sent(imap: ImapService, raw: bytes) -> bool:
     return True
 
 
+def is_signature_html(text: str) -> bool:
+    """Detect if the signature string contains rich HTML elements."""
+    markers = ("<p", "<div", "<br", "<span", "<table", "<b", "<i", "<a", "<ul", "<ol", "<img")
+    lower = text.lower()
+    return any(m in lower for m in markers)
+
+
 def apply_signature(initial: dict[str, str], signature: str) -> dict[str, str]:
     """Attach the account signature to the initial compose fields when non-empty."""
     clean_sig = signature.strip()
@@ -208,10 +215,18 @@ def apply_signature(initial: dict[str, str], signature: str) -> dict[str, str]:
         return initial
     updated = dict(initial)
     existing = updated.get("body", "").strip()
-    if existing:
-        updated["body"] = f"\n\n-- \n{clean_sig}\n\n{existing}"
+
+    if is_signature_html(clean_sig) or (existing and "<" in existing):
+        sig_block = f'<div class="mail-signature"><br>-- <br>{clean_sig}</div>'
+        if existing:
+            updated["body"] = f"{sig_block}<br><br>{existing}"
+        else:
+            updated["body"] = f"<p><br></p>{sig_block}"
     else:
-        updated["body"] = f"\n\n-- \n{clean_sig}"
+        if existing:
+            updated["body"] = f"\n\n-- \n{clean_sig}\n\n{existing}"
+        else:
+            updated["body"] = f"\n\n-- \n{clean_sig}"
     return updated
 
 

@@ -144,3 +144,42 @@ class MailPreference(models.Model):
 
         if errors:
             raise ValidationError(errors)
+
+
+class AccountSignature(models.Model):
+    """Stores multiple rich HTML signatures per account."""
+
+    account_key = cast(
+        str,
+        models.CharField(max_length=ACCOUNT_KEY_MAX_LENGTH, db_index=True),
+    )
+    email = cast(str, models.EmailField(db_index=True))
+    name = cast(str, models.CharField(max_length=100))
+    content_html = cast(str, models.TextField(blank=True, default=""))
+    is_default = cast(
+        bool,
+        models.BooleanField(default=False),  # pyright: ignore[reportArgumentType]
+    )
+    is_active = cast(
+        bool,
+        models.BooleanField(default=True),  # pyright: ignore[reportArgumentType]
+    )
+    created_at = cast(datetime, models.DateTimeField(auto_now_add=True))
+    updated_at = cast(datetime, models.DateTimeField(auto_now=True))
+
+    class Meta:
+        ordering = ["-is_default", "name"]
+        verbose_name = gettext_lazy("account signature")
+        verbose_name_plural = gettext_lazy("account signatures")
+
+    def __str__(self) -> str:
+        default_tag = " (default)" if self.is_default else ""
+        return f"{self.email} - {self.name}{default_tag}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.is_default:
+            cast(Any, AccountSignature).objects.filter(
+                account_key=self.account_key,
+                is_default=True,
+            ).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)

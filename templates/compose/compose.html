@@ -356,6 +356,52 @@
             <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
           </svg>
         </button>
+        {% if active_signatures %}
+          <div class="dropdown dropdown-top dropdown-end sm:dropdown-bottom shrink-0">
+            <button
+              type="button"
+              tabindex="0"
+              class="btn btn-ghost btn-xs gap-1"
+              title="{% translate 'Insert signature' %}"
+              @mousedown.prevent
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m18 2 4 4-14 14H4v-4L18 2z"/>
+                <path d="m14.5 5.5 4 4"/>
+              </svg>
+              <span class="hidden sm:inline text-xs">{% translate "Signature" %}</span>
+            </button>
+            <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-100 rounded-box z-50 w-52 p-2 shadow-lg border border-base-300">
+              <li class="menu-title text-[10px] uppercase font-bold text-base-content/60">
+                {% translate "Choose signature" %}
+              </li>
+              {% for sig in active_signatures %}
+                <li>
+                  <button
+                    type="button"
+                    class="flex items-center justify-between text-xs"
+                    @click="applySignature('{{ sig.id }}')"
+                  >
+                    <span class="truncate">{{ sig.name }}</span>
+                    {% if sig.is_default %}
+                      <span class="badge badge-xs badge-primary">{% translate "Default" %}</span>
+                    {% endif %}
+                  </button>
+                </li>
+              {% endfor %}
+              <div class="divider my-1"></div>
+              <li>
+                <button
+                  type="button"
+                  class="text-xs text-error"
+                  @click="removeSignature()"
+                >
+                  {% translate "Remove signature" %}
+                </button>
+              </li>
+            </ul>
+          </div>
+        {% endif %}
         <button type="button" class="btn btn-ghost btn-xs shrink-0" title="{% translate 'Clear formatting' %}" @mousedown.prevent @click="clearFormat()">
           <span class="text-xs font-mono">T<sub class="text-[9px]">x</sub></span>
         </button>
@@ -447,5 +493,13 @@
         <button>{% translate "Close" %}</button>
       </form>
     </dialog>
+
+    {% if active_signatures %}
+      <div class="hidden" aria-hidden="true">
+        {% for sig in active_signatures %}
+          <template id="sig-data-{{ sig.id }}">{{ sig.content_html|safe }}</template>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 {% endblock %}

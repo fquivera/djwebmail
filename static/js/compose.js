@@ -469,6 +469,36 @@
               return;
             }
           }
+        },
+        applySignature(sigId) {
+          var sigTpl = document.getElementById("sig-data-" + sigId);
+          if (!sigTpl || !this.$refs.editor) {
+            return;
+          }
+          var sigHtml = sigTpl.innerHTML || "";
+          if (!sigHtml) {
+            return;
+          }
+          var existing = this.$refs.editor.querySelector(".mail-signature");
+          if (existing) {
+            existing.innerHTML = "<br>-- <br>" + sigHtml;
+          } else {
+            var div = document.createElement("div");
+            div.className = "mail-signature";
+            div.innerHTML = "<br>-- <br>" + sigHtml;
+            this.$refs.editor.appendChild(div);
+          }
+          this.syncToTextarea();
+        },
+        removeSignature() {
+          if (!this.$refs.editor) {
+            return;
+          }
+          var existing = this.$refs.editor.querySelector(".mail-signature");
+          if (existing) {
+            existing.remove();
+            this.syncToTextarea();
+          }
         }
       };
     });

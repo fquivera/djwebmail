@@ -56,6 +56,9 @@
               <option value="vacation" {% if active_section == "vacation" %}selected{% endif %}>
                 {% translate "Out of office" %}
               </option>
+              <option value="signatures" {% if active_section == "signatures" %}selected{% endif %}>
+                {% translate "Signatures" %}
+              </option>
             </select>
           </div>
           <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
@@ -78,6 +81,10 @@
 
       <div id="section-vacation" class="space-y-4 {% if active_section != 'vacation' %}hidden{% endif %}">
         {% include "mail/_vacation_panel.html" %}
+      </div>
+
+      <div id="section-signatures" class="space-y-4 {% if active_section != 'signatures' %}hidden{% endif %}">
+        {% include "preferences/_signatures_panel.html" %}
       </div>
     </div>
   </section>
