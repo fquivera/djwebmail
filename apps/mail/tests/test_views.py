@@ -1239,6 +1239,24 @@ def test_message_view_renders_reply_all_and_details(
     assert b"Show details" in response.content
 
 
+def test_message_view_renders_edit_draft_in_drafts_folder(
+    logged_in_client: Client,
+    message_view_data: MessageDetail,
+) -> None:
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "Drafts", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert reverse("compose:edit_draft", kwargs={"folder_name": "Drafts", "uid": 7}).encode() in (
+        response.content
+    )
+    assert b"Edit draft" in response.content
+    assert reverse("compose:reply", kwargs={"folder_name": "Drafts", "uid": 7}).encode() not in (
+        response.content
+    )
+
+
 @pytest.mark.django_db
 def test_message_view_auto_loads_remote_images_when_preference_is_always(
     logged_in_client: Client,

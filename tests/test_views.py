@@ -68,3 +68,19 @@ def test_media_file_serving(client, settings):
     finally:
         if test_file.exists():
             test_file.unlink()
+
+
+@pytest.mark.django_db
+def test_brand_wordmark_colors_rendered_on_public_views(client):
+    brand_wordmark = '<span class="brand-dj">Dj</span><span class="brand-webmail">Webmail</span>'
+
+    res_home = client.get(reverse("home"))
+    assert res_home.status_code == 200
+    home_html = res_home.content.decode("utf-8")
+    assert brand_wordmark in home_html
+
+    res_login = client.get(reverse("accounts:login"))
+    assert res_login.status_code == 200
+    login_html = res_login.content.decode("utf-8")
+    assert brand_wordmark in login_html
+    assert 'id="about-dialog"' in login_html

@@ -4,6 +4,7 @@ IMAP_INBOX = "INBOX"
 FOLDER_FLAG_NOSELECT = "\\Noselect"
 MESSAGE_FLAG_SEEN = "\\Seen"
 MESSAGE_FLAG_FLAGGED = "\\Flagged"
+MESSAGE_FLAG_DRAFT = "\\Draft"
 
 # Search fields are intentionally bounded before they reach IMAP. They are domain
 # validation limits, not deployment settings.

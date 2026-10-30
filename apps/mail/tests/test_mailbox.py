@@ -17,6 +17,7 @@ from apps.mail.services.mailbox import (
     create_user_folder,
     delete_message,
     is_archive_folder,
+    is_drafts_folder,
     is_trash_folder,
     list_messages,
     move_message,
@@ -391,3 +392,14 @@ def test_trash_folder_resolution() -> None:
     assert is_trash_folder("Deleted Messages") is True
     assert is_trash_folder("INBOX") is False
     assert is_trash_folder("Archive") is False
+
+
+def test_is_drafts_folder() -> None:
+    assert is_drafts_folder("Drafts") is True
+    assert is_drafts_folder("drafts") is True
+    assert is_drafts_folder("Draft") is True
+    assert is_drafts_folder("Borradores") is True
+    assert is_drafts_folder("INBOX.Drafts") is True
+    assert is_drafts_folder("INBOX/Borradores") is True
+    assert is_drafts_folder("INBOX") is False
+    assert is_drafts_folder("Sent") is False

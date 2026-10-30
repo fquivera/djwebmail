@@ -13,7 +13,9 @@
         </svg>
       </div>
       <div>
-        <h2 id="about-dialog-title" class="text-lg font-bold tracking-tight">DjWebmail</h2>
+        <h2 id="about-dialog-title" class="text-lg font-bold tracking-tight">
+          <span class="brand-dj">Dj</span><span class="brand-webmail">Webmail</span>
+        </h2>
         <p class="text-xs text-base-content/60">
           {% translate "Modern, secure webmail client" %} &middot; <span class="font-mono">v{{ djwebmail_version }}</span>
         </p>
@@ -49,7 +51,7 @@
     </dl>
 
     <div class="mt-4 rounded-lg border border-base-300/80 p-3 text-center text-xs text-base-content/60">
-      <p>&copy; {{ current_year }} DjWebmail. {% translate "All rights reserved." %}</p>
+      <p>&copy; {{ current_year }} <span class="font-semibold"><span class="brand-dj">Dj</span><span class="brand-webmail">Webmail</span></span>. {% translate "All rights reserved." %}</p>
       <p class="mt-0.5 text-[11px] opacity-80">{% translate "Engineered for security, privacy and speed." %}</p>
     </div>
 

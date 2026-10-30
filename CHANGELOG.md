@@ -1,3 +1,11 @@
+## v1.0.0 (2026-10-30)
+
+### Feat
+
+- **compose**: auto-save drafts to IMAP Drafts mailbox, live indicator and resume draft editing (#72)
+- **brand**: standardize official dual-color wordmark (#0C4B33 / #1E88E5) across all templates (#70, #71)
+- **docs**: add official launch documentation, sysadmin guide, contributing handbook, and deployment runbook
+
 ## v0.6.1 (2026-10-30)
 
 ### Fix

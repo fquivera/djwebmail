@@ -1,0 +1,10 @@
+{% load i18n %}
+{% if saved_at %}
+  <span class="text-xs text-base-content/60 inline-flex items-center gap-1 animate-fadeIn">
+    <svg class="size-3.5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5"/>
+    </svg>
+    <span class="hidden sm:inline">{% translate "Draft saved at" %} {{ saved_at }}</span>
+    <span class="sm:hidden">{% translate "Saved" %}</span>
+  </span>
+{% endif %}

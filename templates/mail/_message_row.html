@@ -90,44 +90,58 @@
     role="toolbar"
     aria-label="{% translate 'Message actions' %}"
   >
-    <a
-      href="{% url 'compose:reply' message_folder message.uid %}"
-      class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
-      title="{% translate 'Reply' %}"
-      aria-label="{% translate 'Reply' %}"
-    >
-      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="9 17 4 12 9 7"></polyline>
-        <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
-      </svg>
-    </a>
+    {% if is_drafts_folder %}
+      <a
+        href="{% url 'compose:edit_draft' message_folder message.uid %}"
+        class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+        title="{% translate 'Edit draft' %}"
+        aria-label="{% translate 'Edit draft' %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+        </svg>
+      </a>
+    {% else %}
+      <a
+        href="{% url 'compose:reply' message_folder message.uid %}"
+        class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+        title="{% translate 'Reply' %}"
+        aria-label="{% translate 'Reply' %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 17 4 12 9 7"></polyline>
+          <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+        </svg>
+      </a>
 
-    <a
-      href="{% url 'compose:reply_all' message_folder message.uid %}"
-      class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
-      title="{% translate 'Reply all' %}"
-      aria-label="{% translate 'Reply all' %}"
-    >
-      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="7 17 2 12 7 7"></polyline>
-        <polyline points="12 17 7 12 12 7"></polyline>
-        <path d="M22 18v-2a4 4 0 0 0-4-4H7"></path>
-      </svg>
-    </a>
+      <a
+        href="{% url 'compose:reply_all' message_folder message.uid %}"
+        class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+        title="{% translate 'Reply all' %}"
+        aria-label="{% translate 'Reply all' %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="7 17 2 12 7 7"></polyline>
+          <polyline points="12 17 7 12 12 7"></polyline>
+          <path d="M22 18v-2a4 4 0 0 0-4-4H7"></path>
+        </svg>
+      </a>
 
-    <a
-      href="{% url 'compose:forward' message_folder message.uid %}"
-      class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
-      title="{% translate 'Forward' %}"
-      aria-label="{% translate 'Forward' %}"
-    >
-      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="15 17 20 12 15 7"></polyline>
-        <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
-      </svg>
-    </a>
+      <a
+        href="{% url 'compose:forward' message_folder message.uid %}"
+        class="btn btn-ghost btn-xs btn-square text-base-content/70 hover:text-primary"
+        title="{% translate 'Forward' %}"
+        aria-label="{% translate 'Forward' %}"
+      >
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 17 20 12 15 7"></polyline>
+          <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
+        </svg>
+      </a>
+    {% endif %}
 
-    {% if not is_archive_folder and not is_trash_folder %}
+    {% if not is_archive_folder and not is_trash_folder and not is_drafts_folder %}
       <form
         method="post"
         action="{% url 'mail:message_archive' message_folder message.uid %}"
