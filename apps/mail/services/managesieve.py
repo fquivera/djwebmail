@@ -55,7 +55,8 @@ class ManageSieveClient:
         self.capabilities: dict[str, str] = {}
 
     def __enter__(self) -> ManageSieveClient:
-        self.connect()
+        if self.sock is None:
+            self.connect()
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -63,6 +64,8 @@ class ManageSieveClient:
 
     def connect(self) -> None:
         """Connect to the ManageSieve host and parse initial capabilities."""
+        if self.sock is not None:
+            return
         try:
             raw_sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
             if self.security == "ssl":
@@ -152,6 +155,8 @@ class ManageSieveClient:
         output_lines: list[str] = []
         while True:
             line = self._read_line()
+            if not line:
+                continue
             if line.startswith("OK"):
                 return "OK", "\n".join(output_lines) or line
             elif line.startswith("NO"):
@@ -213,8 +218,6 @@ class ManageSieveClient:
             length = int(length_match.group(1))
             bytes_data = self.file.read(length)
             content = bytes_data.decode("utf-8", errors="replace")
-            # Consume trailing newline
-            self._read_line()
         else:
             # Literal lines until OK
             content_lines.append(header_line)

@@ -1,3 +1,9 @@
+## v0.6.1 (2026-10-30)
+
+### Fix
+
+- **mail**: preserve authenticated socket in ManageSieve context manager and fix literal response parsing (#68)
+
 ## v0.6.0 (2026-10-30)
 
 ### Feat
