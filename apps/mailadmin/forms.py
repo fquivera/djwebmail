@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from django import forms
+from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.services.password import validate_password_rules
@@ -377,4 +378,158 @@ class MailboxEditForm(forms.Form):
             cleaned_data["quota_bytes"] = None
             cleaned_data["clear_quota"] = True
 
+        return cleaned_data
+
+
+class AliasCreateForm(forms.Form):
+    """Form to create a new virtual alias or distribution list."""
+
+    source = forms.EmailField(
+        label=_("Source alias address"),
+        widget=forms.EmailInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": "team@example.com",
+                "autocomplete": "off",
+            }
+        ),
+        help_text=_("Incoming address that forwards to the destinations below."),
+    )
+    name = forms.CharField(
+        label=_("Description / Name (optional)"),
+        required=False,
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": _("e.g. Sales Team or Support Committee"),
+            }
+        ),
+    )
+    destinations = forms.CharField(
+        label=_("Destination email addresses"),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea w-full font-mono text-xs",
+                "rows": 4,
+                "placeholder": "user1@example.com\nuser2@example.com",
+            }
+        ),
+        help_text=_("One email address per line or separated by commas."),
+    )
+    is_active = forms.BooleanField(
+        label=_("Active alias"),
+        initial=True,
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+    )
+
+    def clean_source(self) -> str:
+        source = self.cleaned_data["source"].strip().lower()
+        try:
+            validate_email(source)
+        except forms.ValidationError as exc:
+            raise forms.ValidationError(_("Enter a valid source email address.")) from exc
+
+        driver = get_account_driver()
+        if driver.get_alias(source) is not None:
+            raise forms.ValidationError(_("An alias with this source address already exists."))
+        return source
+
+    def clean_destinations(self) -> list[str]:
+        raw = self.cleaned_data.get("destinations", "")
+        lines = raw.replace(",", "\n").replace(";", "\n").splitlines()
+        destinations = [line.strip().lower() for line in lines if line.strip()]
+        if not destinations:
+            raise forms.ValidationError(_("Specify at least one destination email address."))
+
+        invalid_emails: list[str] = []
+        for d in destinations:
+            try:
+                validate_email(d)
+            except forms.ValidationError:
+                invalid_emails.append(d)
+
+        if invalid_emails:
+            raise forms.ValidationError(
+                _("The following destination addresses are invalid: %(emails)s")
+                % {"emails": ", ".join(invalid_emails)}
+            )
+        return destinations
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        source = cleaned_data.get("source", "").lower()
+        destinations = cleaned_data.get("destinations")
+        if source and destinations and isinstance(destinations, list) and source in destinations:
+            self.add_error("destinations", _("An alias cannot forward to itself."))
+        return cleaned_data
+
+
+class AliasEditForm(forms.Form):
+    """Form to edit an existing virtual alias or distribution list."""
+
+    name = forms.CharField(
+        label=_("Description / Name (optional)"),
+        required=False,
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={
+                "class": "input w-full",
+                "placeholder": _("e.g. Sales Team or Support Committee"),
+            }
+        ),
+    )
+    destinations = forms.CharField(
+        label=_("Destination email addresses"),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea w-full font-mono text-xs",
+                "rows": 4,
+                "placeholder": "user1@example.com\nuser2@example.com",
+            }
+        ),
+        help_text=_("One email address per line or separated by commas."),
+    )
+    is_active = forms.BooleanField(
+        label=_("Active alias"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+    )
+
+    def __init__(self, *args: Any, source: str = "", **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.source = source.strip().lower()
+
+    def clean_destinations(self) -> list[str]:
+        raw = self.cleaned_data.get("destinations", "")
+        lines = raw.replace(",", "\n").replace(";", "\n").splitlines()
+        destinations = [line.strip().lower() for line in lines if line.strip()]
+        if not destinations:
+            raise forms.ValidationError(_("Specify at least one destination email address."))
+
+        invalid_emails: list[str] = []
+        for d in destinations:
+            try:
+                validate_email(d)
+            except forms.ValidationError:
+                invalid_emails.append(d)
+
+        if invalid_emails:
+            raise forms.ValidationError(
+                _("The following destination addresses are invalid: %(emails)s")
+                % {"emails": ", ".join(invalid_emails)}
+            )
+        return destinations
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        destinations = cleaned_data.get("destinations")
+        if (
+            self.source
+            and destinations
+            and isinstance(destinations, list)
+            and self.source in destinations
+        ):
+            self.add_error("destinations", _("An alias cannot forward to itself."))
         return cleaned_data

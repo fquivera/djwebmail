@@ -288,3 +288,86 @@ class ManagedMailbox(models.Model):
             val = self.quota_bytes / (1024 * 1024)
             return f"{val:.1f} MB".replace(".0 MB", " MB")
         return f"{self.quota_bytes} B"
+
+
+class ManagedAlias(models.Model):
+    """Managed virtual alias or distribution list."""
+
+    objects: Any = models.Manager()
+
+    source = cast(
+        str,
+        models.EmailField(
+            unique=True,
+            verbose_name=_("Source alias address"),
+            help_text=_("Incoming email address (e.g. team@domain.com)."),
+        ),
+    )
+    destinations = cast(
+        str,
+        models.TextField(
+            verbose_name=_("Recipient destinations"),
+            help_text=_("Comma or newline-separated recipient email addresses."),
+        ),
+    )
+    name = cast(
+        str,
+        models.CharField(
+            max_length=150,
+            blank=True,
+            default="",
+            verbose_name=_("Name / Description"),
+            help_text=_("Descriptive name or committee title."),
+        ),
+    )
+    is_active = cast(
+        bool,
+        models.BooleanField(
+            default=True,  # pyright: ignore[reportArgumentType]
+            verbose_name=_("Active"),
+            help_text=str(_("Designates whether this alias forwards incoming messages.")),
+        ),
+    )
+    created_at = cast(
+        Any,
+        models.DateTimeField(
+            auto_now_add=True,
+            verbose_name=_("Created at"),
+        ),
+    )
+    updated_at = cast(
+        Any,
+        models.DateTimeField(
+            auto_now=True,
+            verbose_name=_("Updated at"),
+        ),
+    )
+
+    class Meta:
+        verbose_name = _("Managed alias")
+        verbose_name_plural = _("Managed aliases")
+        ordering = ["source"]
+
+    def __str__(self) -> str:
+        label = f" ({self.name})" if self.name else ""
+        return f"{self.source}{label}"
+
+    def get_destinations_list(self) -> list[str]:
+        raw = self.destinations.replace(",", "\n").replace(";", "\n")
+        return [line.strip().lower() for line in raw.splitlines() if line.strip()]
+
+    @property
+    def destination_count(self) -> int:
+        return len(self.get_destinations_list())
+
+    @property
+    def is_distribution_list(self) -> bool:
+        return self.destination_count > 1
+
+    @property
+    def destinations_display(self) -> str:
+        return ", ".join(self.get_destinations_list())
+
+    @property
+    def domain(self) -> str:
+        return self.source.split("@")[1] if "@" in self.source else ""

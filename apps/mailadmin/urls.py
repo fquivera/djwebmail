@@ -20,5 +20,14 @@ urlpatterns = [
         name="account_toggle",
     ),
     path("accounts/<str:email>/delete/", views.AccountDeleteView.as_view(), name="account_delete"),
+    path("aliases/", views.AliasListView.as_view(), name="aliases"),
+    path("aliases/new/", views.AliasCreateView.as_view(), name="alias_create"),
+    path("aliases/<str:source>/edit/", views.AliasEditView.as_view(), name="alias_edit"),
+    path(
+        "aliases/<str:source>/toggle/",
+        views.AliasToggleStatusView.as_view(),
+        name="alias_toggle",
+    ),
+    path("aliases/<str:source>/delete/", views.AliasDeleteView.as_view(), name="alias_delete"),
     path("diagnostics/", views.DiagnosticsView.as_view(), name="diagnostics"),
 ]
