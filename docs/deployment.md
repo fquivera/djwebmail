@@ -103,6 +103,13 @@ Optional operational tuning:
 | `DJANGO_MAIL_POPPASSD_HOST` | `""` | Optional POPPASSD daemon hostname for remote password updates |
 | `DJANGO_MAIL_POPPASSD_PORT` | `106` | POPPASSD daemon port |
 | `DJANGO_MAIL_CHANGE_PASSWORD_ENABLED` | `True` | Enable/disable self-service password changes in the UI |
+| `DJANGO_MAIL_MANAGESIEVE_ENABLED` | `False` | Enable ManageSieve protocol client for server-side Sieve sync |
+| `DJANGO_MAIL_MANAGESIEVE_HOST` | `""` | ManageSieve server hostname (e.g. Dovecot on 4190) |
+| `DJANGO_MAIL_MANAGESIEVE_PORT` | `4190` | ManageSieve port |
+| `DJANGO_MAIL_MANAGESIEVE_SECURITY` | `starttls` | ManageSieve security mode (`starttls`, `ssl`, or `none`) |
+| `DJANGO_MAIL_ADMIN_ACCOUNTS` | `""` | Comma-separated emails allowed to access `/mailadmin/` |
+| `DJANGO_MAIL_ADMIN_DRIVER` | `docker-mailserver` | Driver for account/alias management: `docker-mailserver`, `file`, or `none` |
+| `DJANGO_MAIL_VIRTUAL_FILE` | `""` | Optional mounted virtual aliases file (e.g. `/data/mail/postfix-virtual.cf`) |
 | `DJANGO_LANGUAGE_CODE` | `en-us` | Fallback UI language before a user preference is loaded |
 | `DJANGO_LOG_LEVEL` | `INFO` | Root/application log level (`INFO`, `WARNING`, `ERROR`) |
 
@@ -169,7 +176,7 @@ services:
       retries: 5
 
   web:
-    image: ghcr.io/fquivera/djwebmail:0.5.2
+    image: ghcr.io/fquivera/djwebmail:1.0.0
     restart: unless-stopped
     env_file: .env.prod
     volumes:
@@ -344,4 +351,65 @@ omitted from `/settings/`. When set to `True` without configuring either backend
 driver, the interface displays an informative banner notifying the user that
 password changes are not configured on this server, disabling submission to
 prevent false-positive reports.
+
+---
+
+## 8. Sieve filter rules & ManageSieve (RFC 5804)
+
+DjWebmail supports visual Sieve filter creation and Out-of-Office vacation auto-replies.
+
+### Operating Modes
+
+1. **ManageSieve Direct Synchronization (Recommended)**:
+   When `DJANGO_MAIL_MANAGESIEVE_ENABLED=True`, DjWebmail authenticates using the user's active session credentials to port 4190 (Dovecot Pigeonhole / ManageSieve). Filter rules and vacation scripts are compiled to valid RFC 5228 Sieve scripts, uploaded via `PUTSCRIPT`, and marked active with `SETACTIVE`.
+   ```dotenv
+   DJANGO_MAIL_MANAGESIEVE_ENABLED=True
+   DJANGO_MAIL_MANAGESIEVE_HOST=mailserver
+   DJANGO_MAIL_MANAGESIEVE_PORT=4190
+   DJANGO_MAIL_MANAGESIEVE_SECURITY=starttls
+   ```
+2. **Database Fallback Mode**:
+   If ManageSieve is not reachable or disabled, DjWebmail automatically stores the rule tree in PostgreSQL (`UserSieveScript` model) with zero disruption to the user experience.
+
+---
+
+## 9. Bare-metal Systemd service (non-Docker)
+
+For bare-metal Ubuntu/Debian deployments running Gunicorn directly:
+
+Create `/etc/systemd/system/djwebmail.service`:
+
+```ini
+[Unit]
+Description=DjWebmail WSGI Application
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/djwebmail
+EnvironmentFile=/opt/djwebmail/.env
+ExecStart=/opt/djwebmail/.venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8000 \
+    --workers 4 \
+    --worker-class gthread \
+    --threads 2 \
+    --timeout 60 \
+    --access-logfile - \
+    --error-logfile -
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+systemctl daemon-reload
+systemctl enable --now djwebmail
+```
+
 

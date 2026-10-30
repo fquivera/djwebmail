@@ -3,277 +3,257 @@
 [![CI](https://github.com/fquivera/djwebmail/actions/workflows/ci.yml/badge.svg)](https://github.com/fquivera/djwebmail/actions/workflows/ci.yml)
 [![Release](https://github.com/fquivera/djwebmail/actions/workflows/release.yml/badge.svg)](https://github.com/fquivera/djwebmail/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+[![Docker Image](https://img.shields.io/badge/ghcr.io-djwebmail-green.svg)](https://github.com/fquivera/djwebmail/pkgs/container/djwebmail)
 
-**A modern, HTMX-driven webmail client built with Django.**
+**A modern, lightweight, server-rendered webmail client built with Django, HTMX, and Tailwind CSS.**
 
-DjWebmail is a lightweight, self-hosted webmail frontend that talks to your
-existing IMAP/SMTP server. It is inspired by [SnappyMail](https://github.com/the-djmaze/snappymail)
-but rewritten from scratch in Django with a server-rendered, HTMX-first
-architecture — no SPA, no heavy JavaScript framework, no build step required
-to run it.
+DjWebmail connects directly to your existing IMAP and SMTP servers. It delivers a fast, responsive user experience without heavy single-page application (SPA) frameworks or complex browser build pipelines.
 
-> **Status:** early development. The architecture is being designed in the open;
-> APIs and templates will change. Watch the repo or open an issue to follow along.
+Inspired by [SnappyMail](https://github.com/the-djmaze/snappymail) and Roundcube, but rebuilt from scratch in Python and Django with an HTMX-first architecture.
 
 ---
 
-## Why another webmail?
+## Key Features
 
-Most self-hosted webmail clients are either PHP applications (Roundcube,
-SnappyMail) or single-page apps with large JavaScript bundles. DjWebmail takes
-a different path:
+### ✉️ Email Experience
+- **IMAP as Source of Truth**: Emails and folders live strictly on your IMAP server; no email message data is stored in the local database.
+- **Continuous IMAP Draft Autosave**: Drafts save automatically to your server's `Drafts` (or `Borradores`) mailbox as you type, with live indicators and seamless draft editing.
+- **Rich-Text Compose**: Multi-recipient handling (`To`, `Cc`, `Bcc`), rich HTML formatting, inline pasted/dropped images, multiple signatures, and attachment streaming.
+- **Fast 3-Pane Interface**: Full 100vh responsive layout with folder trees, unread badges, multi-message batch actions, and unified search.
+- **Security & Privacy First**: Server-side HTML sanitization with `nh3`, anti-SSRF remote image proxy, strict Content Security Policy (CSP), and zero client-side credential storage.
+- **Strict Attachment Viewer**: Built-in modal preview for images, PDFs, text, and media without leaving the mailbox.
 
-- **Server-rendered HTML** with [HTMX](https://htmx.org/) for partial updates.
-- **Alpine.js** for local UI state only (menus, modals, toggles).
-- **Tailwind CSS + daisyUI** for a compact, information-dense interface with
-  light and dark themes.
-- **Django** for the backend: clear app boundaries, testable service layer,
-  standard security middleware, and a familiar developer experience.
+### ⚙️ Mailbox Control & Automation
+- **ManageSieve Filters (RFC 5228 / RFC 5804)**: Visual rule builder for incoming email filtering (move, discard, forward, flag), backed directly by Dovecot/ManageSieve or an automatic database fallback.
+- **Vacation Auto-Responder**: Out-of-office auto-reply configuration with customizable subject, body, interval days, and active status.
+- **Sender Rules**: Per-account allowlist for trusted senders (automatic image display) and denylist for blocked senders.
+- **RFC 7095 jCard Contacts**: Full contact management with JSON jCard import/export, autocomplete in compose, and one-click contact addition from message headers.
 
-The goal is a webmail that is fast on modest hardware, easy to audit, and
-pleasant to extend for Django developers.
-
----
-
-## Stack
-
-| Layer      | Choice                                  | Why |
-|------------|-----------------------------------------|-----|
-| Backend    | Django (LTS)                            | Mature, secure, well-documented |
-| IMAP/SMTP  | `imapclient` + `smtplib`                | Explicit, testable, no ORM coupling |
-| Templates  | Django templates + partials             | Server-rendered, easy to reason about |
-| Interactivity | HTMX                                 | Partial updates without a SPA |
-| Local UI state | Alpine.js                           | Small, declarative, no build step |
-| Styling    | Tailwind CSS + daisyUI                  | Utility-first, themeable, dark mode |
-| Config     | `django-environ`                        | 12-factor settings per environment |
+### 🛡️ Administration & Domain Management (`mailadmin`)
+- **Multi-Driver Architecture**: Native drivers for `docker-mailserver` and standard file-based accounts (`postfix_accounts` / `postfix_virtual`), with extensible driver support.
+- **Accounts & Quota Visibility**: Real-time storage consumption metrics, account creation/suspension, and password updates.
+- **Virtual Aliases & Distribution Lists**: Manage alias forwarders, group distribution lists, and catch-all rules directly from the web UI.
+- **Corporate Branding**: Configurable organization name, custom logos, browser favicon, and helpdesk support links.
+- **Diagnostics Dashboard**: Built-in health probes verifying database, cache, IMAP, SMTP, and ManageSieve connectivity.
 
 ---
 
-## Design principles
+## Quickstart with Docker Compose
 
-1. **The server owns the state.** HTMX requests return HTML fragments; the
-   browser does not orchestrate data fetching.
-2. **Alpine is for UI only.** No Alpine component talks to the network directly.
-3. **IMAP is the source of truth.** DjWebmail stores as little as possible in
-   the database — ideally only user preferences and UI cache. Mail lives on
-   your IMAP server.
-4. **No hidden magic.** Service classes are plain Python; views are thin;
-   templates are readable.
-5. **Security by default.** CSRF, CSP, secure cookies, and explicit
-   authentication against IMAP — no silent fallbacks.
+The fastest way to deploy DjWebmail is using the official Docker image from GitHub Container Registry: `ghcr.io/fquivera/djwebmail:latest`.
+
+### 1. Standalone Stack (Caddy + DjWebmail + PostgreSQL + Redis)
+
+Create a `compose.yml` file:
+
+```yaml
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+  web:
+    image: ghcr.io/fquivera/djwebmail:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - media_data:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: djwebmail
+      POSTGRES_USER: djwebmail
+      POSTGRES_PASSWORD: ChangeThisPostgresPassword
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U djwebmail"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  db_data:
+  redis_data:
+  media_data:
+  caddy_data:
+  caddy_config:
+```
+
+### 2. Configure Environment (`.env`)
+
+Generate required keys:
+
+```bash
+# Secret key for Django signing
+python3 -c "import secrets; print(secrets.token_urlsafe(50))"
+
+# Fernet key for encrypting IMAP credentials in memory
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Save your `.env` configuration:
+
+```env
+DJANGO_SETTINGS_MODULE=config.settings.production
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=your-generated-secret-key
+FERNET_KEY=your-generated-fernet-key
+DJANGO_ALLOWED_HOSTS=mail.example.com,web,localhost
+CSRF_TRUSTED_ORIGINS=https://mail.example.com
+
+DATABASE_URL=postgres://djwebmail:ChangeThisPostgresPassword@db:5432/djwebmail
+REDIS_URL=redis://redis:6379/0
+
+# Mail server connection
+DJANGO_MAIL_IMAP_HOST=mail.example.com
+DJANGO_MAIL_IMAP_PORT=993
+DJANGO_MAIL_IMAP_SECURITY=ssl
+
+DJANGO_MAIL_SMTP_HOST=mail.example.com
+DJANGO_MAIL_SMTP_PORT=587
+DJANGO_MAIL_SMTP_SECURITY=starttls
+
+# Optional: ManageSieve for server-side filter rules
+DJANGO_MAIL_MANAGESIEVE_ENABLED=True
+DJANGO_MAIL_MANAGESIEVE_HOST=mail.example.com
+DJANGO_MAIL_MANAGESIEVE_PORT=4190
+DJANGO_MAIL_MANAGESIEVE_SECURITY=starttls
+DJANGO_MAIL_VERIFY_TLS=True
+
+# Admin Module (Optional)
+DJANGO_MAIL_ADMIN_ACCOUNTS=admin@example.com
+```
+
+### 3. Caddy Reverse Proxy (`Caddyfile`)
+
+```caddyfile
+mail.example.com {
+    reverse_proxy web:8000 {
+        header_up Host {host}
+        header_up X-Forwarded-Proto https
+    }
+}
+```
+
+### 4. Start the Application
+
+```bash
+docker compose up -d
+docker compose exec web python manage.py migrate
+```
+
+Visit `https://mail.example.com` to log in with your email account!
 
 ---
 
-## Architecture
+## Configuration Reference
 
-```text
-djwebmail/
-├── config/           # Settings package (base/dev/test/prod), URLs, ASGI/WSGI
-├── apps/
-│   ├── accounts/     # IMAP/SMTP login, session handling
-│   ├── mail/         # Folders, message list, message view
-│   ├── compose/      # Compose, reply, forward, send
-│   ├── contacts/     # RFC 7095 jCard address book, import/export
-│   └── preferences/  # Per-user UI preferences and account identity
-├── common/           # Shared views, services, templatetags
-├── templates/        # Base layout and partials
-├── theme/            # Tailwind source and committed compiled CSS
-├── static/           # Vendored assets and small overrides
-├── tests/            # Project-level smoke and integration tests
-├── Dockerfile        # Production image
-├── Dockerfile.dev    # Development image
-├── compose.yml       # Development stack (PostgreSQL, Redis, GreenMail)
-└── compose.staging.yml # Local staging stack
-```
+| Environment Variable | Default | Purpose |
+|---|---|---|
+| `DJANGO_SETTINGS_MODULE` | `config.settings.development` | Set to `config.settings.production` in live environments. |
+| `DJANGO_SECRET_KEY` | *(None)* | High-entropy secret for signing and CSRF tokens. |
+| `FERNET_KEY` | *(None)* | URL-safe base64 32-byte key used to encrypt the session IMAP credentials in Redis. |
+| `DATABASE_URL` | `sqlite:///db.sqlite3` | PostgreSQL connection URL (e.g., `postgres://user:pass@host:5432/db`). |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis instance for session state, credential caching, and temporary attachments. |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Comma-separated list of allowed hostnames. |
+| `CSRF_TRUSTED_ORIGINS` | *(None)* | Comma-separated list of trusted HTTPS origins (e.g., `https://mail.example.com`). |
+| `DJANGO_MAIL_IMAP_HOST` | `localhost` | Hostname or IP of your IMAP server. |
+| `DJANGO_MAIL_IMAP_PORT` | `993` | IMAP port (typically 993 for SSL/TLS, 143 for STARTTLS). |
+| `DJANGO_MAIL_IMAP_SECURITY` | `ssl` | Connection security: `ssl`, `starttls`, or `plain`. |
+| `DJANGO_MAIL_SMTP_HOST` | `localhost` | Hostname or IP of your SMTP server. |
+| `DJANGO_MAIL_SMTP_PORT` | `587` | SMTP port (typically 587 for STARTTLS, 465 for SSL, 25 for plain). |
+| `DJANGO_MAIL_SMTP_SECURITY` | `starttls` | Connection security: `starttls`, `ssl`, or `plain`. |
+| `DJANGO_MAIL_MANAGESIEVE_HOST`| *(None)* | ManageSieve server host (e.g., Dovecot ManageSieve on port 4190). |
+| `DJANGO_MAIL_MANAGESIEVE_PORT`| `4190` | Port for ManageSieve protocol. |
+| `DJANGO_MAIL_MANAGESIEVE_ENABLED` | `False` | Enables direct Sieve script synchronization over ManageSieve. |
+| `DJANGO_MAIL_ADMIN_ACCOUNTS` | *(None)* | Comma-separated list of email addresses granted access to `/mailadmin/`. |
+| `DJANGO_MAIL_ADMIN_DRIVER` | `docker-mailserver` | Driver for admin operations: `docker-mailserver`, `file`, or `none`. |
 
-The `ImapService` class encapsulates connection and operations, so views and
-HTMX endpoints stay thin and testable.
+Detailed deployment guides and Nginx configurations are documented in [`docs/deployment.md`](docs/deployment.md).
 
 ---
 
-## Getting started (development)
+## Bare-Metal Deployment (Systemd + Gunicorn)
 
-Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/). SQLite is the
-default database, so no external services are needed to start.
-
-```bash
-git clone https://github.com/fquivera/djwebmail.git
-cd djwebmail
-uv sync
-cp .env.example .env   # set your IMAP/SMTP credentials when you need them
-# Generate the key that encrypts the transient IMAP password:
-uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-# Paste the value into FERNET_KEY in .env, then:
-uv run python manage.py migrate
-uv run python manage.py runserver
-```
-
-Open <http://127.0.0.1:8000/>. The container health probe lives at `/health/`.
-Development uses an in-process cache. Production requires `REDIS_URL` and a
-stable `FERNET_KEY`; startup fails with an actionable error when either is
-missing.
-
-To use PostgreSQL (same engine as CI and production), set in `.env`:
+For non-containerized installations on Debian/Ubuntu:
 
 ```bash
-DATABASE_URL=postgres://djwebmail:djwebmail@localhost:5432/djwebmail
-```
+# 1. Clone & sync dependencies
+git clone https://github.com/fquivera/djwebmail.git /opt/djwebmail
+cd /opt/djwebmail
+uv sync --no-dev --group production
 
-### Frontend assets
-
-Tailwind CSS and daisyUI are compiled with the standalone
-`django-tailwind` CLI. The compiled stylesheet
-(`theme/static/css/dist/styles.css`) is committed, so running the app does not
-need Node or npm. After changing template classes, rebuild it:
-
-```bash
-DJANGO_SETTINGS_MODULE=config.settings.test uv run python manage.py tailwind build
-```
-
-For frontend work, keep the watcher running in a second terminal:
-
-```bash
-DJANGO_SETTINGS_MODULE=config.settings.development uv run python manage.py tailwind start
-```
-
-CI rebuilds the stylesheet and rejects a stale committed file. See
-[`docs/tailwind-pipeline.md`](docs/tailwind-pipeline.md) for versions, theme
-tokens, and the production image behavior.
-
-### Local mail stack (Docker Compose)
-
-A disposable IMAP/SMTP server is available for login and functional tests:
-
-```bash
+# 2. Configure .env and migrate
 cp .env.example .env
-# Set DJANGO_SECRET_KEY and FERNET_KEY in .env.
-docker compose up --build
+# Edit .env with your secrets and database credentials
+uv run python manage.py migrate
+uv run python manage.py collectstatic --no-input
+
+# 3. Run with Gunicorn
+uv run gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8000 \
+    --workers 4 \
+    --timeout 60
 ```
 
-The stack runs Django, PostgreSQL, Redis, and
-[GreenMail](https://greenmail-mail-test.github.io/greenmail/) with the test
-account `demo@example.test` / `demo`. Open <http://localhost:8000/> and run the
-functional suite inside the web container:
+Refer to [`docs/deployment.md`](docs/deployment.md) for full Systemd unit files and automated restart configuration.
 
-```bash
-docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings.test web pytest -m functional
-```
+---
 
-GreenMail was chosen over `docker-mailserver` because functional tests need a
-lightweight, deterministic IMAP/SMTP server without TLS or DNS setup. The
-application still uses ordinary environment-driven IMAP/SMTP endpoints, so the
-server can be replaced later. Details and the staging stack are in
-[`docs/development-stack.md`](docs/development-stack.md).
+## Architecture & Technology Stack
 
-### Settings modules
+| Layer | Component | Choice |
+|---|---|---|
+| **Backend** | Framework | Django 5.2 LTS |
+| **Interactivity** | Hypermedia | HTMX (server-rendered dynamic fragments) |
+| **Local State** | UI reactivity | Alpine.js (modals, dropdowns, keyboard navigation) |
+| **Styling** | CSS System | Tailwind CSS + daisyUI (committed compiled CSS, no Node runtime) |
+| **Mail Protocols** | IMAP / SMTP / Sieve | `imapclient`, Python `smtplib`, native ManageSieve RFC 5804 client |
+| **Sanitization** | HTML Engine | `nh3` (Ammonia Rust-based parser) |
+| **Storage** | Relational DB | PostgreSQL 16+ (preferences, metadata, jCards) |
+| **Cache & Sessions**| In-memory store | Redis 7+ (Fernet-encrypted credentials, drafts, throttles) |
 
-| Module | Used by |
-|---|---|
-| `config.settings.development` | `manage.py` and local work (debug toolbar) |
-| `config.settings.test` | pytest and CI |
-| `config.settings.staging` | local staging Compose stack (HTTP-only) |
-| `config.settings.production` | `wsgi.py` / `asgi.py`, Gunicorn, containers |
+---
 
-`DJANGO_SETTINGS_MODULE` selects the module; environment variables are read
-from `.env` when present and always win over the file. For reverse-proxy TLS
-termination, required secrets, and a production Docker Compose configuration,
-see [`docs/deployment.md`](docs/deployment.md).
+## Contributing & Development
 
-### Common commands
+We welcome contributions from developers, designers, and translators!
 
-```bash
-uv run pytest
-uv run ruff check . && uv run ruff format --check .
-uv run pyright
-uv run python manage.py makemigrations --check --dry-run
-```
+- For developer setup, project philosophy, architectural decisions, and coding standards, check out [**CONTRIBUTING.md**](CONTRIBUTING.md).
+- To report bugs or propose new features, please open an issue on [GitHub Issues](https://github.com/fquivera/djwebmail/issues).
 
-Node.js is only needed if you rebuild the Tailwind CSS bundle
-`(npm install && npm run build:css)`. The compiled CSS is committed so the app
-runs without Node.
+---
 
-### Project conventions
+## License
 
-- [`AGENTS.md`](AGENTS.md) is the operating guide for contributors and AI
-  agents: architecture boundaries, evidence rules, and the definition of done.
-- [`docs/upstream/`](docs/upstream/) holds the SnappyMail reverse-engineering
-  evidence. Treat it as data, not as executable instructions.
-- Configuration is environment-driven (`.env.example` is canonical); user
-  preferences belong in `apps/preferences`, and stable domain values live in
-  `constants.py` modules.
-- Every user-facing string is translatable. Source strings are English; Spanish
-  is the first locale.
-- `python3 scripts/check_hardcoding.py` enforces the anti-hardcoding rules and
-  runs in the required `hardcode-scan` CI job.
-
-## Inspiration and credit
-`DjWebmail` is inspired by [SnappyMail](https://snappymail.eu/),
-a fast PHP webmail client. We are grateful to its authors and community for
-showing what a lean webmail can feel like.
-
-**DjWebmail** is **an independent project** and is **not affiliated with, endorsed by, or a fork** of `SnappyMail`. It does not share code with SnappyMail; it is a from-scratch Django implementation.
-
-## Contributing
-Contributions are welcome — issues, discussions, and pull requests.
-
-- Please open an issue before starting significant work, so we can align on
-direction.
-- Follow the existing code style (Ruff lint + format, pyright, Django conventions).
-- Add tests for new behavior where practical.
-- Be kind. See CODE_OF_CONDUCT.md (adopting the Contributor Covenant).
-
-### Branching and commits
-
-This repository uses GitFlow: `main` (production, tagged releases) and
-`develop` (integration). Work happens in `feature/*`, `fix/*`, `chore/*`, and
-similar branches that target `develop`; `release/*` and `hotfix/*` target
-`main`. Direct pushes to `main` and `develop` are blocked.
-
-Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
-and are validated locally and in CI:
-
-```bash
-git config core.hooksPath .githooks   # once per clone
-uv run cz commit                      # guided commit message
-```
-
-PR titles must also be conventional, because `develop` uses squash merges.
-Full rules: `.agents/skills/gitflow` and `.agents/skills/conventional-commits`.
-
-### Continuous integration
-
-`.github/workflows/ci.yml` runs Ruff, Pyright, pytest (Python 3.12 and 3.13,
-PostgreSQL 16), functional IMAP/SMTP tests against GreenMail, Django checks,
-branch policy, and commit validation on every PR.
-Pushing a `v*.*.*` tag runs `.github/workflows/release.yml`, which verifies the
-tag, publishes a container image to GHCR, and creates a GitHub Release.
-
-### License
-MIT — see the LICENSE file for details.
-
-## Roadmap (high level)
-☑ IMAP login and session management<br>
-☑ Local development/staging mail stack and functional tests<br>
-☑ Folder tree and message list with HTMX pagination<br>
-☑ Message viewer with safe HTML rendering and remote-content blocking<br>
-☑ Compose, reply, forward, send via SMTP<br>
-☑ Per-user UI preferences (theme, density, signature)<br>
-☑ Search within a folder<br>
-☑ Search across all folders<br>
-☑ Accessibility pass<br>
-☑ Keyboard shortcuts and command palette<br>
-☑ Responsive single-panel navigation and optimistic flags<br>
-☑ Batch message selection and actions (read/unread, star, move, delete)<br>
-☑ Sent folder copy on send and per-account HTML signature<br>
-☑ Account owner display name, account label, and custom IMAP folder creation<br>
-☑ Contacts module with RFC 7095 jCard import/export and compose autocomplete<br>
-☑ Professional email archiving (single, batch, and shortcut)<br>
-☑ Blocking modal attachment viewer with live inline previews<br>
-☑ Self-service password management with OWASP/NIST rules and security guide<br>
-☑ Docker image publishing<br>
-☑ Deployment guide<br>
-
-## Acknowledgements
-Built with Django, HTMX,
-Alpine.js, Tailwind CSS,
-and daisyUI.
+DjWebmail is open-source software licensed under the [MIT License](LICENSE).

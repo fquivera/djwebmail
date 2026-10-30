@@ -1,6 +1,6 @@
 [project]
 name = "djwebmail"
-version = "0.6.1"
+version = "1.0.0"
 description = "A modern, HTMX-driven webmail client built with Django."
 readme = "README.md"
 requires-python = ">=3.12"
