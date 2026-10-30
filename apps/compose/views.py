@@ -293,7 +293,8 @@ def compose_draft(request: HttpRequest) -> HttpResponse:
                 cc_list = [addr.strip() for addr in cc_text.split(",") if addr.strip()]
                 bcc_list = [addr.strip() for addr in bcc_text.split(",") if addr.strip()]
                 post = getattr(request, "POST", None)
-                attachment_ids = [str(i) for i in post.getlist("attachment_ids") if i] if post else []
+                raw_ids = post.getlist("attachment_ids") if post else []
+                attachment_ids = [str(i) for i in raw_ids if i]
                 attachments = load_attachments(session_key, attachment_ids)
 
                 new_uid = save_draft_to_imap(
