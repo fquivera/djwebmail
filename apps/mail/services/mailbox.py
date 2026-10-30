@@ -40,6 +40,10 @@ _TRASH_FOLDER_NAMES = frozenset(
 )
 _TRASH_FOLDER_FLAG = "\\trash"
 
+_DEFAULT_DRAFTS_FOLDER = "Drafts"
+_DRAFTS_FOLDER_NAMES = frozenset({"drafts", "draft", "borradores"})
+_DRAFTS_FOLDER_FLAG = "\\drafts"
+
 
 @dataclass(frozen=True)
 class FolderNode:
@@ -379,6 +383,15 @@ def is_trash_folder(folder_name: str) -> bool:
         return True
     leaf = normalized.replace("\\", "/").rsplit("/", 1)[-1].rsplit(".", 1)[-1]
     return leaf in _TRASH_FOLDER_NAMES
+
+
+def is_drafts_folder(folder_name: str) -> bool:
+    """Return True when ``folder_name`` is a Drafts folder."""
+    normalized = folder_name.strip().casefold()
+    if normalized in _DRAFTS_FOLDER_NAMES:
+        return True
+    leaf = normalized.replace("\\", "/").rsplit("/", 1)[-1].rsplit(".", 1)[-1]
+    return leaf in _DRAFTS_FOLDER_NAMES
 
 
 def translate_folder_label(name: str) -> str:

@@ -141,48 +141,63 @@
         {% endif %}
 
         <div class="flex flex-wrap items-center gap-1" role="toolbar" aria-label="{% translate 'Message actions' %}">
-          <a
-            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
-            href="{% url 'compose:reply' folder_name message.uid %}"
-            data-shortcut="reply"
-            title="{% translate 'Reply' %}"
-            aria-label="{% translate 'Reply' %}"
-          >
-            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="9 17 4 12 9 7"></polyline>
-              <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
-            </svg>
-            <span class="sr-only">{% translate "Reply" %}</span>
-          </a>
+          {% if is_drafts_folder %}
+            <a
+              class="btn btn-primary btn-sm gap-1.5"
+              href="{% url 'compose:edit_draft' folder_name message.uid %}"
+              title="{% translate 'Edit draft' %}"
+              aria-label="{% translate 'Edit draft' %}"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+              </svg>
+              <span>{% translate "Edit draft" %}</span>
+            </a>
+          {% else %}
+            <a
+              class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+              href="{% url 'compose:reply' folder_name message.uid %}"
+              data-shortcut="reply"
+              title="{% translate 'Reply' %}"
+              aria-label="{% translate 'Reply' %}"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 17 4 12 9 7"></polyline>
+                <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+              </svg>
+              <span class="sr-only">{% translate "Reply" %}</span>
+            </a>
 
-          <a
-            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
-            href="{% url 'compose:reply_all' folder_name message.uid %}"
-            title="{% translate 'Reply all' %}"
-            aria-label="{% translate 'Reply all' %}"
-          >
-            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="7 17 2 12 7 7"></polyline>
-              <polyline points="12 17 7 12 12 7"></polyline>
-              <path d="M22 18v-2a4 4 0 0 0-4-4H7"></path>
-            </svg>
-            <span class="sr-only">{% translate "Reply all" %}</span>
-          </a>
+            <a
+              class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+              href="{% url 'compose:reply_all' folder_name message.uid %}"
+              title="{% translate 'Reply all' %}"
+              aria-label="{% translate 'Reply all' %}"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="7 17 2 12 7 7"></polyline>
+                <polyline points="12 17 7 12 12 7"></polyline>
+                <path d="M22 18v-2a4 4 0 0 0-4-4H7"></path>
+              </svg>
+              <span class="sr-only">{% translate "Reply all" %}</span>
+            </a>
 
-          <a
-            class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
-            href="{% url 'compose:forward' folder_name message.uid %}"
-            title="{% translate 'Forward' %}"
-            aria-label="{% translate 'Forward' %}"
-          >
-            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="15 17 20 12 15 7"></polyline>
-              <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
-            </svg>
-            <span class="sr-only">{% translate "Forward" %}</span>
-          </a>
+            <a
+              class="btn btn-ghost btn-sm btn-square text-base-content/75 hover:text-primary"
+              href="{% url 'compose:forward' folder_name message.uid %}"
+              title="{% translate 'Forward' %}"
+              aria-label="{% translate 'Forward' %}"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 17 20 12 15 7"></polyline>
+                <path d="M4 18v-2a4 4 0 0 1 4-4h12"></path>
+              </svg>
+              <span class="sr-only">{% translate "Forward" %}</span>
+            </a>
+          {% endif %}
 
-          {% if not is_archive_folder and not is_trash_folder %}
+          {% if not is_archive_folder and not is_trash_folder and not is_drafts_folder %}
             <form
               method="post"
               action="{% url 'mail:message_archive' folder_name message.uid %}"

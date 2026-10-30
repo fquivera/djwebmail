@@ -12,11 +12,15 @@ from apps.compose.services import (
     append_to_sent,
     apply_signature,
     build_message,
+    delete_draft_from_imap,
+    draft_initial,
     extract_inline_images,
+    find_drafts_folder,
     forward_initial,
     html_to_text,
     reply_all_initial,
     reply_initial,
+    save_draft_to_imap,
     send_message,
 )
 from apps.mail.services.message import MessageDetail
@@ -303,3 +307,103 @@ def test_build_message_embeds_inline_cid_images() -> None:
     assert "Content-Type: image/jpeg" in as_str
     assert "Content-ID: <" in as_str
     assert "cid:" in as_str
+
+
+def test_find_drafts_folder_with_flag() -> None:
+    class FakeImap:
+        def list_folders(self) -> list[Folder]:
+            return [
+                Folder(name="INBOX", delimiter="/", flags=()),
+                Folder(name="DraftBox", delimiter="/", flags=("\\Drafts",)),
+            ]
+
+    imap = FakeImap()
+    assert find_drafts_folder(cast(ImapService, imap)) == "DraftBox"
+
+
+def test_find_drafts_folder_with_name() -> None:
+    class FakeImap:
+        def list_folders(self) -> list[Folder]:
+            return [
+                Folder(name="INBOX", delimiter="/", flags=()),
+                Folder(name="Borradores", delimiter="/", flags=()),
+            ]
+
+    imap = FakeImap()
+    assert find_drafts_folder(cast(ImapService, imap)) == "Borradores"
+
+
+def test_save_draft_to_imap_replaces_previous_and_appends() -> None:
+    deleted: list[tuple[str, list[int], bool]] = []
+    appended: list[tuple[str, bytes, tuple[str, ...]]] = []
+    selected: list[str] = []
+
+    class FakeDraftImap:
+        def list_folders(self) -> list[Folder]:
+            return [Folder(name="Drafts", delimiter="/", flags=("\\Drafts",))]
+
+        def select(self, folder: str, readonly: bool = False) -> None:
+            selected.append(folder)
+
+        def delete(self, uids: list[int], expunge: bool = True) -> None:
+            deleted.append((selected[-1] if selected else "", uids, expunge))
+
+        def append(self, folder: str, raw: bytes, *, flags: tuple[str, ...] = ()) -> None:
+            appended.append((folder, raw, tuple(flags)))
+
+        def search(self, criteria: list[str]) -> list[int]:
+            return [42]
+
+    imap = FakeDraftImap()
+    uid = save_draft_to_imap(
+        cast(ImapService, imap),
+        sender="user@example.com",
+        to=["recipient@example.com"],
+        subject="Draft subject",
+        body="Draft content",
+        prev_uid=15,
+        prev_folder="Drafts",
+    )
+
+    assert uid == 42
+    assert deleted == [("Drafts", [15], True)]
+    assert len(appended) == 1
+    folder, raw, flags = appended[0]
+    assert folder == "Drafts"
+    assert b"Subject: Draft subject" in raw
+    assert "\\Draft" in flags
+    assert "\\Seen" in flags
+
+
+def test_delete_draft_from_imap() -> None:
+    deleted: list[tuple[str, list[int]]] = []
+
+    class FakeDraftImap:
+        def list_folders(self) -> list[Folder]:
+            return [Folder(name="Drafts", delimiter="/", flags=("\\Drafts",))]
+
+        def select(self, folder: str, readonly: bool = False) -> None:
+            pass
+
+        def delete(self, uids: list[int], expunge: bool = True) -> None:
+            deleted.append(("Drafts", uids))
+
+    imap = FakeDraftImap()
+    delete_draft_from_imap(cast(ImapService, imap), uid=99)
+    assert deleted == [("Drafts", [99])]
+
+
+def test_draft_initial() -> None:
+    detail = make_detail(
+        recipients="Alice <alice@example.com>",
+        cc="Bob <bob@example.com>",
+        subject="Draft subject",
+        body_html="<p>Draft body</p>",
+    )
+    initial = draft_initial(detail)
+    assert initial == {
+        "to": "Alice <alice@example.com>",
+        "cc": "Bob <bob@example.com>",
+        "subject": "Draft subject",
+        "body": "<p>Draft body</p>",
+    }

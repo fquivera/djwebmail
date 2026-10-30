@@ -519,3 +519,139 @@ def test_compose_send_uses_session_display_name_in_from_header(
     envelope_sender, _recipients, raw = smtp.sent
     assert envelope_sender == "user@example.com"
     assert b"From: Alice Owner <user@example.com>" in raw
+
+
+def test_compose_draft_autosave_syncs_to_imap(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    appended: list[tuple[str, bytes]] = []
+
+    class FakeDraftImap:
+        def __enter__(self) -> FakeDraftImap:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+        def list_folders(self) -> list[Any]:
+            from apps.accounts.services.imap import Folder
+
+            return [Folder(name="Drafts", delimiter="/", flags=("\\Drafts",))]
+
+        def select(self, folder: str, readonly: bool = False) -> None:
+            pass
+
+        def delete(self, uids: list[int], expunge: bool = True) -> None:
+            pass
+
+        def append(self, folder: str, raw: bytes, **kwargs: object) -> None:
+            appended.append((folder, raw))
+
+        def search(self, criteria: list[str]) -> list[int]:
+            return [88]
+
+    monkeypatch.setattr("apps.compose.views.get_mail_imap_service", lambda request: FakeDraftImap())
+
+    response: Any = logged_in_client.post(
+        reverse("compose:draft"),
+        {"to": "draft-to@example.com", "subject": "Draft title", "body": "Draft auto body"},
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response.status_code == 200
+    assert len(appended) == 1
+    assert appended[0][0] == "Drafts"
+    assert b"Subject: Draft title" in appended[0][1]
+    assert logged_in_client.session["compose_draft_uid"] == 88
+
+
+def test_compose_edit_draft_prefills_view(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeDraftImap:
+        def __enter__(self) -> FakeDraftImap:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+    detail = MessageDetail(
+        uid=55,
+        folder="Drafts",
+        subject="Existing draft subject",
+        sender="user@example.com",
+        recipients="recipient@example.com",
+        cc="cc@example.com",
+        date=datetime(2026, 10, 25, 12, 0, tzinfo=UTC),
+        flags=("\\Draft",),
+        is_seen=True,
+        is_flagged=False,
+        body_kind="html",
+        body_html="<p>Pre-existing draft body</p>",
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=False,
+    )
+
+    monkeypatch.setattr("apps.compose.views.get_mail_imap_service", lambda request: FakeDraftImap())
+    monkeypatch.setattr("apps.compose.views.get_message", lambda imap, folder, uid: detail)
+
+    response: Any = logged_in_client.get(
+        reverse("compose:edit_draft", kwargs={"folder_name": "Drafts", "uid": 55})
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Existing draft subject" in content
+    assert "recipient@example.com" in content
+    assert "Pre-existing draft body" in content
+    assert logged_in_client.session["compose_draft_uid"] == 55
+    assert logged_in_client.session["compose_draft_folder"] == "Drafts"
+
+
+def test_compose_send_deletes_draft_from_imap(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    smtp = FakeSmtp()
+    deleted: list[tuple[str, list[int]]] = []
+
+    class FakeDraftImap:
+        def __enter__(self) -> FakeDraftImap:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+        def list_folders(self) -> list[Any]:
+            from apps.accounts.services.imap import Folder
+
+            return [Folder(name="Drafts", delimiter="/", flags=("\\Drafts",))]
+
+        def select(self, folder: str, readonly: bool = False) -> None:
+            pass
+
+        def delete(self, uids: list[int], expunge: bool = True) -> None:
+            deleted.append(("Drafts", uids))
+
+        def append(self, folder: str, raw: bytes, **kwargs: object) -> None:
+            pass
+
+    monkeypatch.setattr("apps.compose.views.get_mail_smtp_service", lambda request: smtp)
+    monkeypatch.setattr("apps.compose.views.get_mail_imap_service", lambda request: FakeDraftImap())
+
+    session = logged_in_client.session
+    session["compose_draft_uid"] = 77
+    session["compose_draft_folder"] = "Drafts"
+    session.save()
+
+    response: Any = logged_in_client.post(
+        reverse("compose:send"),
+        {"to": "friend@example.com", "subject": "Final", "body": "Hello world"},
+    )
+
+    assert response.status_code == 302
+    assert deleted == [("Drafts", [77])]
+    assert "compose_draft_uid" not in logged_in_client.session
