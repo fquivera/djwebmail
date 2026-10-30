@@ -183,3 +183,119 @@ class AccountSignature(models.Model):
                 is_default=True,
             ).exclude(pk=self.pk).update(is_default=False)
         super().save(*args, **kwargs)
+
+
+class BlockedSenderAction(models.TextChoices):
+    TRASH = "trash", gettext_lazy("Move to Trash")
+    DISCARD = "discard", gettext_lazy("Discard silently")
+
+
+class TrustedSender(models.Model):
+    """Allowlist of email addresses or domains whose remote images are automatically trusted."""
+
+    account_key = cast(
+        str,
+        models.CharField(max_length=ACCOUNT_KEY_MAX_LENGTH, db_index=True),
+    )
+    email = cast(str, models.EmailField(db_index=True))
+    pattern = cast(
+        str,
+        models.CharField(
+            max_length=255,
+            db_index=True,
+            verbose_name=gettext_lazy("Email address or domain"),
+            help_text=gettext_lazy("e.g. newsletter@company.com or company.com"),
+        ),
+    )
+    description = cast(
+        str,
+        models.CharField(
+            max_length=255,
+            blank=True,
+            default="",
+            verbose_name=gettext_lazy("Notes"),
+        ),
+    )
+    created_at = cast(datetime, models.DateTimeField(auto_now_add=True))
+    updated_at = cast(datetime, models.DateTimeField(auto_now=True))
+
+    class Meta:
+        ordering = ["pattern"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["account_key", "pattern"],
+                name="unique_account_trusted_sender",
+            )
+        ]
+        verbose_name = gettext_lazy("trusted sender")
+        verbose_name_plural = gettext_lazy("trusted senders")
+
+    def __str__(self) -> str:
+        return f"{self.email} -> {self.pattern}"
+
+    def clean(self) -> None:
+        super().clean()
+        normalized = self.pattern.strip().lower().lstrip("@")
+        if not normalized:
+            raise ValidationError({"pattern": _("Sender email or domain cannot be empty.")})
+        self.pattern = normalized
+
+
+class BlockedSender(models.Model):
+    """Denylist of email addresses or domains blocked for this account."""
+
+    account_key = cast(
+        str,
+        models.CharField(max_length=ACCOUNT_KEY_MAX_LENGTH, db_index=True),
+    )
+    email = cast(str, models.EmailField(db_index=True))
+    pattern = cast(
+        str,
+        models.CharField(
+            max_length=255,
+            db_index=True,
+            verbose_name=gettext_lazy("Email address or domain"),
+            help_text=gettext_lazy("e.g. spam@domain.com or spamdomain.com"),
+        ),
+    )
+    action = cast(
+        str,
+        models.CharField(
+            max_length=16,
+            choices=BlockedSenderAction.choices,
+            default=BlockedSenderAction.TRASH,
+            verbose_name=gettext_lazy("Action"),
+        ),
+    )
+    description = cast(
+        str,
+        models.CharField(
+            max_length=255,
+            blank=True,
+            default="",
+            verbose_name=gettext_lazy("Notes"),
+        ),
+    )
+    created_at = cast(datetime, models.DateTimeField(auto_now_add=True))
+    updated_at = cast(datetime, models.DateTimeField(auto_now=True))
+
+    class Meta:
+        ordering = ["pattern"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["account_key", "pattern"],
+                name="unique_account_blocked_sender",
+            )
+        ]
+        verbose_name = gettext_lazy("blocked sender")
+        verbose_name_plural = gettext_lazy("blocked senders")
+
+    def __str__(self) -> str:
+        return f"{self.email} -> {self.pattern} ({self.action})"
+
+    def clean(self) -> None:
+        super().clean()
+        normalized = self.pattern.strip().lower().lstrip("@")
+        if not normalized:
+            raise ValidationError({"pattern": _("Sender email or domain cannot be empty.")})
+        self.pattern = normalized

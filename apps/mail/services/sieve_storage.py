@@ -25,6 +25,7 @@ from apps.mail.services.managesieve import (
     ManageSieveError,
 )
 from apps.mail.services.sieve_generator import (
+    BlockedSenderRule,
     FilterRule,
     VacationRule,
     rules_to_sieve_script,
@@ -131,6 +132,14 @@ def load_sieve_rules(
     return incoming, outgoing, False
 
 
+def get_account_blocked_rules(account_key: str) -> list[BlockedSenderRule]:
+    """Retrieve active blocked sender patterns for this account."""
+    from apps.preferences.services import get_blocked_senders
+
+    blocked_list = get_blocked_senders(account_key)
+    return [BlockedSenderRule(pattern=b.pattern, action=b.action) for b in blocked_list]
+
+
 def save_sieve_rules(
     request: HttpRequest,
     account: MailAccount,
@@ -145,13 +154,15 @@ def save_sieve_rules(
     incoming_list = list(incoming_rules)
     outgoing_list = list(outgoing_rules)
 
-    # Preserve existing vacation configuration
+    # Preserve existing vacation configuration & blocked senders
     vacation_rule, _ = load_vacation_rule(request, account)
+    blocked_rules = get_account_blocked_rules(account.account_key)
 
     sieve_source = rules_to_sieve_script(
         incoming_list,
         script_name=DEFAULT_SCRIPT_NAME,
         vacation=vacation_rule,
+        blocked_senders=blocked_rules,
     )
 
     # 1. Always update database record for parity and offline preservation
@@ -161,8 +172,11 @@ def save_sieve_rules(
         "incoming": [r.to_dict() for r in incoming_list],
         "outgoing": [r.to_dict() for r in outgoing_list],
         "vacation": vacation_rule.to_dict(),
+        "blocked_senders": [b.to_dict() for b in blocked_rules],
     }
-    record.is_active = any(r.active for r in incoming_list) or vacation_rule.enabled
+    record.is_active = (
+        any(r.active for r in incoming_list) or vacation_rule.enabled or bool(blocked_rules)
+    )
     record.save()
 
     # 2. Push to ManageSieve server if online
@@ -230,11 +244,13 @@ def save_vacation_rule(
         True if synchronized with server ManageSieve, False if saved only in DB fallback.
     """
     incoming_rules, outgoing_rules, _ = load_sieve_rules(request, account)
+    blocked_rules = get_account_blocked_rules(account.account_key)
 
     sieve_source = rules_to_sieve_script(
         incoming_rules,
         script_name=DEFAULT_SCRIPT_NAME,
         vacation=vacation,
+        blocked_senders=blocked_rules,
     )
 
     # 1. Update database record
@@ -244,8 +260,55 @@ def save_vacation_rule(
         "incoming": [r.to_dict() for r in incoming_rules],
         "outgoing": [r.to_dict() for r in outgoing_rules],
         "vacation": vacation.to_dict(),
+        "blocked_senders": [b.to_dict() for b in blocked_rules],
     }
-    record.is_active = any(r.active for r in incoming_rules) or vacation.enabled
+    record.is_active = (
+        any(r.active for r in incoming_rules) or vacation.enabled or bool(blocked_rules)
+    )
+    record.save()
+
+    # 2. Push to ManageSieve if online
+    client = get_account_managesieve_client(request, account)
+    if client:
+        try:
+            with client:
+                client.put_script(DEFAULT_SCRIPT_NAME, sieve_source)
+                client.set_active(DEFAULT_SCRIPT_NAME)
+                return True
+        except ManageSieveError:
+            return False
+
+    return False
+
+
+def save_blocked_senders_to_sieve(
+    request: HttpRequest,
+    account: MailAccount,
+) -> bool:
+    """Recompile and push the active Sieve script with updated blocked senders."""
+    incoming_rules, outgoing_rules, _ = load_sieve_rules(request, account)
+    vacation_rule, _ = load_vacation_rule(request, account)
+    blocked_rules = get_account_blocked_rules(account.account_key)
+
+    sieve_source = rules_to_sieve_script(
+        incoming_rules,
+        script_name=DEFAULT_SCRIPT_NAME,
+        vacation=vacation_rule,
+        blocked_senders=blocked_rules,
+    )
+
+    # 1. Update database record
+    record = _get_or_create_db_record(account)
+    record.script_source = sieve_source
+    record.rules_data = {
+        "incoming": [r.to_dict() for r in incoming_rules],
+        "outgoing": [r.to_dict() for r in outgoing_rules],
+        "vacation": vacation_rule.to_dict(),
+        "blocked_senders": [b.to_dict() for b in blocked_rules],
+    }
+    record.is_active = (
+        any(r.active for r in incoming_rules) or vacation_rule.enabled or bool(blocked_rules)
+    )
     record.save()
 
     # 2. Push to ManageSieve if online

@@ -19,14 +19,30 @@ from apps.accounts.exceptions import MailSessionError, PasswordChangeError, Pass
 from apps.accounts.services.password import change_account_password, is_password_change_configured
 from apps.accounts.services.session import load_mail_account
 from apps.mail.services.sieve_generator import VacationRule
-from apps.mail.services.sieve_storage import load_sieve_rules, load_vacation_rule
+from apps.mail.services.sieve_storage import (
+    load_sieve_rules,
+    load_vacation_rule,
+    save_blocked_senders_to_sieve,
+)
 from apps.mail.views import get_account_folder_choices
-from apps.preferences.forms import AccountSignatureForm, ChangePasswordForm, MailPreferenceForm
-from apps.preferences.models import AccountSignature, MailPreference
+from apps.preferences.forms import (
+    AccountSignatureForm,
+    BlockedSenderForm,
+    ChangePasswordForm,
+    MailPreferenceForm,
+    TrustedSenderForm,
+)
+from apps.preferences.models import AccountSignature, BlockedSenderAction, MailPreference
 from apps.preferences.services import (
+    add_blocked_sender,
+    add_trusted_sender,
     apply_mail_preference,
+    delete_blocked_sender,
+    delete_trusted_sender,
     get_account_signatures,
+    get_blocked_senders,
     get_mail_preference,
+    get_trusted_senders,
     sync_default_signature_to_session,
 )
 
@@ -101,6 +117,8 @@ def _render(
     vacation_rule = VacationRule()
     vacation_synced = False
     signatures = []
+    trusted_senders = []
+    blocked_senders = []
     if not htmx:
         account = getattr(request, "mail_account", None) or load_mail_account(request)
         if account:
@@ -112,10 +130,16 @@ def _render(
                 email=account.email,
                 seed_from_pref=preference.signature_html,
             )
+            trusted_senders = get_trusted_senders(account.account_key)
+            blocked_senders = get_blocked_senders(account.account_key)
     active_tab = request.GET.get("tab", "incoming")
     if active_tab not in {"incoming", "outgoing"}:
         active_tab = "incoming"
     current_rules = incoming_rules if active_tab == "incoming" else outgoing_rules
+
+    senders_tab = "trusted"
+    if request.GET.get("section") == "senders":
+        senders_tab = request.GET.get("tab", "trusted")
 
     context = {
         "form": form,
@@ -137,6 +161,11 @@ def _render(
         "vacation_synced": vacation_synced,
         "folder_choices": folder_choices,
         "signatures": signatures,
+        "trusted_senders": trusted_senders,
+        "blocked_senders": blocked_senders,
+        "trusted_sender_form": TrustedSenderForm(),
+        "blocked_sender_form": BlockedSenderForm(),
+        "senders_tab": senders_tab,
     }
     template = "preferences/_settings_form.html" if htmx else "preferences/index.html"
     return render(request, template, context, status=status)
@@ -367,3 +396,113 @@ def signature_delete(request: HttpRequest, sig_id: int) -> HttpResponse:
         "status_message": _("Signature deleted."),
     }
     return render(request, "preferences/_signatures_panel.html", context)
+
+
+def _render_senders_panel(
+    request: HttpRequest,
+    account: Any,
+    active_tab: str = "trusted",
+    status_message: str = "",
+) -> HttpResponse:
+    trusted_senders = get_trusted_senders(account.account_key)
+    blocked_senders = get_blocked_senders(account.account_key)
+    context = {
+        "trusted_senders": trusted_senders,
+        "blocked_senders": blocked_senders,
+        "trusted_sender_form": TrustedSenderForm(),
+        "blocked_sender_form": BlockedSenderForm(),
+        "senders_tab": active_tab,
+        "status_message": status_message,
+    }
+    return render(request, "preferences/_senders_settings.html", context)
+
+
+@never_cache
+@require_http_methods(["GET"])
+@mail_login_required
+def senders_panel(request: HttpRequest) -> HttpResponse:
+    """Render the senders management panel (trusted allowlist and blocked denylist)."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+    tab = request.GET.get("tab", "trusted")
+    if tab not in {"trusted", "blocked"}:
+        tab = "trusted"
+    return _render_senders_panel(request, account, active_tab=tab)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def trusted_sender_add_view(request: HttpRequest) -> HttpResponse:
+    """Add a trusted sender or domain pattern."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    form = TrustedSenderForm(request.POST)
+    msg = ""
+    if form.is_valid():
+        add_trusted_sender(
+            account_key=account.account_key,
+            email=account.email,
+            pattern=form.cleaned_data["pattern"],
+            description=form.cleaned_data.get("description", ""),
+        )
+        msg = _("Sender added to trusted allowlist.")
+
+    return _render_senders_panel(request, account, active_tab="trusted", status_message=msg)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def trusted_sender_delete_view(request: HttpRequest, pk: int) -> HttpResponse:
+    """Remove a pattern from the trusted allowlist."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    delete_trusted_sender(account.account_key, pk)
+    msg = _("Sender removed from trusted allowlist.")
+    return _render_senders_panel(request, account, active_tab="trusted", status_message=msg)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def blocked_sender_add_view(request: HttpRequest) -> HttpResponse:
+    """Add a blocked sender or domain pattern and sync Sieve rule."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    form = BlockedSenderForm(request.POST)
+    msg = ""
+    if form.is_valid():
+        add_blocked_sender(
+            account_key=account.account_key,
+            email=account.email,
+            pattern=form.cleaned_data["pattern"],
+            action=form.cleaned_data.get("action", BlockedSenderAction.TRASH),
+            description=form.cleaned_data.get("description", ""),
+        )
+        save_blocked_senders_to_sieve(request, account)
+        msg = _("Sender blocked and filter updated.")
+
+    return _render_senders_panel(request, account, active_tab="blocked", status_message=msg)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def blocked_sender_delete_view(request: HttpRequest, pk: int) -> HttpResponse:
+    """Remove a pattern from the blocked denylist and sync Sieve rule."""
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    delete_blocked_sender(account.account_key, pk)
+    save_blocked_senders_to_sieve(request, account)
+    msg = _("Sender unblocked and filter updated.")
+    return _render_senders_panel(request, account, active_tab="blocked", status_message=msg)

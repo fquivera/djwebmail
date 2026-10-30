@@ -1,0 +1,335 @@
+{% load i18n %}
+<div id="senders-panel" class="card bg-base-100 border border-base-300 shadow-sm">
+  <div class="card-body p-4 sm:p-6 space-y-5">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-base-300 pb-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-bold text-base-content">{% translate "Trusted & Blocked Senders" %}</h2>
+        </div>
+        <p class="text-xs text-base-content/60 mt-0.5">
+          {% translate "Control privacy allowlists for remote content and server-side filtering for unwanted senders." %}
+        </p>
+      </div>
+
+      {% if status_message %}
+        <div class="alert alert-success py-1 px-3 text-xs w-auto" role="status">
+          <span>{{ status_message }}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="tabs tabs-bordered">
+      <button
+        type="button"
+        class="tab {% if senders_tab != 'blocked' %}tab-active font-semibold text-primary border-primary{% endif %} gap-2"
+        hx-get="{% url 'preferences:senders_panel' %}?tab=trusted"
+        hx-target="#senders-panel"
+        hx-swap="outerHTML"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <polyline points="9 12 11 14 15 10"></polyline>
+        </svg>
+        <span>{% translate "Trusted Senders" %}</span>
+        <span class="badge badge-sm {% if senders_tab != 'blocked' %}badge-primary{% else %}badge-ghost{% endif %}">
+          {{ trusted_senders|length }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="tab {% if senders_tab == 'blocked' %}tab-active font-semibold text-error border-error{% endif %} gap-2"
+        hx-get="{% url 'preferences:senders_panel' %}?tab=blocked"
+        hx-target="#senders-panel"
+        hx-swap="outerHTML"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        </svg>
+        <span>{% translate "Blocked Senders" %}</span>
+        <span class="badge badge-sm {% if senders_tab == 'blocked' %}badge-error text-white{% else %}badge-ghost{% endif %}">
+          {{ blocked_senders|length }}
+        </span>
+      </button>
+    </div>
+
+    {% if senders_tab != 'blocked' %}
+      <!-- TRUSTED SENDERS TAB -->
+      <div class="space-y-4">
+        <div class="rounded-xl border border-base-200 bg-base-200/30 p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-base-content/70 flex items-center gap-2">
+            <svg class="size-3.5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {% translate "Add trusted sender or domain" %}
+          </h3>
+          <p class="text-xs text-base-content/60">
+            {% translate "Remote images from these senders will load automatically without privacy warnings." %}
+          </p>
+
+          <form
+            method="post"
+            action="{% url 'preferences:trusted_sender_add' %}"
+            hx-post="{% url 'preferences:trusted_sender_add' %}"
+            hx-target="#senders-panel"
+            hx-swap="outerHTML"
+            class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end"
+          >
+            {% csrf_token %}
+            <div class="sm:col-span-6">
+              <label class="label text-xs font-medium py-1" for="trusted-pattern">
+                {% translate "Email address or domain" %}
+              </label>
+              <input
+                type="text"
+                id="trusted-pattern"
+                name="pattern"
+                required
+                class="input input-bordered input-sm w-full"
+                placeholder="newsletter@company.com / company.com"
+              />
+            </div>
+            <div class="sm:col-span-4">
+              <label class="label text-xs font-medium py-1" for="trusted-description">
+                {% translate "Notes (optional)" %}
+              </label>
+              <input
+                type="text"
+                id="trusted-description"
+                name="description"
+                class="input input-bordered input-sm w-full"
+                placeholder="Monthly reports"
+              />
+            </div>
+            <div class="sm:col-span-2">
+              <button type="submit" class="btn btn-primary btn-sm w-full gap-1">
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>{% translate "Trust" %}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Trusted List -->
+        {% if trusted_senders %}
+          <div class="overflow-x-auto rounded-xl border border-base-300">
+            <table class="table table-sm w-full">
+              <thead>
+                <tr class="bg-base-200/50 text-xs">
+                  <th>{% translate "Email address or domain" %}</th>
+                  <th>{% translate "Notes" %}</th>
+                  <th>{% translate "Added date" %}</th>
+                  <th class="text-end">{% translate "Action" %}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-base-200">
+                {% for sender in trusted_senders %}
+                  <tr class="hover:bg-base-200/30">
+                    <td class="font-medium font-mono text-xs text-base-content flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-success shrink-0"></span>
+                      <span>{{ sender.pattern }}</span>
+                    </td>
+                    <td class="text-xs text-base-content/70">
+                      {{ sender.description|default:"—" }}
+                    </td>
+                    <td class="text-xs text-base-content/60">
+                      {{ sender.created_at|date:"SHORT_DATE_FORMAT" }}
+                    </td>
+                    <td class="text-end">
+                      <form
+                        method="post"
+                        action="{% url 'preferences:trusted_sender_delete' sender.pk %}"
+                        hx-post="{% url 'preferences:trusted_sender_delete' sender.pk %}"
+                        hx-target="#senders-panel"
+                        hx-swap="outerHTML"
+                        class="inline"
+                      >
+                        {% csrf_token %}
+                        <button
+                          type="submit"
+                          class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                          title="{% translate 'Remove trusted sender' %}"
+                        >
+                          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                          <span>{% translate "Remove" %}</span>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="rounded-xl border border-dashed border-base-300 p-8 text-center space-y-2">
+            <div class="mx-auto size-10 rounded-full bg-base-200 flex items-center justify-center text-base-content/40">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <p class="text-xs font-medium text-base-content/70">{% translate "No trusted senders registered yet." %}</p>
+            <p class="text-[11px] text-base-content/50">
+              {% translate "You can also trust senders directly from the message viewer warning banner." %}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <!-- BLOCKED SENDERS TAB -->
+      <div class="space-y-4">
+        <div class="rounded-xl border border-base-200 bg-base-200/30 p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-error flex items-center gap-2">
+            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+            {% translate "Add blocked sender or domain" %}
+          </h3>
+          <p class="text-xs text-base-content/60">
+            {% translate "Incoming messages matching these senders are handled directly on the mail server." %}
+          </p>
+
+          <form
+            method="post"
+            action="{% url 'preferences:blocked_sender_add' %}"
+            hx-post="{% url 'preferences:blocked_sender_add' %}"
+            hx-target="#senders-panel"
+            hx-swap="outerHTML"
+            class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end"
+          >
+            {% csrf_token %}
+            <div class="sm:col-span-5">
+              <label class="label text-xs font-medium py-1" for="blocked-pattern">
+                {% translate "Email address or domain" %}
+              </label>
+              <input
+                type="text"
+                id="blocked-pattern"
+                name="pattern"
+                required
+                class="input input-bordered input-sm w-full"
+                placeholder="spammer@evil.com / evil.com"
+              />
+            </div>
+            <div class="sm:col-span-3">
+              <label class="label text-xs font-medium py-1" for="blocked-action">
+                {% translate "Action" %}
+              </label>
+              <select id="blocked-action" name="action" class="select select-bordered select-sm w-full">
+                <option value="trash">{% translate "Move to Trash" %}</option>
+                <option value="discard">{% translate "Discard silently" %}</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="label text-xs font-medium py-1" for="blocked-description">
+                {% translate "Notes (optional)" %}
+              </label>
+              <input
+                type="text"
+                id="blocked-description"
+                name="description"
+                class="input input-bordered input-sm w-full"
+                placeholder="Unsolicited"
+              />
+            </div>
+            <div class="sm:col-span-2">
+              <button type="submit" class="btn btn-error btn-sm w-full gap-1 text-white">
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                </svg>
+                <span>{% translate "Block" %}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Blocked List -->
+        {% if blocked_senders %}
+          <div class="overflow-x-auto rounded-xl border border-base-300">
+            <table class="table table-sm w-full">
+              <thead>
+                <tr class="bg-base-200/50 text-xs">
+                  <th>{% translate "Email address or domain" %}</th>
+                  <th>{% translate "Rule Action" %}</th>
+                  <th>{% translate "Notes" %}</th>
+                  <th>{% translate "Added date" %}</th>
+                  <th class="text-end">{% translate "Action" %}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-base-200">
+                {% for sender in blocked_senders %}
+                  <tr class="hover:bg-base-200/30">
+                    <td class="font-medium font-mono text-xs text-base-content flex items-center gap-2">
+                      <span class="size-2 rounded-full bg-error shrink-0"></span>
+                      <span>{{ sender.pattern }}</span>
+                    </td>
+                    <td>
+                      {% if sender.action == "discard" %}
+                        <span class="badge badge-error badge-outline badge-xs">{% translate "Discard silently" %}</span>
+                      {% else %}
+                        <span class="badge badge-warning badge-outline badge-xs">{% translate "Move to Trash" %}</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-xs text-base-content/70">
+                      {{ sender.description|default:"—" }}
+                    </td>
+                    <td class="text-xs text-base-content/60">
+                      {{ sender.created_at|date:"SHORT_DATE_FORMAT" }}
+                    </td>
+                    <td class="text-end">
+                      <form
+                        method="post"
+                        action="{% url 'preferences:blocked_sender_delete' sender.pk %}"
+                        hx-post="{% url 'preferences:blocked_sender_delete' sender.pk %}"
+                        hx-target="#senders-panel"
+                        hx-swap="outerHTML"
+                        class="inline"
+                      >
+                        {% csrf_token %}
+                        <button
+                          type="submit"
+                          class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                          title="{% translate 'Unblock sender' %}"
+                        >
+                          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                          <span>{% translate "Unblock" %}</span>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="rounded-xl border border-dashed border-base-300 p-8 text-center space-y-2">
+            <div class="mx-auto size-10 rounded-full bg-base-200 flex items-center justify-center text-base-content/40">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+              </svg>
+            </div>
+            <p class="text-xs font-medium text-base-content/70">{% translate "No blocked senders registered yet." %}</p>
+            <p class="text-[11px] text-base-content/50">
+              {% translate "You can also block senders directly from the message viewer." %}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
