@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 SIEVE_METADATA_PREFIX = "# DJWEBMAIL_FILTER_RULES_V1: "
+_DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # Sieve field identifier mappings
 HEADER_FIELD_MAP = {
@@ -108,6 +109,36 @@ class FilterRule:
             conditions=conditions,
             actions=actions,
             stop=stop,
+        )
+
+
+@dataclass
+class VacationRule:
+    """An out-of-office / vacation auto-reply configuration (RFC 5230, RFC 5260)."""
+
+    enabled: bool = False
+    subject: str = ""
+    message: str = ""
+    days: int = 7
+    start_date: str = ""  # YYYY-MM-DD
+    end_date: str = ""  # YYYY-MM-DD
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> VacationRule:
+        try:
+            days = int(data.get("days", 7))
+        except (ValueError, TypeError):
+            days = 7
+        return cls(
+            enabled=bool(data.get("enabled", False)),
+            subject=str(data.get("subject", "")),
+            message=str(data.get("message", "")),
+            days=max(1, days),
+            start_date=str(data.get("start_date", "")),
+            end_date=str(data.get("end_date", "")),
         )
 
 
@@ -213,18 +244,71 @@ def compile_rule_to_sieve(rule: FilterRule) -> tuple[str, set[str]]:
     return code, capabilities
 
 
+def compile_vacation_to_sieve(vacation: VacationRule) -> tuple[str, set[str]]:
+    """Compile a VacationRule into a Sieve RFC 5230 / RFC 5260 block."""
+    if not vacation.enabled:
+        return "# Vacation auto-responder is disabled\n", set()
+
+    message = vacation.message.strip()
+    if not message:
+        return "# Vacation auto-responder is disabled (empty message)\n", set()
+
+    capabilities: set[str] = {"vacation"}
+    tests: list[str] = []
+
+    start = vacation.start_date.strip()
+    end = vacation.end_date.strip()
+
+    if _DATE_REGEX.match(start):
+        tests.append(f'currentdate :value "ge" "date" "{start}"')
+    if _DATE_REGEX.match(end):
+        tests.append(f'currentdate :value "le" "date" "{end}"')
+
+    if tests:
+        capabilities.update({"date", "relational"})
+
+    escaped_subject = escape_sieve_string(vacation.subject.strip())
+    lines = vacation.message.splitlines()
+    stuffed_lines = [f".{ln}" if ln.startswith(".") else ln for ln in lines]
+    body_content = "\n".join(stuffed_lines)
+
+    subject_arg = f' :subject "{escaped_subject}"' if escaped_subject else ""
+    vacation_stmt = f"vacation :days {vacation.days}{subject_arg} text:\n{body_content}\n.\n;"
+
+    title = escape_sieve_string(vacation.subject.strip() or "Out of office")
+    if tests:
+        if len(tests) == 1:
+            cond_clause = tests[0]
+        else:
+            joined_tests = ",\n        ".join(tests)
+            cond_clause = f"allof (\n        {joined_tests}\n    )"
+        code = f"# vacation:[{title}]\nif {cond_clause} {{\n    {vacation_stmt}\n}}\n"
+    else:
+        code = f"# vacation:[{title}]\n{vacation_stmt}\n"
+
+    return code, capabilities
+
+
 def rules_to_sieve_script(
     rules: Sequence[FilterRule],
     *,
     script_name: str = "djwebmail",
+    vacation: VacationRule | None = None,
 ) -> str:
-    """Compile a list of structured FilterRules into a complete RFC 5228 Sieve script.
+    """Compile structured FilterRules and VacationRule into a complete RFC 5228 Sieve script.
 
     Embeds JSON metadata as a comment line to ensure lossless round-trip reconstruction
-    in the Carbonio-style visual webmail editor.
+    in the webmail settings editor.
     """
     rule_blocks: list[str] = []
     all_capabilities: set[str] = set()
+
+    vacation_block = ""
+    if vacation is not None:
+        v_block, v_caps = compile_vacation_to_sieve(vacation)
+        if v_block:
+            vacation_block = v_block
+        all_capabilities.update(v_caps)
 
     for rule in rules:
         block, caps = compile_rule_to_sieve(rule)
@@ -233,10 +317,11 @@ def rules_to_sieve_script(
 
     # Encode metadata for visual editor fidelity
     rules_dict = [r.to_dict() for r in rules]
-    metadata_json = json.dumps(
-        {"name": script_name, "rules": rules_dict},
-        ensure_ascii=False,
-    )
+    meta_payload: dict[str, Any] = {"name": script_name, "rules": rules_dict}
+    if vacation is not None:
+        meta_payload["vacation"] = vacation.to_dict()
+
+    metadata_json = json.dumps(meta_payload, ensure_ascii=False)
     metadata_comment = f"{SIEVE_METADATA_PREFIX}{metadata_json}\n"
 
     lines: list[str] = [
@@ -249,6 +334,9 @@ def rules_to_sieve_script(
         sorted_caps = sorted(all_capabilities)
         req_str = ", ".join(f'"{c}"' for c in sorted_caps)
         lines.append(f"require [{req_str}];\n")
+
+    if vacation_block:
+        lines.append(vacation_block)
 
     lines.extend(rule_blocks)
     return "\n".join(lines).strip() + "\n"
@@ -357,3 +445,79 @@ def sieve_script_to_rules(script_source: str) -> list[FilterRule]:
         )
 
     return rules
+
+
+def sieve_script_to_vacation(script_source: str) -> VacationRule | None:
+    """Extract a VacationRule from a Sieve script.
+
+    Prefers lossless JSON metadata; falls back to parsing standard Sieve vacation
+    and RFC 5260 currentdate syntax for externally modified scripts.
+    """
+    if not script_source:
+        return None
+
+    # 1. Check for DjWebmail metadata comment
+    for line in script_source.splitlines():
+        line = line.strip()
+        if line.startswith(SIEVE_METADATA_PREFIX):
+            json_part = line[len(SIEVE_METADATA_PREFIX) :].strip()
+            try:
+                payload = json.loads(json_part)
+                raw_vacation = payload.get("vacation")
+                if isinstance(raw_vacation, dict):
+                    return VacationRule.from_dict(raw_vacation)
+            except Exception:
+                pass
+
+    # 2. Fallback parser: inspect script text for vacation command
+    if "vacation" not in script_source:
+        return None
+
+    start_date = ""
+    end_date = ""
+    start_m = re.search(
+        r'currentdate\s+:value\s+"ge"\s+"date"\s+"(\d{4}-\d{2}-\d{2})"',
+        script_source,
+    )
+    if start_m:
+        start_date = start_m.group(1)
+
+    end_m = re.search(
+        r'currentdate\s+:value\s+"le"\s+"date"\s+"(\d{4}-\d{2}-\d{2})"',
+        script_source,
+    )
+    if end_m:
+        end_date = end_m.group(1)
+
+    days = 7
+    days_m = re.search(r":days\s+(\d+)", script_source)
+    if days_m:
+        try:
+            days = int(days_m.group(1))
+        except ValueError:
+            pass
+
+    subject = ""
+    subj_m = re.search(r':subject\s+"([^"]*)"', script_source)
+    if subj_m:
+        subject = subj_m.group(1)
+
+    message = ""
+    body_text_m = re.search(r"text:\s*\n(.*?)\n\.\s*;", script_source, re.DOTALL)
+    if body_text_m:
+        raw_msg = body_text_m.group(1)
+        unstuffed = [ln[1:] if ln.startswith("..") else ln for ln in raw_msg.splitlines()]
+        message = "\n".join(unstuffed)
+    else:
+        quoted_m = re.search(r'vacation[^;]*"([^"]+)";', script_source, re.DOTALL)
+        if quoted_m:
+            message = quoted_m.group(1)
+
+    return VacationRule(
+        enabled=True,
+        subject=subject,
+        message=message,
+        days=days,
+        start_date=start_date,
+        end_date=end_date,
+    )

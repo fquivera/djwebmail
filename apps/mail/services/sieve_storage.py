@@ -26,8 +26,10 @@ from apps.mail.services.managesieve import (
 )
 from apps.mail.services.sieve_generator import (
     FilterRule,
+    VacationRule,
     rules_to_sieve_script,
     sieve_script_to_rules,
+    sieve_script_to_vacation,
 )
 
 DEFAULT_SCRIPT_NAME = "djwebmail"
@@ -143,7 +145,14 @@ def save_sieve_rules(
     incoming_list = list(incoming_rules)
     outgoing_list = list(outgoing_rules)
 
-    sieve_source = rules_to_sieve_script(incoming_list, script_name=DEFAULT_SCRIPT_NAME)
+    # Preserve existing vacation configuration
+    vacation_rule, _ = load_vacation_rule(request, account)
+
+    sieve_source = rules_to_sieve_script(
+        incoming_list,
+        script_name=DEFAULT_SCRIPT_NAME,
+        vacation=vacation_rule,
+    )
 
     # 1. Always update database record for parity and offline preservation
     record = _get_or_create_db_record(account)
@@ -151,11 +160,95 @@ def save_sieve_rules(
     record.rules_data = {
         "incoming": [r.to_dict() for r in incoming_list],
         "outgoing": [r.to_dict() for r in outgoing_list],
+        "vacation": vacation_rule.to_dict(),
     }
-    record.is_active = any(r.active for r in incoming_list)
+    record.is_active = any(r.active for r in incoming_list) or vacation_rule.enabled
     record.save()
 
     # 2. Push to ManageSieve server if online
+    client = get_account_managesieve_client(request, account)
+    if client:
+        try:
+            with client:
+                client.put_script(DEFAULT_SCRIPT_NAME, sieve_source)
+                client.set_active(DEFAULT_SCRIPT_NAME)
+                return True
+        except ManageSieveError:
+            return False
+
+    return False
+
+
+def load_vacation_rule(
+    request: HttpRequest,
+    account: MailAccount,
+) -> tuple[VacationRule, bool]:
+    """Load vacation auto-reply configuration for an account.
+
+    Returns:
+        (vacation_rule, is_synced_to_server)
+    """
+    # 1. Try ManageSieve if available
+    client = get_account_managesieve_client(request, account)
+    if client:
+        try:
+            with client:
+                _scripts, active_name = client.list_scripts()
+                target_script = active_name or DEFAULT_SCRIPT_NAME
+                try:
+                    script_content = client.get_script(target_script)
+                    vacation = sieve_script_to_vacation(script_content)
+                    if vacation is not None:
+                        return vacation, True
+                    fallback_record = _get_or_create_db_record(account)
+                    raw_vacation = fallback_record.rules_data.get("vacation")
+                    if isinstance(raw_vacation, dict):
+                        return VacationRule.from_dict(raw_vacation), True
+                    return VacationRule(), True
+                except ManageSieveError:
+                    pass
+        except Exception:
+            pass
+
+    # 2. Fall back to database model
+    record = _get_or_create_db_record(account)
+    rules_dict = record.rules_data or {}
+    raw_vacation = rules_dict.get("vacation")
+    if isinstance(raw_vacation, dict):
+        return VacationRule.from_dict(raw_vacation), False
+    return VacationRule(), False
+
+
+def save_vacation_rule(
+    request: HttpRequest,
+    account: MailAccount,
+    vacation: VacationRule,
+) -> bool:
+    """Save vacation configuration to database and push Sieve script to server.
+
+    Returns:
+        True if synchronized with server ManageSieve, False if saved only in DB fallback.
+    """
+    incoming_rules, outgoing_rules, _ = load_sieve_rules(request, account)
+
+    sieve_source = rules_to_sieve_script(
+        incoming_rules,
+        script_name=DEFAULT_SCRIPT_NAME,
+        vacation=vacation,
+    )
+
+    # 1. Update database record
+    record = _get_or_create_db_record(account)
+    record.script_source = sieve_source
+    record.rules_data = {
+        "incoming": [r.to_dict() for r in incoming_rules],
+        "outgoing": [r.to_dict() for r in outgoing_rules],
+        "vacation": vacation.to_dict(),
+    }
+    record.is_active = any(r.active for r in incoming_rules) or vacation.enabled
+    record.save()
+
+    # 2. Push to ManageSieve if online
     client = get_account_managesieve_client(request, account)
     if client:
         try:

@@ -1,0 +1,178 @@
+{% load i18n %}
+<div id="vacation-panel" class="card bg-base-100 border border-base-300 shadow-sm">
+  <div class="card-body p-4 sm:p-6 space-y-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-base-300 pb-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-bold text-base-content">{% translate "Out of office auto-responder" %}</h2>
+          {% if is_synced or vacation_synced %}
+            <span class="badge badge-success badge-sm gap-1" title="{% translate 'Synchronized with ManageSieve server' %}">
+              <span class="size-1.5 rounded-full bg-base-100"></span>
+              ManageSieve
+            </span>
+          {% else %}
+            <span class="badge badge-warning badge-sm gap-1" title="{% translate 'Saved in database fallback mode' %}">
+              <span class="size-1.5 rounded-full bg-base-100"></span>
+              {% translate "Database Fallback" %}
+            </span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-base-content/60 mt-0.5">
+          {% translate "Automatically send replies to incoming messages while you are away." %}
+        </p>
+      </div>
+
+      {% if status_message %}
+        <div class="alert alert-success py-1 px-3 text-xs w-auto" role="status">
+          <span>{{ status_message }}</span>
+        </div>
+      {% endif %}
+      {% if error_message %}
+        <div class="alert alert-error py-1 px-3 text-xs w-auto" role="alert">
+          <span>{{ error_message }}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Form -->
+    <form
+      id="vacation-form"
+      method="post"
+      action="{% url 'mail:vacation_save' %}"
+      hx-post="{% url 'mail:vacation_save' %}"
+      hx-target="#vacation-panel"
+      hx-swap="outerHTML"
+      class="space-y-4"
+    >
+      {% csrf_token %}
+
+      <!-- Enable / Disable Toggle -->
+      <div class="flex items-center justify-between rounded-lg border border-base-300 bg-base-200/40 p-4">
+        <div>
+          <label for="vacation-enabled" class="text-sm font-semibold text-base-content cursor-pointer">
+            {% translate "Enable auto-responder" %}
+          </label>
+          <p class="text-xs text-base-content/60">
+            {% translate "When active, DjWebmail responds to incoming messages on the server according to the rules below." %}
+          </p>
+        </div>
+        <input
+          type="checkbox"
+          id="vacation-enabled"
+          name="enabled"
+          class="toggle toggle-primary"
+          {% if vacation_rule.enabled %}checked{% endif %}
+        >
+      </div>
+
+      <!-- Date Range (RFC 5260) -->
+      <fieldset class="rounded-xl border border-base-300 bg-base-100 p-4 space-y-3">
+        <legend class="flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+          <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+            <line x1="16" x2="16" y1="2" y2="6"></line>
+            <line x1="8" x2="8" y1="2" y2="6"></line>
+            <line x1="3" x2="21" y1="10" y2="10"></line>
+          </svg>
+          <span>{% translate "Active period" %}</span>
+        </legend>
+        <p class="text-xs text-base-content/60">
+          {% translate "Optional. Define when the auto-responder should run. If left empty, it starts immediately and runs until disabled." %}
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="vacation-start-date" class="label text-xs font-medium text-base-content/70">
+              {% translate "Start date" %}
+            </label>
+            <input
+              type="date"
+              id="vacation-start-date"
+              name="start_date"
+              class="input input-bordered input-sm w-full"
+              value="{{ vacation_rule.start_date }}"
+            >
+          </div>
+          <div>
+            <label for="vacation-end-date" class="label text-xs font-medium text-base-content/70">
+              {% translate "End date" %}
+            </label>
+            <input
+              type="date"
+              id="vacation-end-date"
+              name="end_date"
+              class="input input-bordered input-sm w-full"
+              value="{{ vacation_rule.end_date }}"
+            >
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Response Content (RFC 5230) -->
+      <fieldset class="rounded-xl border border-base-300 bg-base-100 p-4 space-y-4">
+        <legend class="flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+          <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>{% translate "Auto-reply message" %}</span>
+        </legend>
+
+        <div>
+          <label for="vacation-subject" class="label text-xs font-medium text-base-content/70">
+            {% translate "Subject" %}
+          </label>
+          <input
+            type="text"
+            id="vacation-subject"
+            name="subject"
+            class="input input-bordered input-sm w-full"
+            value="{{ vacation_rule.subject }}"
+            placeholder="{% translate 'Out of office' %}"
+          >
+        </div>
+
+        <div>
+          <label for="vacation-message" class="label text-xs font-medium text-base-content/70">
+            {% translate "Message" %}
+          </label>
+          <textarea
+            id="vacation-message"
+            name="message"
+            rows="6"
+            class="textarea textarea-bordered w-full text-sm"
+            placeholder="{% translate 'I am currently away and will have limited access to email. I will respond to your message upon my return.' %}"
+          >{{ vacation_rule.message }}</textarea>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+          <div>
+            <label for="vacation-days" class="label text-xs font-medium text-base-content/70">
+              {% translate "Response interval (days)" %}
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                type="number"
+                id="vacation-days"
+                name="days"
+                min="1"
+                max="90"
+                class="input input-bordered input-sm w-24"
+                value="{{ vacation_rule.days|default:7 }}"
+              >
+              <span class="text-xs text-base-content/60">
+                {% translate "days between replies to the same sender" %}
+              </span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          {% translate "Save vacation settings" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -17,7 +17,8 @@ from apps.accounts.decorators import login_redirect, mail_login_required
 from apps.accounts.exceptions import MailSessionError, PasswordChangeError, PasswordValidationError
 from apps.accounts.services.password import change_account_password, is_password_change_configured
 from apps.accounts.services.session import load_mail_account
-from apps.mail.services.sieve_storage import load_sieve_rules
+from apps.mail.services.sieve_generator import VacationRule
+from apps.mail.services.sieve_storage import load_sieve_rules, load_vacation_rule
 from apps.mail.views import get_account_folder_choices
 from apps.preferences.forms import ChangePasswordForm, MailPreferenceForm
 from apps.preferences.models import MailPreference
@@ -91,10 +92,13 @@ def _render(
     outgoing_rules = []
     is_synced = False
     folder_choices = []
+    vacation_rule = VacationRule()
+    vacation_synced = False
     if not htmx:
         account = getattr(request, "mail_account", None) or load_mail_account(request)
         if account:
             incoming_rules, outgoing_rules, is_synced = load_sieve_rules(request, account)
+            vacation_rule, vacation_synced = load_vacation_rule(request, account)
             folder_choices = get_account_folder_choices(request)
     active_tab = request.GET.get("tab", "incoming")
     if active_tab not in {"incoming", "outgoing"}:
@@ -117,6 +121,8 @@ def _render(
         "active_rules": [r for r in current_rules if r.active],
         "available_rules": [r for r in current_rules if not r.active],
         "is_synced": is_synced,
+        "vacation_rule": vacation_rule,
+        "vacation_synced": vacation_synced,
         "folder_choices": folder_choices,
     }
     template = "preferences/_settings_form.html" if htmx else "preferences/index.html"

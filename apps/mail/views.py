@@ -74,8 +74,18 @@ from apps.mail.services.message import (
     rewrite_images,
 )
 from apps.mail.services.search import SearchFilters, search_messages
-from apps.mail.services.sieve_generator import FilterAction, FilterCondition, FilterRule
-from apps.mail.services.sieve_storage import load_sieve_rules, save_sieve_rules
+from apps.mail.services.sieve_generator import (
+    FilterAction,
+    FilterCondition,
+    FilterRule,
+    VacationRule,
+)
+from apps.mail.services.sieve_storage import (
+    load_sieve_rules,
+    load_vacation_rule,
+    save_sieve_rules,
+    save_vacation_rule,
+)
 from apps.preferences.constants import RemoteImages
 
 
@@ -1139,3 +1149,82 @@ def filter_save(request: HttpRequest) -> HttpResponse:
     response = render(request, "mail/_filters_panel.html", context)
     response["HX-Trigger"] = json.dumps({"mail:filter-saved": True})
     return response
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def vacation_panel(request: HttpRequest) -> HttpResponse:
+    """Render the out-of-office vacation auto-responder panel."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    vacation_rule, is_synced = load_vacation_rule(request, account)
+    context = {
+        "vacation_rule": vacation_rule,
+        "is_synced": is_synced,
+    }
+    return render(request, "mail/_vacation_panel.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def vacation_save(request: HttpRequest) -> HttpResponse:
+    """Save out-of-office vacation auto-responder settings."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    post = request.POST
+    enabled = post.get("enabled") in {"on", "true", "1"}
+    subject = str(post.get("subject") or "").strip()
+    message = str(post.get("message") or "").strip()
+    start_date = str(post.get("start_date") or "").strip()
+    end_date = str(post.get("end_date") or "").strip()
+
+    try:
+        days_raw = str(post.get("days") or "7")
+        days = int(days_raw)
+        if days < 1:
+            days = 1
+        elif days > 90:
+            days = 90
+    except (ValueError, TypeError):
+        days = 7
+
+    error_message = None
+    if enabled and not message:
+        error_message = _("Auto-reply message is required when vacation responder is enabled.")
+    elif start_date and end_date and start_date > end_date:
+        error_message = _("Start date must be before or equal to end date.")
+
+    vacation = VacationRule(
+        enabled=enabled and not bool(error_message),
+        subject=subject,
+        message=message,
+        days=days,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    status_message = None
+    is_synced = False
+
+    if not error_message:
+        is_synced = save_vacation_rule(request, account, vacation)
+        if enabled:
+            status_message = _("Vacation auto-responder activated successfully.")
+        else:
+            status_message = _("Vacation auto-responder deactivated.")
+
+    context = {
+        "vacation_rule": vacation,
+        "is_synced": is_synced,
+        "status_message": status_message,
+        "error_message": error_message,
+    }
+    is_htmx = request.META.get("HTTP_HX_REQUEST") == "true"
+    status = 422 if error_message and not is_htmx else 200
+    return render(request, "mail/_vacation_panel.html", context, status=status)

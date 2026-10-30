@@ -137,28 +137,23 @@
   });
 
   function applySection(val) {
-    var prefSec = document.getElementById("section-preferences");
-    var passSec = document.getElementById("section-password");
-    var filtSec = document.getElementById("section-filters");
     var select = document.getElementById("settings-section-selector");
 
     if (select && select.value !== val) {
       select.value = val;
     }
 
-    if (val === "password" && passSec) {
-      if (prefSec) prefSec.classList.add("hidden");
-      passSec.classList.remove("hidden");
-      if (filtSec) filtSec.classList.add("hidden");
-    } else if (val === "filters" && filtSec) {
-      if (prefSec) prefSec.classList.add("hidden");
-      if (passSec) passSec.classList.add("hidden");
-      filtSec.classList.remove("hidden");
-    } else {
-      if (prefSec) prefSec.classList.remove("hidden");
-      if (passSec) passSec.classList.add("hidden");
-      if (filtSec) filtSec.classList.add("hidden");
-    }
+    var sections = ["preferences", "password", "filters", "vacation"];
+    sections.forEach(function (sec) {
+      var el = document.getElementById("section-" + sec);
+      if (el) {
+        if (sec === val) {
+          el.classList.remove("hidden");
+        } else {
+          el.classList.add("hidden");
+        }
+      }
+    });
   }
 
   document.addEventListener("change", function (event) {
