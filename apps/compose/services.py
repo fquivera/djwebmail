@@ -26,12 +26,19 @@ from apps.compose.constants import (
     SUBJECT_FORWARD_PREFIX,
     SUBJECT_REPLY_PREFIX,
 )
-from apps.mail.constants import FOLDER_FLAG_NOSELECT, MESSAGE_FLAG_SEEN
+from apps.mail.constants import (
+    FOLDER_FLAG_NOSELECT,
+    MESSAGE_FLAG_DRAFT,
+    MESSAGE_FLAG_SEEN,
+)
 from apps.mail.services.message import MessageDetail
 
 _DEFAULT_SENT_FOLDER = "Sent"
 _SENT_FOLDER_NAMES = frozenset({"sent", "sent messages", "sent items", "enviados"})
 _SENT_FOLDER_FLAG = "\\sent"
+_DEFAULT_DRAFTS_FOLDER = "Drafts"
+_DRAFTS_FOLDER_NAMES = frozenset({"drafts", "draft", "borradores"})
+_DRAFTS_FOLDER_FLAG = "\\drafts"
 _TAG_PATTERN = re.compile(r"<[^>]+>")
 _SPACE_PATTERN = re.compile(r"[ \t\u00a0]+")
 _HTML_TAGS_PATTERN = re.compile(
@@ -199,6 +206,118 @@ def append_to_sent(imap: ImapService, raw: bytes) -> bool:
             return False
     imap.append(target, raw, flags=(MESSAGE_FLAG_SEEN,))
     return True
+
+
+def find_drafts_folder(imap: ImapService) -> str:
+    """Find the account's Drafts folder using RFC 6154 flag or canonical names."""
+    if not hasattr(imap, "list_folders"):
+        return _DEFAULT_DRAFTS_FOLDER
+    folders = imap.list_folders()
+    target = ""
+    for folder in folders:
+        if any(flag.casefold() == FOLDER_FLAG_NOSELECT.casefold() for flag in folder.flags):
+            continue
+        if any(flag.casefold() == _DRAFTS_FOLDER_FLAG for flag in folder.flags):
+            return folder.name
+        leaf = folder.name.rsplit(folder.delimiter, 1)[-1] if folder.delimiter else folder.name
+        leaf_fold = leaf.casefold()
+        name_fold = folder.name.casefold()
+        if leaf_fold in _DRAFTS_FOLDER_NAMES or name_fold in _DRAFTS_FOLDER_NAMES:
+            target = folder.name
+    if target:
+        return target
+    if hasattr(imap, "create_folder"):
+        try:
+            imap.create_folder(_DEFAULT_DRAFTS_FOLDER)
+            return _DEFAULT_DRAFTS_FOLDER
+        except Exception:
+            pass
+    return _DEFAULT_DRAFTS_FOLDER
+
+
+def save_draft_to_imap(
+    imap: ImapService,
+    *,
+    sender: str,
+    sender_name: str = "",
+    to: Sequence[str] = (),
+    cc: Sequence[str] = (),
+    bcc: Sequence[str] = (),
+    subject: str = "",
+    body: str = "",
+    attachments: Sequence[Attachment] = (),
+    prev_uid: int | None = None,
+    prev_folder: str = "",
+) -> int | None:
+    """Save an email draft to the account's Drafts mailbox, replacing any previous draft."""
+    if not any((to, cc, bcc, subject.strip(), body.strip(), attachments)):
+        return None
+
+    target = find_drafts_folder(imap)
+
+    # 1. Clean up previous draft version to avoid clobbering folder with incremental revisions
+    if prev_uid:
+        folder_to_clean = prev_folder or target
+        try:
+            imap.select(folder_to_clean)
+            imap.delete([prev_uid], expunge=True)
+        except Exception:
+            pass
+
+    # 2. Build the draft message
+    message = build_message(
+        sender=sender,
+        sender_name=sender_name,
+        to=to,
+        cc=cc,
+        bcc=bcc,
+        subject=subject,
+        body=body,
+        attachments=attachments,
+    )
+    raw = message.as_bytes()
+    try:
+        imap.append(target, raw, flags=(MESSAGE_FLAG_DRAFT, MESSAGE_FLAG_SEEN))
+    except Exception:
+        return None
+
+    # 3. Resolve the new UID by searching for the generated Message-ID
+    msg_id = message.get("Message-ID", "")
+    new_uid: int | None = None
+    if msg_id and hasattr(imap, "search"):
+        try:
+            imap.select(target)
+            uids = imap.search(["HEADER", "Message-ID", msg_id])
+            if uids:
+                new_uid = uids[-1]
+        except Exception:
+            pass
+
+    return new_uid
+
+
+def delete_draft_from_imap(
+    imap: ImapService,
+    uid: int,
+    folder: str = "",
+) -> None:
+    """Delete a draft message from IMAP upon sending or discarding."""
+    target = folder or find_drafts_folder(imap)
+    try:
+        imap.select(target)
+        imap.delete([uid], expunge=True)
+    except Exception:
+        pass
+
+
+def draft_initial(message: MessageDetail) -> dict[str, str]:
+    """Prefill the compose form with an existing draft message."""
+    return {
+        "to": message.recipients,
+        "cc": message.cc,
+        "subject": message.subject,
+        "body": message.body_html,
+    }
 
 
 def is_signature_html(text: str) -> bool:

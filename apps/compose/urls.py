@@ -6,6 +6,7 @@ from apps.compose.views import (
     compose_attachment_delete,
     compose_attachments,
     compose_draft,
+    compose_edit_draft,
     compose_forward,
     compose_new,
     compose_reply,
@@ -19,6 +20,7 @@ urlpatterns = [
     path("", compose_new, name="new"),
     path("send/", compose_send, name="send"),
     path("draft/", compose_draft, name="draft"),
+    path("draft/<path:folder_name>/<int:uid>/", compose_edit_draft, name="edit_draft"),
     path("attachments/", compose_attachments, name="attachments"),
     path(
         "attachments/<str:attachment_id>/delete/",

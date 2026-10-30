@@ -14,10 +14,13 @@
   <div class="w-full max-w-4xl mx-auto p-0 sm:py-4 sm:px-4 flex flex-col flex-1 min-h-0">
     {% if draft_autosave %}
       <div
+        id="draft-autosave-trigger"
         hx-post="{% url 'compose:draft' %}"
         hx-trigger="input changed delay:5s from:#compose-form"
         hx-include="#compose-form"
-        hx-swap="none"
+        hx-target="#draft-status"
+        hx-swap="innerHTML"
+        hx-indicator="#draft-status-spinner"
         aria-hidden="true"
       ></div>
     {% endif %}
@@ -46,9 +49,38 @@
             <span class="sr-only">{% translate "Back to mail" %}</span>
           </a>
           <h1 class="text-sm sm:text-base font-semibold truncate">{% translate "Compose" %}</h1>
+          {% if draft_autosave %}
+            <div class="text-xs text-base-content/60 flex items-center gap-1.5 min-w-0">
+              <span id="draft-status-spinner" class="htmx-indicator inline-flex items-center gap-1 text-primary">
+                <span class="loading loading-spinner loading-xs"></span>
+                <span class="hidden sm:inline">{% translate "Saving..." %}</span>
+              </span>
+              <div id="draft-status" class="inline-flex items-center"></div>
+            </div>
+          {% endif %}
         </div>
 
         <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+          {% if draft_autosave %}
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm px-2 gap-1.5 text-xs font-medium text-base-content/75 hover:text-base-content"
+              hx-post="{% url 'compose:draft' %}"
+              hx-include="#compose-form"
+              hx-target="#draft-status"
+              hx-swap="innerHTML"
+              hx-indicator="#draft-status-spinner"
+              title="{% translate 'Save draft' %}"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              <span class="hidden sm:inline">{% translate "Save draft" %}</span>
+            </button>
+          {% endif %}
+
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"

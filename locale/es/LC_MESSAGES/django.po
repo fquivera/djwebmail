@@ -2517,3 +2517,18 @@ msgstr "Alias gestionado"
 msgid "Managed aliases"
 msgstr "Alias gestionados"
 
+msgid "Draft saved at"
+msgstr "Borrador guardado a las"
+
+msgid "Saved"
+msgstr "Guardado"
+
+msgid "Save draft"
+msgstr "Guardar borrador"
+
+msgid "Saving..."
+msgstr "Guardando..."
+
+msgid "Edit draft"
+msgstr "Editar borrador"
+

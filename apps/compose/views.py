@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
@@ -23,6 +24,7 @@ from apps.accounts.exceptions import (
     SmtpSendError,
 )
 from apps.accounts.services.session import (
+    _session,
     end_mail_session,
     get_mail_account_label,
     get_mail_display_name,
@@ -48,10 +50,14 @@ from apps.compose.services import (
     append_to_sent,
     apply_signature,
     decode_mime_words,
+    delete_draft_from_imap,
+    draft_initial,
+    find_drafts_folder,
     format_sender_address,
     forward_initial,
     reply_all_initial,
     reply_initial,
+    save_draft_to_imap,
     send_message,
 )
 from apps.contacts.constants import MAX_CONTACTS_AUTOCOMPLETE
@@ -142,6 +148,25 @@ def compose_forward(request: HttpRequest, folder_name: str, uid: int) -> HttpRes
 
 
 @never_cache
+@mail_login_required
+def compose_edit_draft(request: HttpRequest, folder_name: str, uid: int) -> HttpResponse:
+    """Render a compose form prefilled with an existing draft from IMAP."""
+    message = _fetch_message(request, folder_name, uid)
+    if isinstance(message, HttpResponse):
+        return message
+    session = _session(request)
+    session["compose_draft_uid"] = int(uid)
+    session["compose_draft_folder"] = folder_name
+    initial = draft_initial(message)
+    return _render_compose(
+        request,
+        _session_key(request),
+        ComposeForm(initial=initial),
+        draft_autosave=True,
+    )
+
+
+@never_cache
 @require_POST
 @mail_login_required
 def compose_send(request: HttpRequest) -> HttpResponse:
@@ -188,9 +213,15 @@ def compose_send(request: HttpRequest) -> HttpResponse:
         )
         return _render_compose(request, session_key, form, status=422)
 
+    session = _session(request)
+    draft_uid = session.pop("compose_draft_uid", None)
+    draft_folder = session.pop("compose_draft_folder", "")
+
     with suppress(MailError):
         with get_mail_imap_service(request) as imap:
             append_to_sent(imap, raw)
+            if draft_uid:
+                delete_draft_from_imap(imap, draft_uid, folder=draft_folder)
 
     clear_draft(session_key)
     clear_attachments(session_key)
@@ -233,16 +264,69 @@ def compose_attachment_delete(request: HttpRequest, attachment_id: str) -> HttpR
 @require_POST
 @mail_login_required
 def compose_draft(request: HttpRequest) -> HttpResponse:
-    """Autosave the form text under the session scope."""
+    """Autosave the form text under the session scope and sync to IMAP Drafts."""
     session_key = _session_key(request)
+    to_text = _post_text(request, "to")
+    cc_text = _post_text(request, "cc")
+    bcc_text = _post_text(request, "bcc")
+    subject_text = _post_text(request, "subject")
+    body_text = _post_text(request, "body")
+
     save_draft(
         session_key,
-        to=_post_text(request, "to"),
-        cc=_post_text(request, "cc"),
-        bcc=_post_text(request, "bcc"),
-        subject=_post_text(request, "subject"),
-        body=_post_text(request, "body"),
+        to=to_text,
+        cc=cc_text,
+        bcc=bcc_text,
+        subject=subject_text,
+        body=body_text,
     )
+
+    session = _session(request)
+    prev_uid = session.get("compose_draft_uid")
+    prev_folder = session.get("compose_draft_folder", "")
+    account = getattr(request, "mail_account", None)
+
+    if account and any(t.strip() for t in (to_text, subject_text, body_text)):
+        with suppress(Exception):
+            with get_mail_imap_service(request) as imap:
+                to_list = [addr.strip() for addr in to_text.split(",") if addr.strip()]
+                cc_list = [addr.strip() for addr in cc_text.split(",") if addr.strip()]
+                bcc_list = [addr.strip() for addr in bcc_text.split(",") if addr.strip()]
+                post = getattr(request, "POST", None)
+                attachment_ids = [str(i) for i in post.getlist("attachment_ids") if i] if post else []
+                attachments = load_attachments(session_key, attachment_ids)
+
+                new_uid = save_draft_to_imap(
+                    imap,
+                    sender=account.email,
+                    sender_name=get_mail_display_name(request),
+                    to=to_list,
+                    cc=cc_list,
+                    bcc=bcc_list,
+                    subject=subject_text,
+                    body=body_text,
+                    attachments=attachments,
+                    prev_uid=prev_uid,
+                    prev_folder=prev_folder,
+                )
+                if new_uid:
+                    session["compose_draft_uid"] = new_uid
+                    session["compose_draft_folder"] = find_drafts_folder(imap)
+    elif account and prev_uid and not any(t.strip() for t in (to_text, subject_text, body_text)):
+        with suppress(Exception):
+            with get_mail_imap_service(request) as imap:
+                delete_draft_from_imap(imap, prev_uid, folder=prev_folder)
+                session.pop("compose_draft_uid", None)
+                session.pop("compose_draft_folder", None)
+
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        now_str = timezone.localtime().strftime("%H:%M")
+        return render(
+            request,
+            "compose/_draft_status.html",
+            {"saved_at": now_str},
+        )
+
     return HttpResponse(status=204)
 
 
