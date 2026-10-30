@@ -169,9 +169,11 @@ services:
       retries: 5
 
   web:
-    image: ghcr.io/fquivera/djwebmail:0.2.1
+    image: ghcr.io/fquivera/djwebmail:0.5.2
     restart: unless-stopped
     env_file: .env.prod
+    volumes:
+      - media_data:/app/media:rw
     command:
       - sh
       - -c
@@ -187,6 +189,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  media_data:
 ```
 
 Start the stack:

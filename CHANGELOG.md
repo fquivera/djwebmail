@@ -1,3 +1,9 @@
+## v0.5.2 (2026-10-29)
+
+### Fix
+
+- **mailadmin**: serve media files in production
+
 ## v0.5.1 (2026-10-29)
 
 ### Fix

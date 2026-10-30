@@ -55,3 +55,16 @@ def test_null_origin_is_not_trusted():
     )
 
     assert response.status_code == 403
+
+
+def test_media_file_serving(client, settings):
+    media_dir = settings.MEDIA_ROOT / "branding"
+    media_dir.mkdir(parents=True, exist_ok=True)
+    test_file = media_dir / "logo.png"
+    test_file.write_bytes(b"image-data")
+    try:
+        response = client.get(f"{settings.MEDIA_URL}branding/logo.png")
+        assert response.status_code == 200
+    finally:
+        if test_file.exists():
+            test_file.unlink()
