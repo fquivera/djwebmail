@@ -143,7 +143,7 @@
       select.value = val;
     }
 
-    var sections = ["preferences", "password", "filters", "vacation"];
+    var sections = ["preferences", "password", "filters", "vacation", "signatures"];
     sections.forEach(function (sec) {
       var el = document.getElementById("section-" + sec);
       if (el) {

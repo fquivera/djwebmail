@@ -19,7 +19,8 @@ from apps.preferences.constants import (
     PAGE_SIZE_MIN,
     RemoteImages,
 )
-from apps.preferences.models import MailPreference
+from apps.preferences.models import AccountSignature, MailPreference
+from apps.preferences.services import sanitize_signature_html
 
 
 @lru_cache(maxsize=1)
@@ -222,3 +223,42 @@ class ChangePasswordForm(forms.Form):
                 self.add_error("new_password", err)
 
         return cleaned_data
+
+
+class AccountSignatureForm(forms.ModelForm):
+    """Form to create or edit an AccountSignature."""
+
+    class Meta:
+        model = AccountSignature
+        fields = ("name", "content_html", "is_default", "is_active")
+        labels = {
+            "name": _("Signature name"),
+            "content_html": _("Signature content"),
+            "is_default": _("Set as default"),
+            "is_active": _("Active"),
+        }
+        help_texts = {
+            "name": _("Descriptive title, e.g. 'Work', 'Personal' or 'Short'."),
+            "content_html": _("Rich HTML signature appended to your emails."),
+            "is_default": _("Automatically inserted when composing new messages."),
+            "is_active": _("Disable to keep the signature without offering it in compose."),
+        }
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+            "content_html": forms.Textarea(
+                attrs={
+                    "class": "textarea textarea-bordered w-full font-mono text-sm",
+                    "rows": 5,
+                    "placeholder": (
+                        "<div><b>Nombre</b><br>Cargo | Empresa<br>Tel: +1 234 5678</div>"
+                    ),
+                }
+            ),
+            "is_default": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "toggle toggle-primary toggle-sm"}),
+        }
+
+    def clean_content_html(self) -> str:
+        content = self.cleaned_data.get("content_html")
+        text = str(content or "").strip()
+        return sanitize_signature_html(text)

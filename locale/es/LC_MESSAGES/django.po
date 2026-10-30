@@ -2048,3 +2048,144 @@ msgstr "Respuesta automática por ausencia activada exitosamente."
 
 msgid "Vacation auto-responder deactivated."
 msgstr "Respuesta automática por ausencia desactivada."
+
+msgid "account signature"
+msgstr "firma de la cuenta"
+
+msgid "account signatures"
+msgstr "firmas de la cuenta"
+
+msgid "Email signatures"
+msgstr "Firmas de correo"
+
+msgid "signatures"
+msgstr "firmas"
+
+msgid "Signatures"
+msgstr "Firmas"
+
+msgid "Create and manage multiple rich HTML signatures for your outgoing emails."
+msgstr "Cree y gestione múltiples firmas HTML enriquecidas para sus correos salientes."
+
+msgid "Add signature"
+msgstr "Añadir firma"
+
+msgid "Create signature"
+msgstr "Crear firma"
+
+msgid "Edit signature"
+msgstr "Editar firma"
+
+msgid "New signature"
+msgstr "Nueva firma"
+
+msgid "Default signature"
+msgstr "Firma predeterminada"
+
+msgid "Default"
+msgstr "Predeterminada"
+
+msgid "Active"
+msgstr "Activa"
+
+msgid "Inactive"
+msgstr "Inactiva"
+
+msgid "Make default"
+msgstr "Establecer como predeterminada"
+
+msgid "Activate"
+msgstr "Activar"
+
+msgid "Deactivate"
+msgstr "Desactivar"
+
+msgid "Are you sure you want to delete this signature?"
+msgstr "¿Está seguro de que desea eliminar esta firma?"
+
+msgid "Empty signature content"
+msgstr "Contenido de firma vacío"
+
+msgid "Empty signature"
+msgstr "Firma vacía"
+
+msgid "No email signatures configured yet."
+msgstr "No hay firmas de correo configuradas aún."
+
+msgid "Add your first rich HTML signature to append it to your outgoing emails."
+msgstr "Añada su primera firma HTML enriquecida para adjuntarla a sus correos salientes."
+
+msgid "Signature name"
+msgstr "Nombre de la firma"
+
+msgid "Signature content"
+msgstr "Contenido de la firma"
+
+msgid "Set as default"
+msgstr "Establecer como predeterminada"
+
+msgid "Set as default signature"
+msgstr "Establecer como firma predeterminada"
+
+msgid "Descriptive title, e.g. 'Work', 'Personal' or 'Short'."
+msgstr "Título descriptivo, ej. 'Trabajo', 'Personal' o 'Breve'."
+
+msgid "Rich HTML signature appended to your emails."
+msgstr "Firma HTML enriquecida adjunta a sus correos."
+
+msgid "Automatically inserted when composing new messages."
+msgstr "Insertada automáticamente al redactar mensajes nuevos."
+
+msgid "Disable to keep the signature without offering it in compose."
+msgstr "Desactívela para conservarla sin ofrecerla en redacción."
+
+msgid "e.g. Work, Mobile, Support"
+msgstr "ej. Trabajo, Móvil, Soporte"
+
+msgid "Signature Content"
+msgstr "Contenido de la firma"
+
+msgid "Visual Editor"
+msgstr "Editor visual"
+
+msgid "HTML Code"
+msgstr "Código HTML"
+
+msgid "Bold"
+msgstr "Negrita"
+
+msgid "Italic"
+msgstr "Cursiva"
+
+msgid "Underline"
+msgstr "Subrayado"
+
+msgid "Link"
+msgstr "Enlace"
+
+msgid "Enter URL:"
+msgstr "Introduzca URL:"
+
+msgid "Live Preview"
+msgstr "Vista previa en vivo"
+
+msgid "Save signature"
+msgstr "Guardar firma"
+
+msgid "Signature saved successfully."
+msgstr "Firma guardada exitosamente."
+
+msgid "Default signature updated."
+msgstr "Firma predeterminada actualizada."
+
+msgid "Signature deleted."
+msgstr "Firma eliminada."
+
+msgid "Insert signature"
+msgstr "Insertar firma"
+
+msgid "Choose signature"
+msgstr "Elegir firma"
+
+msgid "Remove signature"
+msgstr "Quitar firma"
