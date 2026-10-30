@@ -15,12 +15,14 @@
   {% endif %}
 
   {% if page.messages %}
-    <div x-data="batchSelection">
+    <div x-data="batchSelection" data-batch-container>
       <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 border-b border-base-200 bg-base-200/30 text-xs text-base-content/70">
         <div class="flex items-center gap-2.5">
           {% if not show_folder %}
             <input
               type="checkbox"
+              id="batch-select-all"
+              data-batch-select-all
               class="checkbox checkbox-xs rounded border-base-300"
               @change="toggleAll($event)"
               x-bind:checked="allSelected"

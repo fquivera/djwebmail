@@ -1,0 +1,190 @@
+{% load i18n %}
+
+<div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-xs">
+  <table class="table table-zebra w-full" aria-label="{% translate 'Aliases and distribution lists table' %}">
+    <thead>
+      <tr class="bg-base-200/50 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+        <th scope="col" class="py-3 px-4">{% translate "Source Address" %}</th>
+        <th scope="col" class="py-3 px-4">{% translate "Type" %}</th>
+        <th scope="col" class="py-3 px-4">{% translate "Destinations" %}</th>
+        <th scope="col" class="py-3 px-4">{% translate "Status" %}</th>
+        <th scope="col" class="py-3 px-4 text-right">{% translate "Actions" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alias in aliases %}
+        <tr class="hover:bg-base-200/40 transition-colors">
+          <td class="py-3.5 px-4">
+            <div class="flex items-center gap-3">
+              <div class="avatar placeholder shrink-0">
+                <div class="size-9 rounded-full {% if alias.is_distribution_list %}bg-secondary/10 text-secondary{% else %}bg-info/10 text-info{% endif %} font-bold text-xs flex items-center justify-center">
+                  {% if alias.is_distribution_list %}
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  {% else %}
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="15 10 20 15 15 20"/>
+                      <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
+                    </svg>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="min-w-0">
+                <div class="font-medium text-sm text-base-content truncate">
+                  {{ alias.source }}
+                </div>
+                {% if alias.name %}
+                  <div class="text-xs text-base-content/70 truncate">
+                    {{ alias.name }}
+                  </div>
+                {% else %}
+                  <div class="text-xs text-base-content/40 font-mono truncate">
+                    @{{ alias.domain }}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            {% if alias.is_distribution_list %}
+              <span class="badge badge-secondary badge-soft badge-sm gap-1 font-medium">
+                {% translate "Distribution List" %}
+              </span>
+            {% else %}
+              <span class="badge badge-info badge-soft badge-sm gap-1 font-medium">
+                {% translate "Virtual Alias" %}
+              </span>
+            {% endif %}
+          </td>
+          <td class="py-3.5 px-4">
+            <div class="space-y-1">
+              <span class="badge badge-ghost badge-sm text-[11px] font-mono">
+                {% blocktranslate count counter=alias.destination_count %}{{ counter }} recipient{% plural %}{{ counter }} recipients{% endblocktranslate %}
+              </span>
+              <div class="text-xs font-mono text-base-content/80 max-w-xs truncate" title="{{ alias.destinations_display }}">
+                {{ alias.destinations_display }}
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            {% if alias.is_active %}
+              <span class="badge badge-success badge-soft badge-sm gap-1 font-medium">
+                <span class="size-1.5 rounded-full bg-success"></span>
+                {% translate "Active" %}
+              </span>
+            {% else %}
+              <span class="badge badge-neutral badge-soft badge-sm gap-1 font-medium opacity-80">
+                <span class="size-1.5 rounded-full bg-base-content/40"></span>
+                {% translate "Suspended" %}
+              </span>
+            {% endif %}
+          </td>
+          <td class="py-3.5 px-4 whitespace-nowrap text-right">
+            <div class="flex items-center justify-end gap-1">
+              <a
+                href="{% url 'mailadmin:alias_edit' alias.source %}"
+                class="btn btn-ghost btn-xs gap-1 font-medium"
+                title="{% translate 'Edit alias' %}"
+              >
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                  <path d="m15 5 4 4"/>
+                </svg>
+                <span class="hidden sm:inline">{% translate "Edit" %}</span>
+              </a>
+
+              <form action="{% url 'mailadmin:alias_toggle' alias.source %}" method="post" class="inline">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="btn btn-ghost btn-xs text-base-content/70 hover:text-base-content"
+                  title="{% if alias.is_active %}{% translate 'Suspend alias' %}{% else %}{% translate 'Activate alias' %}{% endif %}"
+                >
+                  {% if alias.is_active %}
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="10" x2="10" y1="15" y2="9"/>
+                      <line x1="14" x2="14" y1="15" y2="9"/>
+                    </svg>
+                    <span class="hidden sm:inline">{% translate "Suspend" %}</span>
+                  {% else %}
+                    <svg class="size-3.5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polygon points="10 8 16 12 10 16 10 8"/>
+                    </svg>
+                    <span class="hidden sm:inline">{% translate "Activate" %}</span>
+                  {% endif %}
+                </button>
+              </form>
+
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                title="{% translate 'Delete alias' %}"
+                data-confirm-open="delete-alias-modal-{{ forloop.counter }}"
+              >
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <span class="hidden sm:inline">{% translate "Delete" %}</span>
+              </button>
+
+              <!-- Native Confirmation Dialog -->
+              <dialog id="delete-alias-modal-{{ forloop.counter }}" class="modal text-left">
+                <div class="modal-box">
+                  <h3 class="font-bold text-lg text-error flex items-center gap-2">
+                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" x2="12" y1="8" y2="12"/>
+                      <line x1="12" x2="12.01" y1="16" y2="16"/>
+                    </svg>
+                    {% translate "Confirm Deletion" %}
+                  </h3>
+                  <p class="py-4 text-sm text-base-content/80 leading-relaxed">
+                    {% blocktranslate with source=alias.source %}Are you sure you want to delete the virtual alias <strong>{{ source }}</strong>? Emails sent to this address will no longer be forwarded.{% endblocktranslate %}
+                  </p>
+                  <div class="modal-action">
+                    <form method="dialog">
+                      <button class="btn btn-ghost btn-sm">{% translate "Cancel" %}</button>
+                    </form>
+                    <form action="{% url 'mailadmin:alias_delete' alias.source %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-error btn-sm font-semibold">
+                        {% translate "Yes, delete alias" %}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                  <button>{% translate "close" %}</button>
+                </form>
+              </dialog>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="py-12 text-center text-base-content/60">
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <svg class="size-8 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <p class="text-sm font-medium">{% translate "No aliases or distribution lists found matching your query." %}</p>
+              {% if search_query or status_filter != 'all' or type_filter != 'all' %}
+                <a href="{% url 'mailadmin:aliases' %}" class="btn btn-ghost btn-xs text-primary">
+                  {% translate "Clear search & filters" %}
+                </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

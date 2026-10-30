@@ -13,3 +13,11 @@ class MailAccountAlreadyExistsError(MailAdminError):
 
 class MailAccountNotFoundError(MailAdminError):
     """Raised when an operation targets a mailbox that does not exist."""
+
+
+class MailAliasAlreadyExistsError(MailAdminError):
+    """Raised when attempting to create an alias or distribution list that already exists."""
+
+
+class MailAliasNotFoundError(MailAdminError):
+    """Raised when an operation targets an alias or distribution list that does not exist."""

@@ -1,0 +1,244 @@
+{% load i18n %}
+<dialog id="signature-modal" class="modal modal-open z-50">
+  <div
+    class="modal-box max-w-2xl border border-base-300 bg-base-100 p-5 space-y-4 shadow-xl"
+    x-data="{
+      htmlContent: `{{ form.content_html.value|default:''|escapejs }}`,
+      activeTab: 'visual',
+      execCmd(command, val) {
+        document.execCommand(command, false, val || null);
+        this.syncVisual();
+      },
+      syncVisual() {
+        if (this.$refs.visualEditor) {
+          this.htmlContent = this.$refs.visualEditor.innerHTML;
+        }
+      },
+      syncRaw() {
+        if (this.$refs.visualEditor) {
+          this.$refs.visualEditor.innerHTML = this.htmlContent;
+        }
+      },
+      insertLink() {
+        var url = prompt('{% translate "Enter URL:" %}', 'https://'); {# hardcode-ok: URL prompt default value #}
+        if (url) {
+          this.execCmd('createLink', url);
+        }
+      }
+    }"
+  >
+    <div class="flex items-center justify-between border-b border-base-200 pb-3">
+      <h3 class="font-bold text-base text-base-content flex items-center gap-2">
+        <svg class="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m18 2 4 4-14 14H4v-4L18 2z"/>
+          <path d="m14.5 5.5 4 4"/>
+        </svg>
+        {% if is_edit %}
+          {% translate "Edit signature" %}
+        {% else %}
+          {% translate "New signature" %}
+        {% endif %}
+      </h3>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs btn-circle text-base-content/60"
+        data-signature-modal-close
+        aria-label="{% translate 'Close' %}"
+      >
+        ✕
+      </button>
+    </div>
+
+    <form
+      method="post"
+      action="{% url 'preferences:signature_save' %}"
+      hx-post="{% url 'preferences:signature_save' %}"
+      hx-target="#signatures-panel"
+      hx-swap="outerHTML"
+      class="space-y-4"
+    >
+      {% csrf_token %}
+      {% if signature %}
+        <input type="hidden" name="sig_id" value="{{ signature.id }}">
+      {% endif %}
+
+      <!-- Name & Flags -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="id_name" class="label text-xs font-semibold text-base-content/80">
+            {% translate "Signature name" %} *
+          </label>
+          <input
+            type="text"
+            id="id_name"
+            name="name"
+            required
+            class="input input-bordered input-sm w-full font-medium"
+            value="{{ form.name.value|default:'' }}"
+            placeholder="{% translate 'e.g. Work, Mobile, Support' %}"
+          >
+          {% if form.name.errors %}
+            <p class="text-xs text-error mt-1">{{ form.name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="flex flex-col justify-end space-y-2 pt-2 sm:pt-0">
+          <label class="label cursor-pointer justify-start gap-2.5 p-0">
+            <input
+              type="checkbox"
+              name="is_default"
+              class="checkbox checkbox-primary checkbox-sm"
+              {% if form.is_default.value %}checked{% endif %}
+            >
+            <span class="label-text text-xs font-medium text-base-content">
+              {% translate "Set as default signature" %}
+            </span>
+          </label>
+
+          <label class="label cursor-pointer justify-start gap-2.5 p-0">
+            <input
+              type="checkbox"
+              name="is_active"
+              class="toggle toggle-primary toggle-sm"
+              {% if form.is_active.value or not is_edit %}checked{% endif %}
+            >
+            <span class="label-text text-xs font-medium text-base-content">
+              {% translate "Active" %}
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Editor Tabs: Visual WYSIWYG vs HTML Source -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between border-b border-base-300 pb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-base-content/70">
+            {% translate "Signature Content" %}
+          </span>
+          <div class="join">
+            <button
+              type="button"
+              class="join-item btn btn-xs"
+              :class="activeTab === 'visual' ? 'btn-active btn-primary' : 'btn-ghost'"
+              @click="activeTab = 'visual'; syncRaw()"
+            >
+              {% translate "Visual Editor" %}
+            </button>
+            <button
+              type="button"
+              class="join-item btn btn-xs"
+              :class="activeTab === 'html' ? 'btn-active btn-primary' : 'btn-ghost'"
+              @click="activeTab = 'html'; syncVisual()"
+            >
+              {% translate "HTML Code" %}
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Toolbar -->
+        <div x-show="activeTab === 'visual'" class="space-y-2">
+          <div class="flex flex-wrap items-center gap-1 p-1 bg-base-200/60 rounded-lg border border-base-300">
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs font-bold"
+              title="{% translate 'Bold' %}"
+              @mousedown.prevent
+              @click="execCmd('bold')"
+            >
+              B
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs italic font-serif"
+              title="{% translate 'Italic' %}"
+              @mousedown.prevent
+              @click="execCmd('italic')"
+            >
+              I
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs underline"
+              title="{% translate 'Underline' %}"
+              @mousedown.prevent
+              @click="execCmd('underline')"
+            >
+              U
+            </button>
+            <div class="divider divider-horizontal my-0.5 mx-0.5"></div>
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs"
+              title="{% translate 'Link' %}"
+              @mousedown.prevent
+              @click="insertLink()"
+            >
+              <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs text-xs font-mono"
+              title="{% translate 'Clear formatting' %}"
+              @mousedown.prevent
+              @click="execCmd('removeFormat')"
+            >
+              Tx
+            </button>
+          </div>
+
+          <!-- Visual Editable Area -->
+          <div
+            x-ref="visualEditor"
+            contenteditable="true"
+            class="min-h-28 max-h-48 overflow-y-auto p-3 rounded-lg border border-base-300 bg-base-100 text-sm focus:outline-none focus:border-primary leading-relaxed"
+            x-init="$el.innerHTML = htmlContent"
+            @input="syncVisual()"
+          ></div>
+        </div>
+
+        <!-- HTML Source Textarea -->
+        <div x-show="activeTab === 'html'">
+          <textarea
+            x-model="htmlContent"
+            class="textarea textarea-bordered w-full font-mono text-xs"
+            rows="6"
+            @input="syncRaw()"
+            placeholder="<div><b>Nombre</b><br>Cargo<br><a href='https://example.com'>example.com</a></div>" {# hardcode-ok: placeholder example markup #}
+          ></textarea>
+        </div>
+
+        <!-- Hidden Input sent in form POST -->
+        <input type="hidden" name="content_html" :value="htmlContent">
+      </div>
+
+      <!-- Live Preview Area -->
+      <div class="space-y-1">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-base-content/60">
+          {% translate "Live Preview" %}
+        </span>
+        <div
+          class="p-3 rounded-lg border border-dashed border-base-300 bg-base-200/40 text-sm overflow-x-auto min-h-12 leading-relaxed"
+          x-html="htmlContent"
+        ></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          data-signature-modal-close
+        >
+          {% translate "Cancel" %}
+        </button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          {% translate "Save signature" %}
+        </button>
+      </div>
+    </form>
+  </div>
+  <div class="modal-backdrop" data-signature-modal-close></div>
+</dialog>

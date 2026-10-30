@@ -16,6 +16,8 @@ from apps.mail.services.mailbox import FolderNode, MessagePage, MessageSummary
 from apps.mail.services.message import Attachment, MessageDetail
 from apps.mail.services.search import SearchResult
 
+pytestmark = pytest.mark.django_db
+
 
 class FakeImapContext:
     """Context manager that stands in for a connected ImapService."""
@@ -1524,3 +1526,137 @@ def test_attachment_inline_allows_safe_preview_types_and_rejects_unsafe(
     )
 
     assert unsafe_response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_message_view_auto_loads_remote_images_when_sender_is_trusted(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+    mail_account: MailAccount,
+) -> None:
+    from apps.preferences.services import add_trusted_sender
+
+    add_trusted_sender(
+        account_key=mail_account.account_key,
+        email=mail_account.email,
+        pattern="alice@example.com",
+    )
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Trusted sender images",
+        sender="Alice <alice@example.com>",
+        recipients="Bob <bob@example.com>",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=True,
+        is_flagged=False,
+        body_kind="html",
+        body_html='<img src="https://example.com/trusted.png">',
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=True,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr("apps.mail.views.list_folders", lambda imap: ())
+    monkeypatch.setattr(
+        "apps.accounts.middleware.load_mail_account",
+        lambda request: mail_account,
+    )
+    session = logged_in_client.session
+    session["mail_remote_images"] = "ask"
+    session.save()
+
+    response: Any = logged_in_client.get(
+        reverse("mail:message", kwargs={"folder_name": "INBOX", "uid": 7})
+    )
+
+    assert response.status_code == 200
+    assert b"/mail/image-proxy/?u=https%3A%2F%2Fexample.com%2Ftrusted.png" in response.content
+    assert b"Remote content was blocked" not in response.content
+
+
+@pytest.mark.django_db
+def test_message_trust_sender_post_action(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+    mail_account: MailAccount,
+) -> None:
+    from apps.preferences.services import is_sender_trusted
+
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Trust me",
+        sender="Newsletter <news@company.org>",
+        recipients="Bob <bob@example.com>",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=True,
+        is_flagged=False,
+        body_kind="html",
+        body_html='<img src="https://company.org/pic.png">',
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=True,
+    )
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr(
+        "apps.accounts.middleware.load_mail_account",
+        lambda request: mail_account,
+    )
+
+    url = reverse("mail:message_trust_sender", kwargs={"folder_name": "INBOX", "uid": 7})
+    response: Any = logged_in_client.post(url)
+    assert response.status_code == 200
+    assert b"/mail/image-proxy/?u=https%3A%2F%2Fcompany.org%2Fpic.png" in response.content
+    assert is_sender_trusted(mail_account.account_key, "news@company.org")
+
+
+@pytest.mark.django_db
+def test_message_block_sender_post_action(
+    logged_in_client: Client,
+    monkeypatch: pytest.MonkeyPatch,
+    mail_account: MailAccount,
+) -> None:
+    from apps.preferences.services import is_sender_blocked
+
+    detail = MessageDetail(
+        uid=7,
+        folder="INBOX",
+        subject="Spam message",
+        sender="Spammer <bad@spam.net>",
+        recipients="Bob <bob@example.com>",
+        cc="",
+        date=None,
+        flags=(),
+        is_seen=True,
+        is_flagged=False,
+        body_kind="html",
+        body_html="<p>Click here</p>",
+        attachments=(),
+        inline_cids={},
+        remote_content_blocked=False,
+    )
+    deleted_calls: list[Any] = []
+    monkeypatch.setattr("apps.mail.views.get_message", lambda imap, folder, uid: detail)
+    monkeypatch.setattr(
+        "apps.mail.views.delete_message",
+        lambda imap, folder, uid: deleted_calls.append((folder, uid)),
+    )
+    monkeypatch.setattr(
+        "apps.mail.views.save_blocked_senders_to_sieve",
+        lambda req, acc: True,
+    )
+    monkeypatch.setattr(
+        "apps.accounts.middleware.load_mail_account",
+        lambda request: mail_account,
+    )
+
+    url = reverse("mail:message_block_sender", kwargs={"folder_name": "INBOX", "uid": 7})
+    response: Any = logged_in_client.post(url, {"action": "trash"}, HTTP_HX_REQUEST="true")
+    assert response.status_code == 204
+    assert is_sender_blocked(mail_account.account_key, "bad@spam.net") is not None
+    assert deleted_calls == [("INBOX", 7)]

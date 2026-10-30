@@ -41,7 +41,8 @@ RUN export DJANGO_SETTINGS_MODULE=config.settings.production \
     TAILWINDCSS_BIN_DIR=/tmp/tailwindcss && \
     python manage.py tailwind build && \
     python manage.py collectstatic --noinput && \
-    rm -rf /tmp/tailwindcss
+    rm -rf /tmp/tailwindcss && \
+    mkdir -p /app/media
 
 RUN chown -R django:django /app
 

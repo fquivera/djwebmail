@@ -53,6 +53,15 @@
               <option value="filters" {% if active_section == "filters" %}selected{% endif %}>
                 {% translate "Filters" %}
               </option>
+              <option value="vacation" {% if active_section == "vacation" %}selected{% endif %}>
+                {% translate "Out of office" %}
+              </option>
+              <option value="signatures" {% if active_section == "signatures" %}selected{% endif %}>
+                {% translate "Signatures" %}
+              </option>
+              <option value="senders" {% if active_section == "senders" %}selected{% endif %}>
+                {% translate "Senders (Trust & Block)" %}
+              </option>
             </select>
           </div>
           <a class="btn btn-ghost btn-sm" href="{% url 'mail:index' %}">{% translate "Back to mail" %}</a>
@@ -71,6 +80,18 @@
 
       <div id="section-filters" class="space-y-4 {% if active_section != 'filters' %}hidden{% endif %}">
         {% include "mail/_filters_panel.html" %}
+      </div>
+
+      <div id="section-vacation" class="space-y-4 {% if active_section != 'vacation' %}hidden{% endif %}">
+        {% include "mail/_vacation_panel.html" %}
+      </div>
+
+      <div id="section-signatures" class="space-y-4 {% if active_section != 'signatures' %}hidden{% endif %}">
+        {% include "preferences/_signatures_panel.html" %}
+      </div>
+
+      <div id="section-senders" class="space-y-4 {% if active_section != 'senders' %}hidden{% endif %}">
+        {% include "preferences/_senders_settings.html" %}
       </div>
     </div>
   </section>

@@ -74,9 +74,27 @@ from apps.mail.services.message import (
     rewrite_images,
 )
 from apps.mail.services.search import SearchFilters, search_messages
-from apps.mail.services.sieve_generator import FilterAction, FilterCondition, FilterRule
-from apps.mail.services.sieve_storage import load_sieve_rules, save_sieve_rules
+from apps.mail.services.sieve_generator import (
+    FilterAction,
+    FilterCondition,
+    FilterRule,
+    VacationRule,
+)
+from apps.mail.services.sieve_storage import (
+    load_sieve_rules,
+    load_vacation_rule,
+    save_blocked_senders_to_sieve,
+    save_sieve_rules,
+    save_vacation_rule,
+)
 from apps.preferences.constants import RemoteImages
+from apps.preferences.services import (
+    add_blocked_sender,
+    add_trusted_sender,
+    extract_sender_address_and_domain,
+    is_sender_blocked,
+    is_sender_trusted,
+)
 
 
 @never_cache
@@ -309,7 +327,16 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
         return _error_response(request)
 
     remote_policy = get_mail_remote_images(request)
-    allow_remote = remote_policy == RemoteImages.ALWAYS
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    sender_is_trusted = False
+    sender_is_blocked = False
+    if account and message.sender:
+        sender_is_trusted = is_sender_trusted(account.account_key, message.sender)
+        sender_is_blocked = is_sender_blocked(account.account_key, message.sender) is not None
+
+    allow_remote = (remote_policy == RemoteImages.ALWAYS) or (
+        remote_policy != RemoteImages.NEVER and sender_is_trusted
+    )
     context = {
         "folder_name": folder,
         "folder_label": translate_folder_label(folder),
@@ -320,6 +347,8 @@ def message_view(request: HttpRequest, folder_name: str, uid: int) -> HttpRespon
         "body_html": _render_body_html(message, folder, uid, allow_remote=allow_remote),
         "remote_images_loaded": allow_remote,
         "remote_images_never": remote_policy == RemoteImages.NEVER,
+        "is_sender_trusted": sender_is_trusted,
+        "is_sender_blocked": sender_is_blocked,
         "search_scope": _search_scope(request),
         "search_scope_all": SEARCH_SCOPE_ALL,
         "view": "message",
@@ -352,6 +381,90 @@ def message_remote_images(
 
     body_html = _render_body_html(message, folder, uid, allow_remote=True)
     return render(request, "mail/_message_body.html", {"body_html": body_html})
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def message_trust_sender(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+) -> HttpResponse:
+    """Add message sender to the trusted allowlist and re-render body with images."""
+    folder = folder_name or IMAP_INBOX
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    try:
+        with get_mail_imap_service(request) as imap:
+            message = get_message(imap, folder, uid)
+            if message.sender:
+                clean_addr, _ = extract_sender_address_and_domain(message.sender)
+                if clean_addr:
+                    add_trusted_sender(
+                        account_key=account.account_key,
+                        email=account.email,
+                        pattern=clean_addr,
+                    )
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    body_html = _render_body_html(message, folder, uid, allow_remote=True)
+    return render(request, "mail/_message_body.html", {"body_html": body_html})
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def message_block_sender(
+    request: HttpRequest,
+    folder_name: str,
+    uid: int,
+) -> HttpResponse:
+    """Block the message sender, sync Sieve rule, and move current email to Trash."""
+    folder = folder_name or IMAP_INBOX
+    account = getattr(request, "mail_account", None) or load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    action = request.POST.get("action") or "trash"
+    if action not in {"trash", "discard"}:
+        action = "trash"
+
+    try:
+        with get_mail_imap_service(request) as imap:
+            message = get_message(imap, folder, uid)
+            if message.sender:
+                clean_addr, _ = extract_sender_address_and_domain(message.sender)
+                if clean_addr:
+                    add_blocked_sender(
+                        account_key=account.account_key,
+                        email=account.email,
+                        pattern=clean_addr,
+                        action=action,
+                    )
+                    save_blocked_senders_to_sieve(request, account)
+
+            delete_message(imap, folder, uid)
+    except MailSessionError:
+        return login_redirect(request)
+    except ImapAuthError:
+        end_mail_session(request)
+        return login_redirect(request)
+    except MailError:
+        return _error_response(request)
+
+    target = reverse("mail:folder", kwargs={"folder_name": folder})
+    if request.META.get("HTTP_HX_REQUEST") == "true":
+        return HttpResponse(status=204, headers={"HX-Redirect": target})
+    return redirect(target)
 
 
 @mail_login_required
@@ -1139,3 +1252,82 @@ def filter_save(request: HttpRequest) -> HttpResponse:
     response = render(request, "mail/_filters_panel.html", context)
     response["HX-Trigger"] = json.dumps({"mail:filter-saved": True})
     return response
+
+
+@never_cache
+@require_GET
+@mail_login_required
+def vacation_panel(request: HttpRequest) -> HttpResponse:
+    """Render the out-of-office vacation auto-responder panel."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    vacation_rule, is_synced = load_vacation_rule(request, account)
+    context = {
+        "vacation_rule": vacation_rule,
+        "is_synced": is_synced,
+    }
+    return render(request, "mail/_vacation_panel.html", context)
+
+
+@never_cache
+@require_POST
+@mail_login_required
+def vacation_save(request: HttpRequest) -> HttpResponse:
+    """Save out-of-office vacation auto-responder settings."""
+    account = load_mail_account(request)
+    if not account:
+        return login_redirect(request)
+
+    post = request.POST
+    enabled = post.get("enabled") in {"on", "true", "1"}
+    subject = str(post.get("subject") or "").strip()
+    message = str(post.get("message") or "").strip()
+    start_date = str(post.get("start_date") or "").strip()
+    end_date = str(post.get("end_date") or "").strip()
+
+    try:
+        days_raw = str(post.get("days") or "7")
+        days = int(days_raw)
+        if days < 1:
+            days = 1
+        elif days > 90:
+            days = 90
+    except (ValueError, TypeError):
+        days = 7
+
+    error_message = None
+    if enabled and not message:
+        error_message = _("Auto-reply message is required when vacation responder is enabled.")
+    elif start_date and end_date and start_date > end_date:
+        error_message = _("Start date must be before or equal to end date.")
+
+    vacation = VacationRule(
+        enabled=enabled and not bool(error_message),
+        subject=subject,
+        message=message,
+        days=days,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    status_message = None
+    is_synced = False
+
+    if not error_message:
+        is_synced = save_vacation_rule(request, account, vacation)
+        if enabled:
+            status_message = _("Vacation auto-responder activated successfully.")
+        else:
+            status_message = _("Vacation auto-responder deactivated.")
+
+    context = {
+        "vacation_rule": vacation,
+        "is_synced": is_synced,
+        "status_message": status_message,
+        "error_message": error_message,
+    }
+    is_htmx = request.META.get("HTTP_HX_REQUEST") == "true"
+    status = 422 if error_message and not is_htmx else 200
+    return render(request, "mail/_vacation_panel.html", context, status=status)

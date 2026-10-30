@@ -356,6 +356,149 @@
             var event = new Event("input", { bubbles: true });
             this.$refs.bodyInput.dispatchEvent(event);
           }
+        },
+        openImageModal() {
+          this.saveSelection();
+          var fileInput = document.getElementById("compose-image-file-input");
+          if (fileInput) {
+            fileInput.value = "";
+          }
+          var urlInput = document.getElementById("compose-image-url-input");
+          if (urlInput) {
+            urlInput.value = "";
+          }
+          var dialog = document.getElementById("insert-image-modal");
+          if (dialog && typeof dialog.showModal === "function") {
+            dialog.showModal();
+          }
+        },
+        closeImageModal() {
+          var dialog = document.getElementById("insert-image-modal");
+          if (dialog && typeof dialog.close === "function") {
+            dialog.close();
+          }
+        },
+        saveSelection() {
+          var sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
+            this._savedRange = sel.getRangeAt(0);
+          }
+        },
+        restoreSelection() {
+          if (this._savedRange && this.$refs.editor) {
+            this.$refs.editor.focus();
+            var sel = window.getSelection();
+            if (sel) {
+              sel.removeAllRanges();
+              sel.addRange(this._savedRange);
+            }
+          }
+        },
+        insertImageAtCursor(src, alt) {
+          this.restoreSelection();
+          if (!this.$refs.editor) {
+            return;
+          }
+          var img = document.createElement("img");
+          img.src = src;
+          if (alt) {
+            img.alt = alt;
+          }
+          img.className = "max-w-full h-auto rounded";
+          img.style.maxWidth = "100%";
+          img.style.height = "auto";
+
+          var sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
+            var range = sel.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(img);
+            range.setStartAfter(img);
+            range.setEndAfter(img);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          } else {
+            this.$refs.editor.appendChild(img);
+          }
+          this.syncToTextarea();
+          this.closeImageModal();
+        },
+        confirmInsertImage() {
+          var fileInput = document.getElementById("compose-image-file-input");
+          var urlInput = document.getElementById("compose-image-url-input");
+          var self = this;
+
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+            var file = fileInput.files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              var dataUrl = e.target && e.target.result;
+              if (typeof dataUrl === "string") {
+                self.insertImageAtCursor(dataUrl, file.name);
+              }
+            };
+            reader.readAsDataURL(file);
+            return;
+          }
+
+          if (urlInput && urlInput.value && urlInput.value.trim().length > 0) {
+            var url = urlInput.value.trim();
+            this.insertImageAtCursor(url, "");
+          }
+        },
+        onEditorPaste(event) {
+          var clipboardData = event.clipboardData || window.clipboardData;
+          if (!clipboardData || !clipboardData.items) {
+            return;
+          }
+          for (var i = 0; i < clipboardData.items.length; i += 1) {
+            var item = clipboardData.items[i];
+            if (item.type && item.type.indexOf("image") !== -1) {
+              event.preventDefault();
+              var file = item.getAsFile();
+              if (file) {
+                var self2 = this;
+                var reader2 = new FileReader();
+                reader2.onload = function (e) {
+                  if (e.target && typeof e.target.result === "string") {
+                    self2.insertImageAtCursor(e.target.result, "pasted-image");
+                  }
+                };
+                reader2.readAsDataURL(file);
+              }
+              return;
+            }
+          }
+        },
+        applySignature(sigId) {
+          var sigTpl = document.getElementById("sig-data-" + sigId);
+          if (!sigTpl || !this.$refs.editor) {
+            return;
+          }
+          var sigHtml = sigTpl.innerHTML || "";
+          if (!sigHtml) {
+            return;
+          }
+          var existing = this.$refs.editor.querySelector(".mail-signature");
+          if (existing) {
+            existing.innerHTML = "<br>-- <br>" + sigHtml;
+          } else {
+            var div = document.createElement("div");
+            div.className = "mail-signature";
+            div.innerHTML = "<br>-- <br>" + sigHtml;
+            this.$refs.editor.appendChild(div);
+          }
+          this.syncToTextarea();
+        },
+        removeSignature() {
+          if (!this.$refs.editor) {
+            return;
+          }
+          var existing = this.$refs.editor.querySelector(".mail-signature");
+          if (existing) {
+            existing.remove();
+            this.syncToTextarea();
+          }
         }
       };
     });

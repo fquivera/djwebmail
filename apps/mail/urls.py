@@ -15,15 +15,19 @@ from apps.mail.views import (
     inline_view,
     mailbox,
     message_archive,
+    message_block_sender,
     message_delete,
     message_flags,
     message_move,
     message_remote_images,
+    message_trust_sender,
     message_view,
     messages_batch,
     notifications_check_view,
     palette,
     search,
+    vacation_panel,
+    vacation_save,
 )
 
 app_name = "mail"
@@ -35,6 +39,8 @@ urlpatterns = [
     path("filters/action/", filters_action, name="filters_action"),
     path("filters/modal/", filter_modal, name="filter_modal"),
     path("filters/save/", filter_save, name="filter_save"),
+    path("vacation/", vacation_panel, name="vacation_panel"),
+    path("vacation/save/", vacation_save, name="vacation_save"),
     path("folders/create/", folder_create, name="folder_create"),
     path("folder/<path:folder_name>/batch/", messages_batch, name="messages_batch"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),
@@ -45,6 +51,16 @@ urlpatterns = [
         "message/<path:folder_name>/<int:uid>/remote-images/",
         message_remote_images,
         name="message_remote_images",
+    ),
+    path(
+        "message/<path:folder_name>/<int:uid>/trust-sender/",
+        message_trust_sender,
+        name="message_trust_sender",
+    ),
+    path(
+        "message/<path:folder_name>/<int:uid>/block-sender/",
+        message_block_sender,
+        name="message_block_sender",
     ),
     path(
         "message/<path:folder_name>/<int:uid>/flags/",

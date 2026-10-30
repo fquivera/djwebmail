@@ -58,6 +58,7 @@ from apps.contacts.constants import MAX_CONTACTS_AUTOCOMPLETE
 from apps.contacts.selectors import list_contact_suggestions, list_contacts
 from apps.mail.constants import IMAP_INBOX
 from apps.mail.services.message import MessageDetail, get_message
+from apps.preferences.services import get_active_signatures
 
 
 @never_cache
@@ -277,6 +278,16 @@ def _render_compose(
     account_email = account.email if account is not None else ""
     account_key = account.account_key if account is not None else ""
     display_name = get_mail_display_name(request)
+    signature = get_mail_signature(request)
+    active_sigs = (
+        get_active_signatures(
+            account_key,
+            email=account_email,
+            seed_from_pref=signature,
+        )
+        if account_key
+        else []
+    )
     return render(
         request,
         "compose/compose.html",
@@ -292,6 +303,7 @@ def _render_compose(
                 list_contacts(account_key)[:MAX_CONTACTS_AUTOCOMPLETE] if account_key else []
             ),
             "contact_suggestions": list_contact_suggestions(account_key) if account_key else [],
+            "active_signatures": active_sigs,
         },
         status=status,
     )

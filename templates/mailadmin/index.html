@@ -35,7 +35,7 @@
   </div>
 
   <!-- Operational Modules Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
     <!-- Module 1: Corporate Identity & Branding -->
     <a
       href="{% url 'mailadmin:branding' %}"
@@ -91,7 +91,33 @@
       </div>
     </a>
 
-    <!-- Module 3: Diagnostics & Service Health -->
+    <!-- Module 3: Virtual Aliases & Distribution Lists -->
+    <a
+      href="{% url 'mailadmin:aliases' %}"
+      class="card bg-base-100 border border-base-300 hover:border-primary/50 hover:shadow-md transition-all group"
+    >
+      <div class="card-body p-6 space-y-3">
+        <div class="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-content transition-colors">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </div>
+        <h2 class="card-title text-base font-bold text-base-content group-hover:text-primary transition-colors">
+          {% translate "Aliases & Distribution Lists" %}
+        </h2>
+        <p class="text-xs text-base-content/70 leading-relaxed">
+          {% translate "Create forwarding aliases and multi-recipient distribution lists to route incoming emails dynamically." %}
+        </p>
+        <div class="card-actions justify-end pt-2">
+          <span class="btn btn-primary btn-sm btn-ghost gap-1 text-xs">
+            {% translate "Manage aliases" %} &rarr;
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Module 4: Diagnostics & Service Health -->
     <a
       href="{% url 'mailadmin:diagnostics' %}"
       class="card bg-base-100 border border-base-300 hover:border-primary/50 hover:shadow-md transition-all group"
@@ -128,7 +154,7 @@
           {% translate "Full diagnostics report" %} &rarr;
         </a>
       </div>
-      <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+      <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
         <div class="rounded-lg bg-base-200/60 p-3">
           <dt class="text-base-content/60">{% translate "Corporate Identity" %}</dt>
           <dd class="mt-1 font-semibold text-sm truncate">
@@ -140,6 +166,13 @@
           <dt class="text-base-content/60">{% translate "Managed Accounts" %}</dt>
           <dd class="mt-1 font-semibold text-sm truncate">
             {{ accounts_count }} {% translate "mailboxes" %}
+          </dd>
+        </div>
+
+        <div class="rounded-lg bg-base-200/60 p-3">
+          <dt class="text-base-content/60">{% translate "Aliases & Lists" %}</dt>
+          <dd class="mt-1 font-semibold text-sm truncate">
+            {{ aliases_count }} {% translate "configured" %}
           </dd>
         </div>
 

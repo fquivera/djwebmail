@@ -283,6 +283,28 @@ msgstr "El tamaño de página debe estar entre %(minimum)s y %(maximum)s."
 msgid "Preferences saved."
 msgstr "Preferencias guardadas."
 
+#: templates/preferences/index.html:46
+msgid "Preferences"
+msgstr "Preferencias"
+
+#: templates/compose/compose.html:433
+msgid "Insert image"
+msgstr "Insertar imagen"
+
+#: templates/compose/compose.html:447
+msgid "From computer"
+msgstr "Desde el equipo"
+
+#: templates/compose/compose.html:454
+msgid "Image Web URL"
+msgstr "URL web de la imagen"
+
+#: templates/compose/compose.html:463
+msgid "Insert"
+msgstr "Insertar"
+
+
+
 #: config/settings/base.py:109
 msgid "English"
 msgstr "Inglés"
@@ -1972,3 +1994,526 @@ msgstr "Sincronizado con el servidor ManageSieve"
 
 msgid "Saved in database fallback mode"
 msgstr "Guardado en modo de respaldo en base de datos"
+
+msgid "Out of office"
+msgstr "Fuera de la oficina"
+
+msgid "Out of office auto-responder"
+msgstr "Respuesta automática por ausencia"
+
+msgid "Automatically send replies to incoming messages while you are away."
+msgstr "Envía respuestas automáticas a los mensajes entrantes mientras estás fuera."
+
+msgid "Enable auto-responder"
+msgstr "Activar respuesta automática"
+
+msgid "When active, DjWebmail responds to incoming messages on the server according to the rules below."
+msgstr "Cuando está activo, DjWebmail responde a los mensajes entrantes en el servidor según las reglas siguientes."
+
+msgid "Active period"
+msgstr "Período activo"
+
+msgid "Optional. Define when the auto-responder should run. If left empty, it starts immediately and runs until disabled."
+msgstr "Opcional. Define cuándo debe ejecutarse la respuesta automática. Si se deja vacío, inicia de inmediato y continúa hasta desactivarse."
+
+msgid "Start date"
+msgstr "Fecha de inicio"
+
+msgid "End date"
+msgstr "Fecha de fin"
+
+msgid "Auto-reply message"
+msgstr "Mensaje de respuesta automática"
+
+msgid "I am currently away and will have limited access to email. I will respond to your message upon my return."
+msgstr "Actualmente me encuentro fuera y tendré acceso limitado a mi correo. Responderé a su mensaje tan pronto regrese."
+
+msgid "Response interval (days)"
+msgstr "Intervalo de respuesta (días)"
+
+msgid "days between replies to the same sender"
+msgstr "días entre respuestas al mismo remitente"
+
+msgid "Save vacation settings"
+msgstr "Guardar configuración de ausencia"
+
+msgid "Auto-reply message is required when vacation responder is enabled."
+msgstr "El mensaje de respuesta automática es obligatorio cuando la respuesta por ausencia está activada."
+
+msgid "Start date must be before or equal to end date."
+msgstr "La fecha de inicio debe ser anterior o igual a la fecha de fin."
+
+msgid "Vacation auto-responder activated successfully."
+msgstr "Respuesta automática por ausencia activada exitosamente."
+
+msgid "Vacation auto-responder deactivated."
+msgstr "Respuesta automática por ausencia desactivada."
+
+msgid "account signature"
+msgstr "firma de la cuenta"
+
+msgid "account signatures"
+msgstr "firmas de la cuenta"
+
+msgid "Email signatures"
+msgstr "Firmas de correo"
+
+msgid "signatures"
+msgstr "firmas"
+
+msgid "Signatures"
+msgstr "Firmas"
+
+msgid "Create and manage multiple rich HTML signatures for your outgoing emails."
+msgstr "Cree y gestione múltiples firmas HTML enriquecidas para sus correos salientes."
+
+msgid "Add signature"
+msgstr "Añadir firma"
+
+msgid "Create signature"
+msgstr "Crear firma"
+
+msgid "Edit signature"
+msgstr "Editar firma"
+
+msgid "New signature"
+msgstr "Nueva firma"
+
+msgid "Default signature"
+msgstr "Firma predeterminada"
+
+msgid "Default"
+msgstr "Predeterminada"
+
+msgid "Active"
+msgstr "Activa"
+
+msgid "Inactive"
+msgstr "Inactiva"
+
+msgid "Make default"
+msgstr "Establecer como predeterminada"
+
+msgid "Activate"
+msgstr "Activar"
+
+msgid "Deactivate"
+msgstr "Desactivar"
+
+msgid "Are you sure you want to delete this signature?"
+msgstr "¿Está seguro de que desea eliminar esta firma?"
+
+msgid "Empty signature content"
+msgstr "Contenido de firma vacío"
+
+msgid "Empty signature"
+msgstr "Firma vacía"
+
+msgid "No email signatures configured yet."
+msgstr "No hay firmas de correo configuradas aún."
+
+msgid "Add your first rich HTML signature to append it to your outgoing emails."
+msgstr "Añada su primera firma HTML enriquecida para adjuntarla a sus correos salientes."
+
+msgid "Signature name"
+msgstr "Nombre de la firma"
+
+msgid "Signature content"
+msgstr "Contenido de la firma"
+
+msgid "Set as default"
+msgstr "Establecer como predeterminada"
+
+msgid "Set as default signature"
+msgstr "Establecer como firma predeterminada"
+
+msgid "Descriptive title, e.g. 'Work', 'Personal' or 'Short'."
+msgstr "Título descriptivo, ej. 'Trabajo', 'Personal' o 'Breve'."
+
+msgid "Rich HTML signature appended to your emails."
+msgstr "Firma HTML enriquecida adjunta a sus correos."
+
+msgid "Automatically inserted when composing new messages."
+msgstr "Insertada automáticamente al redactar mensajes nuevos."
+
+msgid "Disable to keep the signature without offering it in compose."
+msgstr "Desactívela para conservarla sin ofrecerla en redacción."
+
+msgid "e.g. Work, Mobile, Support"
+msgstr "ej. Trabajo, Móvil, Soporte"
+
+msgid "Signature Content"
+msgstr "Contenido de la firma"
+
+msgid "Visual Editor"
+msgstr "Editor visual"
+
+msgid "HTML Code"
+msgstr "Código HTML"
+
+msgid "Bold"
+msgstr "Negrita"
+
+msgid "Italic"
+msgstr "Cursiva"
+
+msgid "Underline"
+msgstr "Subrayado"
+
+msgid "Link"
+msgstr "Enlace"
+
+msgid "Enter URL:"
+msgstr "Introduzca URL:"
+
+msgid "Live Preview"
+msgstr "Vista previa en vivo"
+
+msgid "Save signature"
+msgstr "Guardar firma"
+
+msgid "Signature saved successfully."
+msgstr "Firma guardada exitosamente."
+
+msgid "Default signature updated."
+msgstr "Firma predeterminada actualizada."
+
+msgid "Signature deleted."
+msgstr "Firma eliminada."
+
+msgid "Insert signature"
+msgstr "Insertar firma"
+
+msgid "Choose signature"
+msgstr "Elegir firma"
+
+msgid "Remove signature"
+msgstr "Quitar firma"
+
+msgid "No active signatures"
+msgstr "No hay firmas activas"
+
+msgid "Manage signatures..."
+msgstr "Gestionar firmas..."
+
+msgid "trusted sender"
+msgstr "remitente de confianza"
+
+msgid "trusted senders"
+msgstr "remitentes de confianza"
+
+msgid "blocked sender"
+msgstr "remitente bloqueado"
+
+msgid "blocked senders"
+msgstr "remitentes bloqueados"
+
+msgid "Email address or domain"
+msgstr "Dirección de correo o dominio"
+
+msgid "e.g. newsletter@company.com or company.com"
+msgstr "ej. boletin@empresa.com o empresa.com"
+
+msgid "e.g. spam@domain.com or spamdomain.com"
+msgstr "ej. spam@dominio.com o dominiospam.com"
+
+msgid "Notes (optional)"
+msgstr "Notas (opcional)"
+
+msgid "Move to Trash"
+msgstr "Mover a Papelera"
+
+msgid "Discard silently"
+msgstr "Descartar silenciosamente"
+
+msgid "Sender email or domain cannot be empty."
+msgstr "El correo o dominio del remitente no puede estar vacío."
+
+msgid "Trusted & Blocked Senders"
+msgstr "Remitentes de confianza y bloqueados"
+
+msgid "Senders (Trust & Block)"
+msgstr "Remitentes (Confianza y Bloqueo)"
+
+msgid "Control privacy allowlists for remote content and server-side filtering for unwanted senders."
+msgstr "Controle las listas de privacidad para contenido remoto y filtrado en el servidor para remitentes no deseados."
+
+msgid "Trusted Senders"
+msgstr "Remitentes de confianza"
+
+msgid "Blocked Senders"
+msgstr "Remitentes bloqueados"
+
+msgid "Add trusted sender or domain"
+msgstr "Añadir remitente o dominio de confianza"
+
+msgid "Remote images from these senders will load automatically without privacy warnings."
+msgstr "Las imágenes remotas de estos remitentes se cargarán automáticamente sin advertencias de privacidad."
+
+msgid "Trust"
+msgstr "Confiar"
+
+msgid "Added date"
+msgstr "Fecha de adición"
+
+msgid "Remove trusted sender"
+msgstr "Eliminar remitente de confianza"
+
+msgid "No trusted senders registered yet."
+msgstr "Aún no hay remitentes de confianza registrados."
+
+msgid "You can also trust senders directly from the message viewer warning banner."
+msgstr "También puede añadir remitentes de confianza directamente desde el aviso en el visor de correos."
+
+msgid "Add blocked sender or domain"
+msgstr "Añadir remitente o dominio bloqueado"
+
+msgid "Incoming messages matching these senders are handled directly on the mail server."
+msgstr "Los mensajes entrantes que coincidan con estos remitentes se procesan directamente en el servidor de correo."
+
+msgid "Rule Action"
+msgstr "Acción de la regla"
+
+msgid "Block"
+msgstr "Bloquear"
+
+msgid "Unblock sender"
+msgstr "Desbloquear remitente"
+
+msgid "Unblock"
+msgstr "Desbloquear"
+
+msgid "No blocked senders registered yet."
+msgstr "Aún no hay remitentes bloqueados registrados."
+
+msgid "You can also block senders directly from the message viewer."
+msgstr "También puede bloquear remitentes directamente desde el visor de mensajes."
+
+msgid "Sender added to trusted allowlist."
+msgstr "Remitente añadido a la lista de confianza."
+
+msgid "Sender removed from trusted allowlist."
+msgstr "Remitente eliminado de la lista de confianza."
+
+msgid "Sender blocked and filter updated."
+msgstr "Remitente bloqueado y filtro actualizado."
+
+msgid "Sender unblocked and filter updated."
+msgstr "Remitente desbloqueado y filtro actualizado."
+
+msgid "Always load images from this sender"
+msgstr "Cargar siempre imágenes de este remitente"
+
+msgid "Always trust sender"
+msgstr "Confiar siempre en el remitente"
+
+msgid "Trusted"
+msgstr "De confianza"
+
+msgid "Blocked"
+msgstr "Bloqueado"
+
+msgid "Block sender"
+msgstr "Bloquear remitente"
+
+msgid "Block this sender?"
+msgstr "¿Bloquear a este remitente?"
+
+msgid "Future emails from <strong>%(sender)s</strong> will be automatically filtered on the server. This message will be moved to Trash."
+msgstr "Los futuros correos de <strong>%(sender)s</strong> serán filtrados automáticamente en el servidor. Este mensaje se moverá a la Papelera."
+
+msgid "Filter action"
+msgstr "Acción del filtro"
+
+msgid "Confirm block"
+msgstr "Confirmar bloqueo"
+
+msgid "Aliases & Distribution Lists"
+msgstr "Alias y Listas de Distribución"
+
+msgid "Virtual Aliases & Distribution Lists"
+msgstr "Alias Virtuales y Listas de Distribución"
+
+msgid "Manage email forwarding aliases and multi-recipient distribution groups for your domain."
+msgstr "Gestione alias de reenvío y grupos de distribución con múltiples destinatarios para su dominio."
+
+msgid "Create forwarding aliases and multi-recipient distribution lists to route incoming emails dynamically."
+msgstr "Cree alias de reenvío y listas de distribución para enrutar correos entrantes dinámicamente."
+
+msgid "Manage aliases"
+msgstr "Gestionar alias"
+
+msgid "Aliases & Lists"
+msgstr "Alias y Listas"
+
+msgid "configured"
+msgstr "configurados"
+
+msgid "Total entries"
+msgstr "Total de entradas"
+
+msgid "Virtual aliases"
+msgstr "Alias virtuales"
+
+msgid "Distribution lists"
+msgstr "Listas de distribución"
+
+msgid "Active routing"
+msgstr "Enrutamiento activo"
+
+msgid "Search by source, destination or name..."
+msgstr "Buscar por origen, destino o nombre..."
+
+msgid "Search aliases and distribution lists"
+msgstr "Buscar alias y listas de distribución"
+
+msgid "All types"
+msgstr "Todos los tipos"
+
+msgid "Aliases"
+msgstr "Alias"
+
+msgid "Lists"
+msgstr "Listas"
+
+msgid "All status"
+msgstr "Todos los estados"
+
+msgid "New alias / list"
+msgstr "Nuevo alias / lista"
+
+msgid "New alias"
+msgstr "Nuevo alias"
+
+msgid "Aliases and distribution lists table"
+msgstr "Tabla de alias y listas de distribución"
+
+msgid "Source Address"
+msgstr "Dirección de origen"
+
+msgid "Source alias address"
+msgstr "Dirección de alias de origen"
+
+msgid "Incoming address that forwards to the destinations below."
+msgstr "Dirección entrante que se reenvía a los destinos siguientes."
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Destinations"
+msgstr "Destinos"
+
+msgid "Destination email addresses"
+msgstr "Direcciones de correo de destino"
+
+msgid "Virtual Alias"
+msgstr "Alias virtual"
+
+msgid "Distribution List"
+msgstr "Lista de distribución"
+
+msgid "Edit alias"
+msgstr "Editar alias"
+
+msgid "Edit Alias: %(source)s"
+msgstr "Editar alias: %(source)s"
+
+msgid "Edit %(source)s"
+msgstr "Editar %(source)s"
+
+msgid "Suspend alias"
+msgstr "Suspender alias"
+
+msgid "Activate alias"
+msgstr "Activar alias"
+
+msgid "Delete alias"
+msgstr "Eliminar alias"
+
+msgid "Confirm Deletion"
+msgstr "Confirmar eliminación"
+
+msgid "Yes, delete alias"
+msgstr "Sí, eliminar alias"
+
+msgid "Are you sure you want to delete the virtual alias <strong>%(source)s</strong>? Emails sent to this address will no longer be forwarded."
+msgstr "¿Está seguro de que desea eliminar el alias virtual <strong>%(source)s</strong>? Los correos enviados a esta dirección ya no serán reenviados."
+
+msgid "No aliases or distribution lists found matching your query."
+msgstr "No se encontraron alias ni listas de distribución que coincidan con su búsqueda."
+
+msgid "Clear search & filters"
+msgstr "Limpiar búsqueda y filtros"
+
+msgid "Create Alias or Distribution List"
+msgstr "Crear alias o lista de distribución"
+
+msgid "Create Alias"
+msgstr "Crear alias"
+
+msgid "Configure a virtual alias or multi-recipient distribution group to forward incoming messages."
+msgstr "Configure un alias virtual o un grupo de distribución para reenviar mensajes entrantes."
+
+msgid "Update recipient destinations, description name, or active routing status."
+msgstr "Actualice destinos, nombre descriptivo o estado de enrutamiento activo."
+
+msgid "Description / Name (optional)"
+msgstr "Descripción / Nombre (opcional)"
+
+msgid "e.g. Sales Team or Support Committee"
+msgstr "p. ej. Equipo de Ventas o Comité de Apoyo"
+
+msgid "Human-readable label to easily identify this distribution group or role in reports."
+msgstr "Etiqueta legible para identificar fácilmente este grupo de distribución en informes."
+
+msgid "One email address per line or separated by commas."
+msgstr "Una dirección de correo por línea o separadas por comas."
+
+msgid "Single = Alias, Multiple = Distribution List"
+msgstr "Único = Alias, Múltiples = Lista de distribución"
+
+msgid "Active alias"
+msgstr "Alias activo"
+
+msgid "If disabled, incoming messages to this alias address will not be forwarded to recipients."
+msgstr "Si está desactivado, los mensajes entrantes a esta dirección no serán reenviados a los destinatarios."
+
+msgid "Specify at least one destination email address."
+msgstr "Especifique al menos una dirección de correo de destino."
+
+msgid "The following destination addresses are invalid: %(emails)s"
+msgstr "Las siguientes direcciones de destino no son válidas: %(emails)s"
+
+msgid "Enter a valid source email address."
+msgstr "Ingrese una dirección de correo de origen válida."
+
+msgid "An alias with this source address already exists."
+msgstr "Ya existe un alias con esta dirección de origen."
+
+msgid "An alias cannot forward to itself."
+msgstr "Un alias no puede reenviarse a sí mismo."
+
+msgid "Alias '%(source)s' created successfully."
+msgstr "Alias '%(source)s' creado exitosamente."
+
+msgid "Alias '%(source)s' updated successfully."
+msgstr "Alias '%(source)s' actualizado exitosamente."
+
+msgid "Alias '%(source)s' has been %(status)s."
+msgstr "El alias '%(source)s' ha sido %(status)s."
+
+msgid "Alias '%(source)s' deleted successfully."
+msgstr "Alias '%(source)s' eliminado exitosamente."
+
+msgid "Alias '%(source)s' was not found."
+msgstr "No se encontró el alias '%(source)s'."
+
+msgid "Alias '%(source)s' not found."
+msgstr "Alias '%(source)s' no encontrado."
+
+msgid "Managed alias"
+msgstr "Alias gestionado"
+
+msgid "Managed aliases"
+msgstr "Alias gestionados"
+

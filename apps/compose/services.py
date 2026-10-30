@@ -7,6 +7,7 @@ handed to SMTP and (later) appended to the Sent folder over IMAP.
 
 from __future__ import annotations
 
+import base64
 import re
 from collections.abc import Sequence
 from email.header import decode_header, make_header
@@ -34,9 +35,45 @@ _SENT_FOLDER_FLAG = "\\sent"
 _TAG_PATTERN = re.compile(r"<[^>]+>")
 _SPACE_PATTERN = re.compile(r"[ \t\u00a0]+")
 _HTML_TAGS_PATTERN = re.compile(
-    r"<(p|div|br|b|i|u|s|ul|ol|li|h[1-6]|span|a|strong|em)\b",
+    r"<(p|div|br|b|i|u|s|ul|ol|li|h[1-6]|span|a|strong|em|img)\b",
     re.IGNORECASE,
 )
+_DATA_URI_PATTERN = re.compile(
+    r"<img(?P<before>[^>]*?)\bsrc=[\"\']"
+    r"data:image/(?P<subtype>png|jpeg|jpg|gif|webp);base64,"
+    r"(?P<b64>[A-Za-z0-9+/= \r\n]+)[\"\'](?P<after>[^>]*?)>",
+    re.IGNORECASE,
+)
+
+
+def extract_inline_images(
+    html: str,
+    domain: str,
+) -> tuple[str, list[tuple[bytes, str, str, str]]]:
+    """Replace base64 data URIs with cid: references and extract raw image payloads.
+
+    Returns (transformed_html, list_of_(bytes, maintype, subtype, cid)).
+    """
+    inline_parts: list[tuple[bytes, str, str, str]] = []
+
+    def _replace(match: re.Match[str]) -> str:
+        subtype = match.group("subtype").lower()
+        if subtype == "jpg":
+            subtype = "jpeg"
+        raw_b64 = re.sub(r"\s+", "", match.group("b64"))
+        try:
+            raw_data = base64.b64decode(raw_b64)
+        except Exception:
+            return match.group(0)
+
+        cid = make_msgid(domain=domain).strip("<>")
+        inline_parts.append((raw_data, "image", subtype, cid))
+        before = match.group("before")
+        after = match.group("after")
+        return f'<img{before}src="cid:{cid}"{after}>'
+
+    transformed = _DATA_URI_PATTERN.sub(_replace, html)
+    return transformed, inline_parts
 
 
 def decode_mime_words(value: str) -> str:
@@ -86,9 +123,22 @@ def build_message(
 
     # If body contains rich HTML markup, assemble multipart/alternative
     if "<" in body and ">" in body and _HTML_TAGS_PATTERN.search(body):
-        plain_text = html_to_text(body)
+        domain = envelope_sender.rsplit("@", 1)[-1]
+        html_body, inline_images = extract_inline_images(body, domain=domain)
+        plain_text = html_to_text(html_body)
         message.set_content(plain_text)
-        message.add_alternative(body, subtype="html")
+        message.add_alternative(html_body, subtype="html")
+        if inline_images:
+            html_part = message.get_body(preferencelist=("html",))
+            if html_part is not None:
+                for raw_data, maintype, subtype, cid in inline_images:
+                    html_part.add_related(
+                        raw_data,
+                        maintype=maintype,
+                        subtype=subtype,
+                        cid=f"<{cid}>",
+                        filename=f"image.{subtype}",
+                    )
     else:
         message.set_content(body)
 
@@ -151,6 +201,13 @@ def append_to_sent(imap: ImapService, raw: bytes) -> bool:
     return True
 
 
+def is_signature_html(text: str) -> bool:
+    """Detect if the signature string contains rich HTML elements."""
+    markers = ("<p", "<div", "<br", "<span", "<table", "<b", "<i", "<a", "<ul", "<ol", "<img")
+    lower = text.lower()
+    return any(m in lower for m in markers)
+
+
 def apply_signature(initial: dict[str, str], signature: str) -> dict[str, str]:
     """Attach the account signature to the initial compose fields when non-empty."""
     clean_sig = signature.strip()
@@ -158,10 +215,18 @@ def apply_signature(initial: dict[str, str], signature: str) -> dict[str, str]:
         return initial
     updated = dict(initial)
     existing = updated.get("body", "").strip()
-    if existing:
-        updated["body"] = f"\n\n-- \n{clean_sig}\n\n{existing}"
+
+    if is_signature_html(clean_sig) or (existing and "<" in existing):
+        sig_block = f'<div class="mail-signature"><br>-- <br>{clean_sig}</div>'
+        if existing:
+            updated["body"] = f"{sig_block}<br><br>{existing}"
+        else:
+            updated["body"] = f"<p><br></p>{sig_block}"
     else:
-        updated["body"] = f"\n\n-- \n{clean_sig}"
+        if existing:
+            updated["body"] = f"\n\n-- \n{clean_sig}\n\n{existing}"
+        else:
+            updated["body"] = f"\n\n-- \n{clean_sig}"
     return updated
 
 

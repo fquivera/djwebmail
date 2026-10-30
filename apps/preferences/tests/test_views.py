@@ -279,21 +279,19 @@ def test_preference_is_created_when_missing(
     assert cast(Any, MailPreference).objects.filter(account_key=account.account_key).exists()
 
 
-def test_settings_saves_signature_and_remote_images_policy(
+def test_settings_saves_remote_images_policy(
     logged_in_client: Client,
     preference: MailPreference,
 ) -> None:
-    data = valid_data(remote_images="always", signature_html="Best,\nUser")
+    data = valid_data(remote_images="always")
 
     response: Any = logged_in_client.post(reverse("preferences:index"), data)
 
     assert response.status_code == 302
     preference.refresh_from_db()
     assert preference.remote_images == "always"
-    assert preference.signature_html == "Best,\nUser"
     session = logged_in_client.session
     assert session["mail_remote_images"] == "always"
-    assert session["mail_signature"] == "Best,\nUser"
 
 
 def test_settings_saves_owner_name_and_label_and_refreshes_navbar_oob(

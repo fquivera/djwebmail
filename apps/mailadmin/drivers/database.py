@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Any, cast
+
 from django.db import DatabaseError, OperationalError, ProgrammingError
+from django.db.models import Q
 from django.utils.translation import gettext as _
 
 from apps.accounts.services.password import hash_sha512_crypt
-from apps.mailadmin.drivers.base import BaseMailAccountDriver, MailAccountData
+from apps.mailadmin.drivers.base import BaseMailAccountDriver, MailAccountData, MailAliasData
 from apps.mailadmin.exceptions import (
     MailAccountAlreadyExistsError,
     MailAccountNotFoundError,
     MailAdminError,
+    MailAliasAlreadyExistsError,
+    MailAliasNotFoundError,
 )
-from apps.mailadmin.models import ManagedMailbox
+from apps.mailadmin.models import ManagedAlias, ManagedMailbox
 
 
 class DatabaseMailAccountDriver(BaseMailAccountDriver):
@@ -123,4 +129,123 @@ class DatabaseMailAccountDriver(BaseMailAccountDriver):
         except (DatabaseError, ProgrammingError, OperationalError) as exc:
             raise MailAdminError(
                 _("Failed to delete mail account: %(error)s") % {"error": str(exc)}
+            ) from exc
+
+    def _alias_to_data(self, alias: ManagedAlias) -> MailAliasData:
+        return MailAliasData(
+            source=alias.source,
+            destinations=alias.get_destinations_list(),
+            name=alias.name,
+            is_active=alias.is_active,
+            created_at=alias.created_at,
+            updated_at=alias.updated_at,
+        )
+
+    def list_aliases(
+        self,
+        search: str = "",
+        is_active: bool | None = None,
+    ) -> list[MailAliasData]:
+        try:
+            qs = cast(Any, ManagedAlias).objects.all().order_by("source")
+            if search.strip():
+                term = search.strip()
+                qs = qs.filter(
+                    cast(Any, Q(source__icontains=term))
+                    | cast(Any, Q(destinations__icontains=term))
+                    | cast(Any, Q(name__icontains=term))
+                )
+            if is_active is not None:
+                qs = qs.filter(is_active=is_active)
+            return [self._alias_to_data(a) for a in qs]
+        except (DatabaseError, ProgrammingError, OperationalError) as exc:
+            raise MailAdminError(
+                _("Database error querying virtual aliases: %(error)s") % {"error": str(exc)}
+            ) from exc
+
+    def get_alias(self, source: str) -> MailAliasData | None:
+        try:
+            target = source.strip().lower()
+            alias = cast(Any, ManagedAlias).objects.filter(source__iexact=target).first()
+            if not alias:
+                return None
+            return self._alias_to_data(alias)
+        except (DatabaseError, ProgrammingError, OperationalError) as exc:
+            raise MailAdminError(
+                _("Database error retrieving alias: %(error)s") % {"error": str(exc)}
+            ) from exc
+
+    def create_alias(
+        self,
+        source: str,
+        destinations: Sequence[str],
+        name: str = "",
+        is_active: bool = True,
+    ) -> MailAliasData:
+        target = source.strip().lower()
+        clean_dests = [d.strip().lower() for d in destinations if d.strip()]
+        if not clean_dests:
+            raise MailAdminError(_("An alias must have at least one destination address."))
+
+        if self.get_alias(target) is not None:
+            raise MailAliasAlreadyExistsError(
+                _("An alias for '%(source)s' already exists.") % {"source": target}
+            )
+
+        try:
+            alias = cast(Any, ManagedAlias).objects.create(
+                source=target,
+                destinations=",\n".join(clean_dests),
+                name=name.strip(),
+                is_active=is_active,
+            )
+            return self._alias_to_data(alias)
+        except (DatabaseError, ProgrammingError, OperationalError) as exc:
+            raise MailAdminError(
+                _("Failed to create alias: %(error)s") % {"error": str(exc)}
+            ) from exc
+
+    def update_alias(
+        self,
+        source: str,
+        destinations: Sequence[str] | None = None,
+        name: str | None = None,
+        is_active: bool | None = None,
+    ) -> MailAliasData:
+        target = source.strip().lower()
+        try:
+            alias = cast(Any, ManagedAlias).objects.filter(source__iexact=target).first()
+            if not alias:
+                raise MailAliasNotFoundError(
+                    _("Alias '%(source)s' not found.") % {"source": target}
+                )
+
+            if destinations is not None:
+                clean_dests = [d.strip().lower() for d in destinations if d.strip()]
+                if not clean_dests:
+                    raise MailAdminError(_("An alias must have at least one destination address."))
+                alias.destinations = ",\n".join(clean_dests)
+
+            if name is not None:
+                alias.name = name.strip()
+            if is_active is not None:
+                alias.is_active = is_active
+
+            alias.save()
+            return self._alias_to_data(alias)
+        except (DatabaseError, ProgrammingError, OperationalError) as exc:
+            raise MailAdminError(
+                _("Failed to update alias: %(error)s") % {"error": str(exc)}
+            ) from exc
+
+    def delete_alias(self, source: str) -> bool:
+        target = source.strip().lower()
+        try:
+            deleted_count, _ = (
+                cast(Any, ManagedAlias).objects.filter(source__iexact=target).delete()
+            )
+            return bool(deleted_count > 0)
+        except (DatabaseError, ProgrammingError, OperationalError) as exc:
+            raise MailAdminError(
+                _("Failed to delete alias: %(error)s") % {"error": str(exc)}
             ) from exc
