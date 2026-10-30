@@ -1,3 +1,17 @@
+## v0.6.0 (2026-10-30)
+
+### Feat
+
+- **mailadmin**: add distribution lists and virtual aliases with multi-driver support (#66)
+- **preferences**: add trusted senders allowlist and blocked senders denylist (#65)
+- **preferences**: add rich html and multi-signature management (#63)
+- **mail**: add out-of-office vacation auto-responder via sieve (#62)
+- **ui**: add compose image insert, fix batch select-all, back button and translations (#61)
+
+### Fix
+
+- **preferences**: refine signatures UI, compose dropdown, and media persistence (#64)
+
 ## v0.5.2 (2026-10-29)
 
 ### Fix
