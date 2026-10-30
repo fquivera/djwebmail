@@ -137,6 +137,10 @@ def test_compose_renders_empty_form(logged_in_client: Client) -> None:
     assert b'name="to"' in response.content
     assert b'name="body"' in response.content
     assert b"Send" in response.content
+    assert b'id="insert-image-modal"' in response.content
+    assert b'title="Insert image"' in response.content
+    assert b"btn-square text-base-content/70 hover:text-base-content" in response.content
+    assert b'<span class="sr-only">Back to mail</span>' in response.content
 
 
 def test_compose_send_requires_login(client: Client) -> None:

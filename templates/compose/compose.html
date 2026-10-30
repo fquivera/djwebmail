@@ -34,7 +34,7 @@
       <div class="flex items-center justify-between border-b border-base-300 bg-base-100 px-3 sm:px-4 py-2 shrink-0 gap-2">
         <div class="flex items-center gap-1.5 sm:gap-3 min-w-0">
           <a
-            class="btn btn-ghost btn-sm btn-square sm:btn-auto sm:px-3 gap-1.5 text-base-content/70 hover:text-base-content shrink-0"
+            class="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-base-content shrink-0"
             href="{% url 'mail:index' %}"
             title="{% translate 'Back to mail' %}"
             aria-label="{% translate 'Back to mail' %}"
@@ -43,7 +43,7 @@
               <line x1="19" y1="12" x2="5" y2="12"/>
               <polyline points="12 19 5 12 12 5"/>
             </svg>
-            <span class="hidden sm:inline">{% translate "Back to mail" %}</span>
+            <span class="sr-only">{% translate "Back to mail" %}</span>
           </a>
           <h1 class="text-sm sm:text-base font-semibold truncate">{% translate "Compose" %}</h1>
         </div>
@@ -343,6 +343,19 @@
           </button>
         </div>
         <div class="divider divider-horizontal my-0.5 mx-0.5 sm:mx-1 shrink-0"></div>
+        <button
+          type="button"
+          class="btn btn-ghost btn-xs shrink-0"
+          title="{% translate 'Insert image' %}"
+          @mousedown.prevent
+          @click="openImageModal()"
+        >
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+            <circle cx="9" cy="9" r="2"/>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+          </svg>
+        </button>
         <button type="button" class="btn btn-ghost btn-xs shrink-0" title="{% translate 'Clear formatting' %}" @mousedown.prevent @click="clearFormat()">
           <span class="text-xs font-mono">T<sub class="text-[9px]">x</sub></span>
         </button>
@@ -358,6 +371,7 @@
           @keyup="onEditorActivity()"
           @mouseup="onEditorActivity()"
           @focus="onEditorActivity()"
+          @paste="onEditorPaste($event)"
         ></div>
 
         <textarea
@@ -394,5 +408,44 @@
         </div>
       </div>
     </form>
+
+    <dialog id="insert-image-modal" class="modal" data-modal-strict>
+      <div class="modal-box max-w-md p-5 bg-base-100">
+        <div class="flex items-center justify-between pb-3 border-b border-base-200">
+          <h3 class="font-bold text-base">{% translate "Insert image" %}</h3>
+          <form method="dialog">
+            <button class="btn btn-ghost btn-xs btn-square" aria-label="{% translate 'Close' %}">
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <div class="py-4 space-y-4">
+          <div>
+            <label class="label text-xs font-medium text-base-content/70 pb-1" for="compose-image-file-input">{% translate "From computer" %}</label>
+            <input type="file" id="compose-image-file-input" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" class="file-input file-input-bordered file-input-sm w-full">
+          </div>
+
+          <div class="divider text-xs text-base-content/50 my-1">{% translate "or" %}</div>
+
+          <div>
+            <label class="label text-xs font-medium text-base-content/70 pb-1" for="compose-image-url-input">{% translate "Image Web URL" %}</label>
+            <input type="url" id="compose-image-url-input" placeholder="https://..." class="input input-bordered input-sm w-full"> {# hardcode-ok: URL input placeholder example #}
+          </div>
+        </div>
+
+        <div class="modal-action mt-2 pt-3 border-t border-base-200 flex justify-end gap-2">
+          <form method="dialog">
+            <button class="btn btn-ghost btn-sm">{% translate "Cancel" %}</button>
+          </form>
+          <button type="button" class="btn btn-primary btn-sm" @click="confirmInsertImage()">{% translate "Insert" %}</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>{% translate "Close" %}</button>
+      </form>
+    </dialog>
   </div>
 {% endblock %}

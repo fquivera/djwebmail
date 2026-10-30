@@ -498,6 +498,45 @@
     }
   });
 
+  document.addEventListener("change", function (event) {
+    var target = event.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.hasAttribute("data-batch-select-all")
+    ) {
+      var container = target.closest("[data-batch-container]") || document;
+      var boxes = container.querySelectorAll("input[data-batch-uid]");
+      var shouldCheck = target.checked;
+      boxes.forEach(function (box) {
+        box.checked = shouldCheck;
+      });
+      target.indeterminate = false;
+    } else if (
+      target instanceof HTMLInputElement &&
+      target.hasAttribute("data-batch-uid")
+    ) {
+      var container2 = target.closest("[data-batch-container]") || document;
+      var allBoxes = container2.querySelectorAll("input[data-batch-uid]");
+      var checkedBoxes = container2.querySelectorAll("input[data-batch-uid]:checked");
+      var selectAll = container2.querySelector("input[data-batch-select-all]");
+      if (selectAll) {
+        selectAll.checked = allBoxes.length > 0 && allBoxes.length === checkedBoxes.length;
+        selectAll.indeterminate =
+          checkedBoxes.length > 0 && checkedBoxes.length < allBoxes.length;
+      }
+    }
+  });
+
+  document.addEventListener("htmx:afterSwap", function (event) {
+    if (window.Alpine && event.detail && event.detail.target) {
+      try {
+        window.Alpine.initTree(event.detail.target);
+      } catch (err) {
+        // Alpine already initialized or not applicable
+      }
+    }
+  });
+
   document.addEventListener("htmx:pushedIntoHistory", syncViewFromUrl);
   document.addEventListener("htmx:historyRestore", syncViewFromUrl);
   window.addEventListener("popstate", syncViewFromUrl);

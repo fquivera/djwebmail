@@ -12,6 +12,7 @@ from apps.compose.services import (
     append_to_sent,
     apply_signature,
     build_message,
+    extract_inline_images,
     forward_initial,
     html_to_text,
     reply_all_initial,
@@ -261,3 +262,34 @@ def test_append_to_sent_creates_sent_folder_when_missing() -> None:
     assert result is True
     assert imap.created == ["Sent"]
     assert imap.appended == ("Sent", b"Subject: Created\r\n\r\nBody", ("\\Seen",))
+
+
+def test_extract_inline_images_converts_base64_to_cid() -> None:
+    raw_html = '<p>Before</p><img src="data:image/png;base64,aGVsbG8=" alt="My Logo"><p>After</p>'
+    transformed, parts = extract_inline_images(raw_html, domain="example.com")
+
+    assert len(parts) == 1
+    raw_data, maintype, subtype, cid = parts[0]
+    assert raw_data == b"hello"
+    assert maintype == "image"
+    assert subtype == "png"
+    assert f'src="cid:{cid}"' in transformed
+    assert 'alt="My Logo"' in transformed
+    assert "data:image/png;base64" not in transformed
+
+
+def test_build_message_embeds_inline_cid_images() -> None:
+    body = '<div>Hello world</div><img src="data:image/jpeg;base64,/9j/4AAQSkZJRg==" alt="Photo">'
+    msg = build_message(
+        sender="sender@example.com",
+        to=["recipient@example.com"],
+        cc=[],
+        subject="Inline test",
+        body=body,
+    )
+
+    as_str = msg.as_string()
+    assert "Content-Type: multipart/related;" in as_str
+    assert "Content-Type: image/jpeg" in as_str
+    assert "Content-ID: <" in as_str
+    assert "cid:" in as_str
