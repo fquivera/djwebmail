@@ -7,6 +7,7 @@ on arrival. When unavailable, rules are persisted in the database model `UserSie
 
 from __future__ import annotations
 
+import logging
 import socket
 from collections.abc import Sequence
 from typing import Any, cast
@@ -34,6 +35,8 @@ from apps.mail.services.sieve_generator import (
 )
 
 DEFAULT_SCRIPT_NAME = "djwebmail"
+
+logger = logging.getLogger(__name__)
 
 
 def get_managesieve_settings() -> tuple[str, int, str, bool]:
@@ -72,7 +75,8 @@ def get_account_managesieve_client(
 
     try:
         password = get_mail_session_password(request)
-    except Exception:
+    except Exception as exc:
+        logger.warning("ManageSieve: could not obtain session password: %s", exc)
         return None
 
     try:
@@ -86,7 +90,8 @@ def get_account_managesieve_client(
         client.connect()
         client.authenticate(account.email, password)
         return client
-    except (ManageSieveConnectionError, ManageSieveAuthError, ManageSieveError):
+    except (ManageSieveConnectionError, ManageSieveAuthError, ManageSieveError) as exc:
+        logger.warning("ManageSieve client connection/auth failed for %s: %s", account.email, exc)
         return None
 
 
@@ -116,10 +121,10 @@ def load_sieve_rules(
                         FilterRule.from_dict(r) for r in outgoing_data if isinstance(r, dict)
                     ]
                     return incoming, outgoing, True
-                except ManageSieveError:
-                    pass
-        except Exception:
-            pass
+                except ManageSieveError as exc:
+                    logger.warning("ManageSieve get_script failed for %s: %s", target_script, exc)
+        except Exception as exc:
+            logger.warning("ManageSieve load error for %s: %s", account.email, exc)
 
     # 2. Fall back to database model
     record = _get_or_create_db_record(account)
@@ -187,7 +192,8 @@ def save_sieve_rules(
                 client.put_script(DEFAULT_SCRIPT_NAME, sieve_source)
                 client.set_active(DEFAULT_SCRIPT_NAME)
                 return True
-        except ManageSieveError:
+        except ManageSieveError as exc:
+            logger.warning("ManageSieve save_sieve_rules failed for %s: %s", account.email, exc)
             return False
 
     return False
@@ -219,10 +225,10 @@ def load_vacation_rule(
                     if isinstance(raw_vacation, dict):
                         return VacationRule.from_dict(raw_vacation), True
                     return VacationRule(), True
-                except ManageSieveError:
-                    pass
-        except Exception:
-            pass
+                except ManageSieveError as exc:
+                    logger.warning("ManageSieve get_script (vacation) failed: %s", exc)
+        except Exception as exc:
+            logger.warning("ManageSieve load_vacation_rule error: %s", exc)
 
     # 2. Fall back to database model
     record = _get_or_create_db_record(account)
@@ -275,7 +281,8 @@ def save_vacation_rule(
                 client.put_script(DEFAULT_SCRIPT_NAME, sieve_source)
                 client.set_active(DEFAULT_SCRIPT_NAME)
                 return True
-        except ManageSieveError:
+        except ManageSieveError as exc:
+            logger.warning("ManageSieve save_vacation_rule failed for %s: %s", account.email, exc)
             return False
 
     return False
@@ -319,7 +326,8 @@ def save_blocked_senders_to_sieve(
                 client.put_script(DEFAULT_SCRIPT_NAME, sieve_source)
                 client.set_active(DEFAULT_SCRIPT_NAME)
                 return True
-        except ManageSieveError:
+        except ManageSieveError as exc:
+            logger.warning("ManageSieve save_blocked_senders failed for %s: %s", account.email, exc)
             return False
 
     return False
