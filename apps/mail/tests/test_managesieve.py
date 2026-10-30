@@ -135,3 +135,45 @@ def test_managesieve_connection_refused_raises_error():
         client = ManageSieveClient(host="offline.example.com", security="none")
         with pytest.raises(ManageSieveConnectionError, match="Cannot connect"):
             client.connect()
+
+
+def test_managesieve_enter_preserves_connected_and_authenticated_socket():
+    responses = [
+        b'OK "Dovecot ready."\r\n',
+        b'OK "Logged in."\r\n',
+        b'"djwebmail" ACTIVE\r\n',
+        b'OK "Listscripts completed."\r\n',
+    ]
+    fake_sock = FakeSocket(responses)
+
+    with patch("socket.create_connection", return_value=fake_sock) as mock_create:
+        client = ManageSieveClient(host="mail.example.com", security="none")
+        client.connect()
+        client.authenticate("user@example.com", "pass")
+        assert mock_create.call_count == 1
+
+        # Using `with client:` must NOT reconnect or clobber authenticated session
+        with client:
+            scripts, active = client.list_scripts()
+            assert active == "djwebmail"
+
+        # Reconnect was not called a second time
+        assert mock_create.call_count == 1
+
+
+def test_managesieve_get_script_without_trailing_newline_before_ok():
+    script_body = b'require ["fileinto"];\n'
+    length = len(script_body)
+    # Direct OK right after literal bytes without extra newline
+    responses = [
+        b'OK "Dovecot ready."\r\n',
+        f"{{{length}+}}\r\n".encode() + script_body + b'OK "Getscript completed."\r\n',
+    ]
+    fake_sock = FakeSocket(responses)
+
+    with patch("socket.create_connection", return_value=fake_sock):
+        client = ManageSieveClient(host="mail.example.com", security="none")
+        client.connect()
+        content = client.get_script("djwebmail")
+        assert content == 'require ["fileinto"];\n'
+        client.close()
