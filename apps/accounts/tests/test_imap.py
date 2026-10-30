@@ -304,6 +304,19 @@ def test_detect_imap_engine_from_id_data() -> None:
     id_data_no_ver = {b"name": b"Cyrus"}
     assert detect_imap_engine(b"", id_data_no_ver) == "Cyrus"
 
+    # IMAPClient parse_response returns tuples for Dovecot/RFC 2971 responses
+    id_data_nested_tuple = ((b"name", b"Dovecot", b"version", b"2.3.21"),)
+    assert detect_imap_engine(b"", id_data_nested_tuple) == "Dovecot 2.3.21"
+
+    id_data_flat_tuple = (b"name", b"Dovecot", b"version", b"2.3.21")
+    assert detect_imap_engine(b"", id_data_flat_tuple) == "Dovecot 2.3.21"
+
+    id_data_pairs_tuple = ((b"name", b"Dovecot"), (b"version", b"2.3.21"))
+    assert detect_imap_engine(b"", id_data_pairs_tuple) == "Dovecot 2.3.21"
+
+    # Malformed ID data should not crash and should fall back safely
+    assert detect_imap_engine(b"* OK GreenMail ready", (123,)) == "GreenMail"
+
 
 def test_detect_imap_engine_from_banners() -> None:
     assert detect_imap_engine(b"* OK [CAPABILITY IMAP4rev1] Dovecot (Debian) ready.") == "Dovecot"
