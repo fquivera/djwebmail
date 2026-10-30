@@ -48,7 +48,6 @@ class MailPreferenceForm(forms.ModelForm):
             "remote_images",
             "notifications_enabled",
             "notification_sound_enabled",
-            "signature_html",
         )
         labels = {
             "display_name": _("Owner name"),
@@ -61,7 +60,6 @@ class MailPreferenceForm(forms.ModelForm):
             "remote_images": _("Remote images"),
             "notifications_enabled": _("Desktop notifications"),
             "notification_sound_enabled": _("Notification sound"),
-            "signature_html": _("Signature"),
         }
         help_texts = {
             "display_name": _("Shown as the sender name on outgoing messages."),
@@ -79,7 +77,6 @@ class MailPreferenceForm(forms.ModelForm):
                 "Show desktop notifications when new emails arrive in your inbox."
             ),
             "notification_sound_enabled": _("Play an audio chime when new emails arrive."),
-            "signature_html": _("Appended automatically when composing a new message or reply."),
         }
         widgets = {
             "display_name": forms.TextInput(
@@ -113,12 +110,6 @@ class MailPreferenceForm(forms.ModelForm):
             "notification_sound_enabled": forms.CheckboxInput(
                 attrs={"class": "toggle toggle-primary toggle-sm"}
             ),
-            "signature_html": forms.Textarea(
-                attrs={
-                    "class": "textarea w-full text-sm",
-                    "rows": 3,
-                }
-            ),
         }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -130,7 +121,6 @@ class MailPreferenceForm(forms.ModelForm):
         self.fields["remote_images"].required = False
         self.fields["notifications_enabled"].required = False
         self.fields["notification_sound_enabled"].required = False
-        self.fields["signature_html"].required = False
         auto_id = self.auto_id
         if isinstance(auto_id, str):
             for name, field in self.fields.items():

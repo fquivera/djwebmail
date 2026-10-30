@@ -2189,3 +2189,9 @@ msgstr "Elegir firma"
 
 msgid "Remove signature"
 msgstr "Quitar firma"
+
+msgid "No active signatures"
+msgstr "No hay firmas activas"
+
+msgid "Manage signatures..."
+msgstr "Gestionar firmas..."

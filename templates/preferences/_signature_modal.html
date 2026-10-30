@@ -42,7 +42,7 @@
       <button
         type="button"
         class="btn btn-ghost btn-xs btn-circle text-base-content/60"
-        onclick="document.getElementById('signature-modal').remove()"
+        data-signature-modal-close
         aria-label="{% translate 'Close' %}"
       >
         ✕
@@ -230,7 +230,7 @@
         <button
           type="button"
           class="btn btn-ghost btn-sm"
-          onclick="document.getElementById('signature-modal').remove()"
+          data-signature-modal-close
         >
           {% translate "Cancel" %}
         </button>
@@ -240,4 +240,5 @@
       </div>
     </form>
   </div>
+  <div class="modal-backdrop" data-signature-modal-close></div>
 </dialog>
