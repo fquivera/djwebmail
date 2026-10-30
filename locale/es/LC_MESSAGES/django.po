@@ -1994,3 +1994,57 @@ msgstr "Sincronizado con el servidor ManageSieve"
 
 msgid "Saved in database fallback mode"
 msgstr "Guardado en modo de respaldo en base de datos"
+
+msgid "Out of office"
+msgstr "Fuera de la oficina"
+
+msgid "Out of office auto-responder"
+msgstr "Respuesta automática por ausencia"
+
+msgid "Automatically send replies to incoming messages while you are away."
+msgstr "Envía respuestas automáticas a los mensajes entrantes mientras estás fuera."
+
+msgid "Enable auto-responder"
+msgstr "Activar respuesta automática"
+
+msgid "When active, DjWebmail responds to incoming messages on the server according to the rules below."
+msgstr "Cuando está activo, DjWebmail responde a los mensajes entrantes en el servidor según las reglas siguientes."
+
+msgid "Active period"
+msgstr "Período activo"
+
+msgid "Optional. Define when the auto-responder should run. If left empty, it starts immediately and runs until disabled."
+msgstr "Opcional. Define cuándo debe ejecutarse la respuesta automática. Si se deja vacío, inicia de inmediato y continúa hasta desactivarse."
+
+msgid "Start date"
+msgstr "Fecha de inicio"
+
+msgid "End date"
+msgstr "Fecha de fin"
+
+msgid "Auto-reply message"
+msgstr "Mensaje de respuesta automática"
+
+msgid "I am currently away and will have limited access to email. I will respond to your message upon my return."
+msgstr "Actualmente me encuentro fuera y tendré acceso limitado a mi correo. Responderé a su mensaje tan pronto regrese."
+
+msgid "Response interval (days)"
+msgstr "Intervalo de respuesta (días)"
+
+msgid "days between replies to the same sender"
+msgstr "días entre respuestas al mismo remitente"
+
+msgid "Save vacation settings"
+msgstr "Guardar configuración de ausencia"
+
+msgid "Auto-reply message is required when vacation responder is enabled."
+msgstr "El mensaje de respuesta automática es obligatorio cuando la respuesta por ausencia está activada."
+
+msgid "Start date must be before or equal to end date."
+msgstr "La fecha de inicio debe ser anterior o igual a la fecha de fin."
+
+msgid "Vacation auto-responder activated successfully."
+msgstr "Respuesta automática por ausencia activada exitosamente."
+
+msgid "Vacation auto-responder deactivated."
+msgstr "Respuesta automática por ausencia desactivada."

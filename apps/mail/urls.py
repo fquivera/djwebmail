@@ -24,6 +24,8 @@ from apps.mail.views import (
     notifications_check_view,
     palette,
     search,
+    vacation_panel,
+    vacation_save,
 )
 
 app_name = "mail"
@@ -35,6 +37,8 @@ urlpatterns = [
     path("filters/action/", filters_action, name="filters_action"),
     path("filters/modal/", filter_modal, name="filter_modal"),
     path("filters/save/", filter_save, name="filter_save"),
+    path("vacation/", vacation_panel, name="vacation_panel"),
+    path("vacation/save/", vacation_save, name="vacation_save"),
     path("folders/create/", folder_create, name="folder_create"),
     path("folder/<path:folder_name>/batch/", messages_batch, name="messages_batch"),
     path("folder/<path:folder_name>/", mailbox, name="folder"),
