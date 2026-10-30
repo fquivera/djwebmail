@@ -1,3 +1,9 @@
+## v0.5.1 (2026-10-29)
+
+### Fix
+
+- **mail**: handle tuple id_data in detect_imap_engine
+
 ## v0.5.0 (2026-10-29)
 
 ### Feat
