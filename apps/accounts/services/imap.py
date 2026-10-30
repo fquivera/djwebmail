@@ -132,23 +132,48 @@ _ENGINE_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
 )
 
 
+def _normalize_id_data(raw: Any) -> dict[Any, Any]:
+    """Safely convert IMAP ID response (dict, tuple or nested list) into a dict."""
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, (tuple, list)):
+        # If response is single-wrapped tuple/list like ((b'name', b'Dovecot', ...),)
+        if len(raw) == 1 and isinstance(raw[0], (tuple, list)):
+            raw = raw[0]
+        # If it's a sequence of (key, value) pairs
+        if all(isinstance(x, (tuple, list)) and len(x) == 2 for x in raw):
+            return {k: v for k, v in raw}
+        # If it's an alternating key-value sequence: (k1, v1, k2, v2, ...)
+        items: dict[Any, Any] = {}
+        for i in range(0, len(raw) - 1, 2):
+            items[raw[i]] = raw[i + 1]
+        return items
+    return {}
+
+
 def detect_imap_engine(
     welcome: bytes | str | None,
-    id_data: dict[Any, Any] | None = None,
+    id_data: Any | None = None,
 ) -> str:
     """Extract human-readable mail engine name and version from ID or greeting."""
     if id_data:
-        name = ""
-        version = ""
-        for k, v in id_data.items():
-            k_str = _as_text(k).lower()
-            v_str = _as_text(v)
-            if k_str == "name":
-                name = v_str
-            elif k_str == "version":
-                version = v_str
-        if name:
-            return f"{name} {version}".strip() if version else name
+        try:
+            norm_id = _normalize_id_data(id_data)
+            name = ""
+            version = ""
+            for k, v in norm_id.items():
+                k_str = _as_text(k).lower()
+                v_str = _as_text(v)
+                if k_str == "name":
+                    name = v_str
+                elif k_str == "version":
+                    version = v_str
+            if name:
+                return f"{name} {version}".strip() if version else name
+        except Exception:
+            pass
 
     if not welcome:
         return "IMAP4rev1"
@@ -256,12 +281,15 @@ class ImapService:
 
         self._client = client
         welcome = getattr(client, "welcome", b"")
-        id_data: dict[Any, Any] | None = None
+        id_data: Any | None = None
         if hasattr(client, "has_capability") and client.has_capability("ID"):
             with suppress(Exception):
                 id_data = client.id_()
 
-        self.server_engine = detect_imap_engine(welcome, id_data)
+        try:
+            self.server_engine = detect_imap_engine(welcome, id_data)
+        except Exception:
+            self.server_engine = "IMAP4rev1"
         self.server_banner = _as_text(welcome).strip()
         if self._on_connect:
             with suppress(Exception):
