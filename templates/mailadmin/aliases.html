@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Aliases & Distribution Lists" %} — DjWebmail{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl space-y-6">
+  <!-- Header & Navigation -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-base-300 pb-5">
+    <div class="space-y-1">
+      <div class="flex items-center gap-2 text-xs text-base-content/60">
+        <a href="{% url 'mailadmin:index' %}" class="link link-hover">{% translate "Administration" %}</a>
+        <span>&rsaquo;</span>
+        <span class="text-base-content font-medium">{% translate "Aliases & Distribution Lists" %}</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-base-content">
+        {% translate "Virtual Aliases & Distribution Lists" %}
+      </h1>
+      <p class="text-xs sm:text-sm text-base-content/70">
+        {% translate "Manage email forwarding aliases and multi-recipient distribution groups for your domain." %}
+      </p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <a
+        href="{% url 'mailadmin:alias_create' %}"
+        class="btn btn-primary btn-sm gap-2 font-medium shadow-xs"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        {% translate "New alias / list" %}
+      </a>
+    </div>
+  </div>
+
+  <!-- Metric Badges -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-base-content/60 font-medium uppercase tracking-wider">
+        {% translate "Total entries" %}
+      </div>
+      <div class="text-2xl font-bold text-base-content">
+        {{ total_count }}
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-info font-medium uppercase tracking-wider">
+        {% translate "Virtual aliases" %}
+      </div>
+      <div class="text-2xl font-bold text-info">
+        {{ virtual_aliases_count }}
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-secondary font-medium uppercase tracking-wider">
+        {% translate "Distribution lists" %}
+      </div>
+      <div class="text-2xl font-bold text-secondary">
+        {{ distribution_lists_count }}
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 p-4 space-y-1 shadow-xs">
+      <div class="text-xs text-success font-medium uppercase tracking-wider">
+        {% translate "Active routing" %}
+      </div>
+      <div class="text-2xl font-bold text-success">
+        {{ active_count }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Live Search Bar -->
+  <div class="card bg-base-100 border border-base-300 p-4 shadow-xs space-y-3">
+    <form
+      id="aliases-filter-form"
+      class="flex flex-col md:flex-row md:items-center justify-between gap-3"
+      method="get"
+      action="{% url 'mailadmin:aliases' %}"
+    >
+      <!-- Search Input with HTMX -->
+      <div class="relative flex-1 max-w-md">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+        </svg>
+        <input
+          type="search"
+          name="q"
+          value="{{ search_query }}"
+          placeholder="{% translate 'Search by source, destination or name...' %}"
+          class="input input-sm w-full pl-9"
+          hx-get="{% url 'mailadmin:aliases' %}"
+          hx-trigger="keyup changed delay:300ms, search"
+          hx-target="#aliases-table"
+          hx-include="#aliases-filter-form"
+          hx-push-url="true"
+          aria-label="{% translate 'Search aliases and distribution lists' %}"
+        >
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Type Filter -->
+        <div class="join">
+          <a
+            href="{% url 'mailadmin:aliases' %}?type=all&status={{ status_filter }}&q={{ search_query }}"
+            class="join-item btn btn-xs {% if type_filter == 'all' %}btn-active font-bold{% else %}btn-ghost{% endif %}"
+            hx-get="{% url 'mailadmin:aliases' %}?type=all&status={{ status_filter }}&q={{ search_query }}"
+            hx-target="#aliases-table"
+            hx-push-url="true"
+          >
+            {% translate "All types" %}
+          </a>
+          <a
+            href="{% url 'mailadmin:aliases' %}?type=alias&status={{ status_filter }}&q={{ search_query }}"
+            class="join-item btn btn-xs {% if type_filter == 'alias' %}btn-active font-bold{% else %}btn-ghost{% endif %}"
+            hx-get="{% url 'mailadmin:aliases' %}?type=alias&status={{ status_filter }}&q={{ search_query }}"
+            hx-target="#aliases-table"
+            hx-push-url="true"
+          >
+            {% translate "Aliases" %}
+          </a>
+          <a
+            href="{% url 'mailadmin:aliases' %}?type=list&status={{ status_filter }}&q={{ search_query }}"
+            class="join-item btn btn-xs {% if type_filter == 'list' %}btn-active font-bold{% else %}btn-ghost{% endif %}"
+            hx-get="{% url 'mailadmin:aliases' %}?type=list&status={{ status_filter }}&q={{ search_query }}"
+            hx-target="#aliases-table"
+            hx-push-url="true"
+          >
+            {% translate "Lists" %}
+          </a>
+        </div>
+
+        <span class="text-base-300">|</span>
+
+        <!-- Status Filter -->
+        <div class="join">
+          <a
+            href="{% url 'mailadmin:aliases' %}?type={{ type_filter }}&status=all&q={{ search_query }}"
+            class="join-item btn btn-xs {% if status_filter == 'all' %}btn-active font-bold{% else %}btn-ghost{% endif %}"
+            hx-get="{% url 'mailadmin:aliases' %}?type={{ type_filter }}&status=all&q={{ search_query }}"
+            hx-target="#aliases-table"
+            hx-push-url="true"
+          >
+            {% translate "All status" %}
+          </a>
+          <a
+            href="{% url 'mailadmin:aliases' %}?type={{ type_filter }}&status=active&q={{ search_query }}"
+            class="join-item btn btn-xs {% if status_filter == 'active' %}btn-active font-bold{% else %}btn-ghost{% endif %}"
+            hx-get="{% url 'mailadmin:aliases' %}?type={{ type_filter }}&status=active&q={{ search_query }}"
+            hx-target="#aliases-table"
+            hx-push-url="true"
+          >
+            {% translate "Active" %}
+          </a>
+          <a
+            href="{% url 'mailadmin:aliases' %}?type={{ type_filter }}&status=inactive&q={{ search_query }}"
+            class="join-item btn btn-xs {% if status_filter == 'inactive' %}btn-active font-bold{% else %}btn-ghost{% endif %}"
+            hx-get="{% url 'mailadmin:aliases' %}?type={{ type_filter }}&status=inactive&q={{ search_query }}"
+            hx-target="#aliases-table"
+            hx-push-url="true"
+          >
+            {% translate "Suspended" %}
+          </a>
+        </div>
+      </div>
+      <input type="hidden" name="type" value="{{ type_filter }}">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+    </form>
+  </div>
+
+  <!-- Aliases Table Container -->
+  <div id="aliases-table">
+    {% include "mailadmin/_aliases_list.html" %}
+  </div>
+</div>
+{% endblock %}

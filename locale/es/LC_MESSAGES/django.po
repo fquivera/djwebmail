@@ -2327,3 +2327,193 @@ msgstr "Acción del filtro"
 
 msgid "Confirm block"
 msgstr "Confirmar bloqueo"
+
+msgid "Aliases & Distribution Lists"
+msgstr "Alias y Listas de Distribución"
+
+msgid "Virtual Aliases & Distribution Lists"
+msgstr "Alias Virtuales y Listas de Distribución"
+
+msgid "Manage email forwarding aliases and multi-recipient distribution groups for your domain."
+msgstr "Gestione alias de reenvío y grupos de distribución con múltiples destinatarios para su dominio."
+
+msgid "Create forwarding aliases and multi-recipient distribution lists to route incoming emails dynamically."
+msgstr "Cree alias de reenvío y listas de distribución para enrutar correos entrantes dinámicamente."
+
+msgid "Manage aliases"
+msgstr "Gestionar alias"
+
+msgid "Aliases & Lists"
+msgstr "Alias y Listas"
+
+msgid "configured"
+msgstr "configurados"
+
+msgid "Total entries"
+msgstr "Total de entradas"
+
+msgid "Virtual aliases"
+msgstr "Alias virtuales"
+
+msgid "Distribution lists"
+msgstr "Listas de distribución"
+
+msgid "Active routing"
+msgstr "Enrutamiento activo"
+
+msgid "Search by source, destination or name..."
+msgstr "Buscar por origen, destino o nombre..."
+
+msgid "Search aliases and distribution lists"
+msgstr "Buscar alias y listas de distribución"
+
+msgid "All types"
+msgstr "Todos los tipos"
+
+msgid "Aliases"
+msgstr "Alias"
+
+msgid "Lists"
+msgstr "Listas"
+
+msgid "All status"
+msgstr "Todos los estados"
+
+msgid "New alias / list"
+msgstr "Nuevo alias / lista"
+
+msgid "New alias"
+msgstr "Nuevo alias"
+
+msgid "Aliases and distribution lists table"
+msgstr "Tabla de alias y listas de distribución"
+
+msgid "Source Address"
+msgstr "Dirección de origen"
+
+msgid "Source alias address"
+msgstr "Dirección de alias de origen"
+
+msgid "Incoming address that forwards to the destinations below."
+msgstr "Dirección entrante que se reenvía a los destinos siguientes."
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Destinations"
+msgstr "Destinos"
+
+msgid "Destination email addresses"
+msgstr "Direcciones de correo de destino"
+
+msgid "Virtual Alias"
+msgstr "Alias virtual"
+
+msgid "Distribution List"
+msgstr "Lista de distribución"
+
+msgid "Edit alias"
+msgstr "Editar alias"
+
+msgid "Edit Alias: %(source)s"
+msgstr "Editar alias: %(source)s"
+
+msgid "Edit %(source)s"
+msgstr "Editar %(source)s"
+
+msgid "Suspend alias"
+msgstr "Suspender alias"
+
+msgid "Activate alias"
+msgstr "Activar alias"
+
+msgid "Delete alias"
+msgstr "Eliminar alias"
+
+msgid "Confirm Deletion"
+msgstr "Confirmar eliminación"
+
+msgid "Yes, delete alias"
+msgstr "Sí, eliminar alias"
+
+msgid "Are you sure you want to delete the virtual alias <strong>%(source)s</strong>? Emails sent to this address will no longer be forwarded."
+msgstr "¿Está seguro de que desea eliminar el alias virtual <strong>%(source)s</strong>? Los correos enviados a esta dirección ya no serán reenviados."
+
+msgid "No aliases or distribution lists found matching your query."
+msgstr "No se encontraron alias ni listas de distribución que coincidan con su búsqueda."
+
+msgid "Clear search & filters"
+msgstr "Limpiar búsqueda y filtros"
+
+msgid "Create Alias or Distribution List"
+msgstr "Crear alias o lista de distribución"
+
+msgid "Create Alias"
+msgstr "Crear alias"
+
+msgid "Configure a virtual alias or multi-recipient distribution group to forward incoming messages."
+msgstr "Configure un alias virtual o un grupo de distribución para reenviar mensajes entrantes."
+
+msgid "Update recipient destinations, description name, or active routing status."
+msgstr "Actualice destinos, nombre descriptivo o estado de enrutamiento activo."
+
+msgid "Description / Name (optional)"
+msgstr "Descripción / Nombre (opcional)"
+
+msgid "e.g. Sales Team or Support Committee"
+msgstr "p. ej. Equipo de Ventas o Comité de Apoyo"
+
+msgid "Human-readable label to easily identify this distribution group or role in reports."
+msgstr "Etiqueta legible para identificar fácilmente este grupo de distribución en informes."
+
+msgid "One email address per line or separated by commas."
+msgstr "Una dirección de correo por línea o separadas por comas."
+
+msgid "Single = Alias, Multiple = Distribution List"
+msgstr "Único = Alias, Múltiples = Lista de distribución"
+
+msgid "Active alias"
+msgstr "Alias activo"
+
+msgid "If disabled, incoming messages to this alias address will not be forwarded to recipients."
+msgstr "Si está desactivado, los mensajes entrantes a esta dirección no serán reenviados a los destinatarios."
+
+msgid "Specify at least one destination email address."
+msgstr "Especifique al menos una dirección de correo de destino."
+
+msgid "The following destination addresses are invalid: %(emails)s"
+msgstr "Las siguientes direcciones de destino no son válidas: %(emails)s"
+
+msgid "Enter a valid source email address."
+msgstr "Ingrese una dirección de correo de origen válida."
+
+msgid "An alias with this source address already exists."
+msgstr "Ya existe un alias con esta dirección de origen."
+
+msgid "An alias cannot forward to itself."
+msgstr "Un alias no puede reenviarse a sí mismo."
+
+msgid "Alias '%(source)s' created successfully."
+msgstr "Alias '%(source)s' creado exitosamente."
+
+msgid "Alias '%(source)s' updated successfully."
+msgstr "Alias '%(source)s' actualizado exitosamente."
+
+msgid "Alias '%(source)s' has been %(status)s."
+msgstr "El alias '%(source)s' ha sido %(status)s."
+
+msgid "Alias '%(source)s' deleted successfully."
+msgstr "Alias '%(source)s' eliminado exitosamente."
+
+msgid "Alias '%(source)s' was not found."
+msgstr "No se encontró el alias '%(source)s'."
+
+msgid "Alias '%(source)s' not found."
+msgstr "Alias '%(source)s' no encontrado."
+
+msgid "Managed alias"
+msgstr "Alias gestionado"
+
+msgid "Managed aliases"
+msgstr "Alias gestionados"
+

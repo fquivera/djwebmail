@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}
+  {% if is_create %}
+    {% translate "Create Alias or Distribution List" %}
+  {% else %}
+    {% blocktranslate with source=target_source %}Edit {{ source }}{% endblocktranslate %}
+  {% endif %} — DjWebmail
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-6">
+  <!-- Breadcrumbs & Title -->
+  <div class="space-y-1 border-b border-base-300 pb-4">
+    <div class="flex items-center gap-2 text-xs text-base-content/60">
+      <a href="{% url 'mailadmin:index' %}" class="link link-hover">{% translate "Administration" %}</a>
+      <span>&rsaquo;</span>
+      <a href="{% url 'mailadmin:aliases' %}" class="link link-hover">{% translate "Aliases & Distribution Lists" %}</a>
+      <span>&rsaquo;</span>
+      <span class="text-base-content font-medium">
+        {% if is_create %}{% translate "New alias" %}{% else %}{% translate "Edit" %}{% endif %}
+      </span>
+    </div>
+    <h1 class="text-2xl font-bold tracking-tight text-base-content">
+      {% if is_create %}
+        {% translate "Create Alias or Distribution List" %}
+      {% else %}
+        {% blocktranslate with source=target_source %}Edit Alias: {{ source }}{% endblocktranslate %}
+      {% endif %}
+    </h1>
+    <p class="text-xs sm:text-sm text-base-content/70">
+      {% if is_create %}
+        {% translate "Configure a virtual alias or multi-recipient distribution group to forward incoming messages." %}
+      {% else %}
+        {% translate "Update recipient destinations, description name, or active routing status." %}
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card bg-base-100 border border-base-300 shadow-sm">
+    <form method="post" class="card-body p-6 space-y-6">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error text-xs" role="alert">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Source Address Field -->
+      {% if is_create %}
+        <div class="space-y-1.5">
+          <label class="block text-xs font-semibold text-base-content" for="{{ form.source.id_for_label }}">
+            {{ form.source.label }} <span class="text-error">*</span>
+          </label>
+          {{ form.source }}
+          {% if form.source.errors %}
+            <p class="text-xs text-error mt-1">{{ form.source.errors.0 }}</p>
+          {% else %}
+            <p class="text-[11px] text-base-content/60">
+              {{ form.source.help_text }}
+            </p>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="space-y-1.5">
+          <span class="block text-xs font-semibold text-base-content/70">
+            {% translate "Source alias address" %}
+          </span>
+          <div class="flex items-center gap-2 p-2.5 rounded-lg bg-base-200/50 border border-base-300 text-sm font-semibold text-base-content">
+            <svg class="size-4 text-base-content/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span>{{ target_source }}</span>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Description / Name Field -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-base-content" for="{{ form.name.id_for_label }}">
+          {{ form.name.label }}
+        </label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <p class="text-xs text-error mt-1">{{ form.name.errors.0 }}</p>
+        {% else %}
+          <p class="text-[11px] text-base-content/60">
+            {% translate "Human-readable label to easily identify this distribution group or role in reports." %}
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- Destinations Textarea -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-base-content" for="{{ form.destinations.id_for_label }}">
+          {{ form.destinations.label }} <span class="text-error">*</span>
+        </label>
+        {{ form.destinations }}
+        {% if form.destinations.errors %}
+          <p class="text-xs text-error mt-1">{{ form.destinations.errors.0 }}</p>
+        {% else %}
+          <div class="flex items-center justify-between text-[11px] text-base-content/60">
+            <span>{{ form.destinations.help_text }}</span>
+            <span class="badge badge-ghost badge-xs text-[10px]">
+              {% translate "Single = Alias, Multiple = Distribution List" %}
+            </span>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Status Checkbox -->
+      <div class="flex items-center gap-3 p-3 rounded-lg bg-base-200/30 border border-base-200">
+        {{ form.is_active }}
+        <label for="{{ form.is_active.id_for_label }}" class="text-xs font-semibold text-base-content cursor-pointer">
+          {{ form.is_active.label }}
+          <span class="block text-[11px] font-normal text-base-content/60">
+            {% translate "If disabled, incoming messages to this alias address will not be forwarded to recipients." %}
+          </span>
+        </label>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-base-200">
+        <a href="{% url 'mailadmin:aliases' %}" class="btn btn-ghost btn-sm">
+          {% translate "Cancel" %}
+        </a>
+        <button type="submit" class="btn btn-primary btn-sm font-semibold">
+          {% if is_create %}{% translate "Create Alias" %}{% else %}{% translate "Save Changes" %}{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
