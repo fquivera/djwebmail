@@ -283,6 +283,28 @@ msgstr "El tamaño de página debe estar entre %(minimum)s y %(maximum)s."
 msgid "Preferences saved."
 msgstr "Preferencias guardadas."
 
+#: templates/preferences/index.html:46
+msgid "Preferences"
+msgstr "Preferencias"
+
+#: templates/compose/compose.html:433
+msgid "Insert image"
+msgstr "Insertar imagen"
+
+#: templates/compose/compose.html:447
+msgid "From computer"
+msgstr "Desde el equipo"
+
+#: templates/compose/compose.html:454
+msgid "Image Web URL"
+msgstr "URL web de la imagen"
+
+#: templates/compose/compose.html:463
+msgid "Insert"
+msgstr "Insertar"
+
+
+
 #: config/settings/base.py:109
 msgid "English"
 msgstr "Inglés"
