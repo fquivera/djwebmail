@@ -109,14 +109,15 @@ def test_header_branding_logic_variations(admin_client: Client) -> None:
     assert 'class="brand-dj"' in content_default
     assert 'class="brand-webmail"' in content_default
 
-    # 2. Only organization name -> renders organization name, not DjWebmail wordmark
+    # 2. Only organization name -> renders organization name, not DjWebmail wordmark in header
     identity.organization_name = "Acme Corp International"
     identity.save()
 
     resp_org: Any = admin_client.get(reverse("mailadmin:index"))
     content_org = resp_org.content.decode("utf-8")
-    assert "Acme Corp International" in content_org
-    assert 'class="brand-dj"' not in content_org
+    header_org = content_org.split("<main")[0]
+    assert "Acme Corp International" in header_org
+    assert 'class="brand-dj"' not in header_org
 
     # 3. Logo configured -> renders only the logo image in the brand link
     identity.logo_light_url = "https://example.com/logo.png"
@@ -124,8 +125,9 @@ def test_header_branding_logic_variations(admin_client: Client) -> None:
 
     resp_logo: Any = admin_client.get(reverse("mailadmin:index"))
     content_logo = resp_logo.content.decode("utf-8")
-    assert 'src="https://example.com/logo.png"' in content_logo
-    assert 'class="brand-dj"' not in content_logo
+    header_logo = content_logo.split("<main")[0]
+    assert 'src="https://example.com/logo.png"' in header_logo
+    assert 'class="brand-dj"' not in header_logo
 
 
 @override_settings(MAIL_ADMIN_ACCOUNTS=["admin@example.com"])

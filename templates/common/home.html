@@ -14,7 +14,13 @@
       </div>
 
       <div class="space-y-3">
-        <h1 class="text-4xl font-bold tracking-tight text-base-content sm:text-5xl">DjWebmail</h1>
+        {% if corporate_identity.organization_name %}
+          <h1 class="text-4xl font-bold tracking-tight text-base-content sm:text-5xl">{{ corporate_identity.organization_name }}</h1>
+        {% else %}
+          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">
+            <span class="brand-dj">Dj</span><span class="brand-webmail">Webmail</span>
+          </h1>
+        {% endif %}
         <p class="mx-auto max-w-xl text-base text-base-content/75 sm:text-lg">
           {% translate "A modern, HTMX-driven webmail client built with Django." %}
         </p>
