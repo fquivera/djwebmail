@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from apps.mail.services.sieve_generator import (
+    BlockedSenderRule,
     FilterAction,
     FilterCondition,
     FilterRule,
+    compile_blocked_senders_to_sieve,
     rules_to_sieve_script,
+    sieve_script_to_blocked_senders,
     sieve_script_to_rules,
 )
 
@@ -118,3 +121,32 @@ def test_parse_external_sieve_script_without_metadata():
     assert r.actions[0].action_type == "fileinto"
     assert r.actions[0].argument == "GitHub"
     assert r.stop is True
+
+
+def test_compile_blocked_senders_to_sieve():
+    blocked = [
+        BlockedSenderRule(pattern="spammer@evil.org", action="trash"),
+        BlockedSenderRule(pattern="phishing.net", action="discard"),
+    ]
+    code, caps = compile_blocked_senders_to_sieve(blocked)
+    assert "fileinto" in caps
+    assert 'fileinto "Trash";' in code
+    assert '"spammer@evil.org"' in code
+    assert "discard;" in code
+    assert '"phishing.net"' in code
+    assert "stop;" in code
+
+
+def test_rules_to_sieve_script_with_blocked_senders_and_metadata():
+    blocked = [
+        BlockedSenderRule(pattern="bad@domain.com", action="trash"),
+    ]
+    script = rules_to_sieve_script([], blocked_senders=blocked)
+    assert 'require ["fileinto"];' in script
+    assert 'fileinto "Trash";' in script
+    assert '"bad@domain.com"' in script
+
+    parsed_blocked = sieve_script_to_blocked_senders(script)
+    assert len(parsed_blocked) == 1
+    assert parsed_blocked[0].pattern == "bad@domain.com"
+    assert parsed_blocked[0].action == "trash"

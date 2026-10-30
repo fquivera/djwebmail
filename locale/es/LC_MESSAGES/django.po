@@ -2195,3 +2195,135 @@ msgstr "No hay firmas activas"
 
 msgid "Manage signatures..."
 msgstr "Gestionar firmas..."
+
+msgid "trusted sender"
+msgstr "remitente de confianza"
+
+msgid "trusted senders"
+msgstr "remitentes de confianza"
+
+msgid "blocked sender"
+msgstr "remitente bloqueado"
+
+msgid "blocked senders"
+msgstr "remitentes bloqueados"
+
+msgid "Email address or domain"
+msgstr "Dirección de correo o dominio"
+
+msgid "e.g. newsletter@company.com or company.com"
+msgstr "ej. boletin@empresa.com o empresa.com"
+
+msgid "e.g. spam@domain.com or spamdomain.com"
+msgstr "ej. spam@dominio.com o dominiospam.com"
+
+msgid "Notes (optional)"
+msgstr "Notas (opcional)"
+
+msgid "Move to Trash"
+msgstr "Mover a Papelera"
+
+msgid "Discard silently"
+msgstr "Descartar silenciosamente"
+
+msgid "Sender email or domain cannot be empty."
+msgstr "El correo o dominio del remitente no puede estar vacío."
+
+msgid "Trusted & Blocked Senders"
+msgstr "Remitentes de confianza y bloqueados"
+
+msgid "Senders (Trust & Block)"
+msgstr "Remitentes (Confianza y Bloqueo)"
+
+msgid "Control privacy allowlists for remote content and server-side filtering for unwanted senders."
+msgstr "Controle las listas de privacidad para contenido remoto y filtrado en el servidor para remitentes no deseados."
+
+msgid "Trusted Senders"
+msgstr "Remitentes de confianza"
+
+msgid "Blocked Senders"
+msgstr "Remitentes bloqueados"
+
+msgid "Add trusted sender or domain"
+msgstr "Añadir remitente o dominio de confianza"
+
+msgid "Remote images from these senders will load automatically without privacy warnings."
+msgstr "Las imágenes remotas de estos remitentes se cargarán automáticamente sin advertencias de privacidad."
+
+msgid "Trust"
+msgstr "Confiar"
+
+msgid "Added date"
+msgstr "Fecha de adición"
+
+msgid "Remove trusted sender"
+msgstr "Eliminar remitente de confianza"
+
+msgid "No trusted senders registered yet."
+msgstr "Aún no hay remitentes de confianza registrados."
+
+msgid "You can also trust senders directly from the message viewer warning banner."
+msgstr "También puede añadir remitentes de confianza directamente desde el aviso en el visor de correos."
+
+msgid "Add blocked sender or domain"
+msgstr "Añadir remitente o dominio bloqueado"
+
+msgid "Incoming messages matching these senders are handled directly on the mail server."
+msgstr "Los mensajes entrantes que coincidan con estos remitentes se procesan directamente en el servidor de correo."
+
+msgid "Rule Action"
+msgstr "Acción de la regla"
+
+msgid "Block"
+msgstr "Bloquear"
+
+msgid "Unblock sender"
+msgstr "Desbloquear remitente"
+
+msgid "Unblock"
+msgstr "Desbloquear"
+
+msgid "No blocked senders registered yet."
+msgstr "Aún no hay remitentes bloqueados registrados."
+
+msgid "You can also block senders directly from the message viewer."
+msgstr "También puede bloquear remitentes directamente desde el visor de mensajes."
+
+msgid "Sender added to trusted allowlist."
+msgstr "Remitente añadido a la lista de confianza."
+
+msgid "Sender removed from trusted allowlist."
+msgstr "Remitente eliminado de la lista de confianza."
+
+msgid "Sender blocked and filter updated."
+msgstr "Remitente bloqueado y filtro actualizado."
+
+msgid "Sender unblocked and filter updated."
+msgstr "Remitente desbloqueado y filtro actualizado."
+
+msgid "Always load images from this sender"
+msgstr "Cargar siempre imágenes de este remitente"
+
+msgid "Always trust sender"
+msgstr "Confiar siempre en el remitente"
+
+msgid "Trusted"
+msgstr "De confianza"
+
+msgid "Blocked"
+msgstr "Bloqueado"
+
+msgid "Block sender"
+msgstr "Bloquear remitente"
+
+msgid "Block this sender?"
+msgstr "¿Bloquear a este remitente?"
+
+msgid "Future emails from <strong>%(sender)s</strong> will be automatically filtered on the server. This message will be moved to Trash."
+msgstr "Los futuros correos de <strong>%(sender)s</strong> serán filtrados automáticamente en el servidor. Este mensaje se moverá a la Papelera."
+
+msgid "Filter action"
+msgstr "Acción del filtro"
+
+msgid "Confirm block"
+msgstr "Confirmar bloqueo"

@@ -23,7 +23,13 @@ from apps.accounts.constants import (
     SESSION_TIMEZONE_KEY,
 )
 from apps.accounts.exceptions import MailSessionError
-from apps.preferences.models import AccountSignature, MailPreference
+from apps.preferences.models import (
+    AccountSignature,
+    BlockedSender,
+    BlockedSenderAction,
+    MailPreference,
+    TrustedSender,
+)
 
 SIGNATURE_ALLOWED_TAGS = {
     "a",
@@ -185,3 +191,126 @@ def sync_default_signature_to_session(request: HttpRequest) -> None:
     cast(Any, MailPreference).objects.filter(
         account_key=account.account_key,
     ).update(signature_html=sig_content)
+
+
+def extract_sender_address_and_domain(sender_header: str) -> tuple[str, str]:
+    """Extract normalized email address and domain from an RFC 5322 From header."""
+    from email.utils import parseaddr
+
+    _, address = parseaddr(sender_header or "")
+    clean_addr = address.strip().lower()
+    domain = clean_addr.split("@")[-1] if "@" in clean_addr else ""
+    return clean_addr, domain
+
+
+def is_sender_trusted(account_key: str, sender_header: str) -> bool:
+    """Check if a sender email address or domain is in the account's trusted allowlist."""
+    if not account_key or not sender_header:
+        return False
+    address, domain = extract_sender_address_and_domain(sender_header)
+    patterns = [p for p in (address, domain) if p]
+    if not patterns:
+        return False
+    return (
+        cast(Any, TrustedSender)
+        .objects.filter(
+            account_key=account_key,
+            pattern__in=patterns,
+        )
+        .exists()
+    )
+
+
+def is_sender_blocked(account_key: str, sender_header: str) -> BlockedSender | None:
+    """Check if a sender email address or domain is in the account's blocked denylist."""
+    if not account_key or not sender_header:
+        return None
+    address, domain = extract_sender_address_and_domain(sender_header)
+    patterns = [p for p in (address, domain) if p]
+    if not patterns:
+        return None
+    return (
+        cast(Any, BlockedSender)
+        .objects.filter(
+            account_key=account_key,
+            pattern__in=patterns,
+        )
+        .first()
+    )
+
+
+def get_trusted_senders(account_key: str) -> list[TrustedSender]:
+    """Return all trusted sender patterns for the account."""
+    return list(
+        cast(Any, TrustedSender).objects.filter(account_key=account_key).order_by("pattern")
+    )
+
+
+def get_blocked_senders(account_key: str) -> list[BlockedSender]:
+    """Return all blocked sender patterns for the account."""
+    return list(
+        cast(Any, BlockedSender).objects.filter(account_key=account_key).order_by("pattern")
+    )
+
+
+def add_trusted_sender(
+    account_key: str,
+    email: str,
+    pattern: str,
+    description: str = "",
+) -> TrustedSender:
+    """Add or update a trusted sender pattern."""
+    norm_pattern = pattern.strip().lower().lstrip("@")
+    sender, _ = cast(Any, TrustedSender).objects.update_or_create(
+        account_key=account_key,
+        pattern=norm_pattern,
+        defaults={"email": email, "description": description.strip()},
+    )
+    return sender
+
+
+def delete_trusted_sender(account_key: str, pk: int) -> bool:
+    """Delete a trusted sender entry by primary key."""
+    deleted, _ = (
+        cast(Any, TrustedSender)
+        .objects.filter(
+            account_key=account_key,
+            pk=pk,
+        )
+        .delete()
+    )
+    return bool(deleted)
+
+
+def add_blocked_sender(
+    account_key: str,
+    email: str,
+    pattern: str,
+    action: str = BlockedSenderAction.TRASH,
+    description: str = "",
+) -> BlockedSender:
+    """Add or update a blocked sender pattern."""
+    norm_pattern = pattern.strip().lower().lstrip("@")
+    sender, _ = cast(Any, BlockedSender).objects.update_or_create(
+        account_key=account_key,
+        pattern=norm_pattern,
+        defaults={
+            "email": email,
+            "action": action,
+            "description": description.strip(),
+        },
+    )
+    return sender
+
+
+def delete_blocked_sender(account_key: str, pk: int) -> bool:
+    """Delete a blocked sender entry by primary key."""
+    deleted, _ = (
+        cast(Any, BlockedSender)
+        .objects.filter(
+            account_key=account_key,
+            pk=pk,
+        )
+        .delete()
+    )
+    return bool(deleted)

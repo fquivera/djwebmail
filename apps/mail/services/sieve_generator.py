@@ -289,19 +289,91 @@ def compile_vacation_to_sieve(vacation: VacationRule) -> tuple[str, set[str]]:
     return code, capabilities
 
 
+@dataclass
+class BlockedSenderRule:
+    """A blocked sender pattern compiled into Sieve rules."""
+
+    pattern: str = ""
+    action: str = "trash"  # "trash" or "discard"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"pattern": self.pattern, "action": self.action}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> BlockedSenderRule:
+        return cls(
+            pattern=str(data.get("pattern", "")),
+            action=str(data.get("action", "trash")),
+        )
+
+
+def compile_blocked_senders_to_sieve(
+    blocked_senders: Sequence[BlockedSenderRule],
+) -> tuple[str, set[str]]:
+    """Compile BlockedSenderRules into RFC 5228 Sieve blocks."""
+    if not blocked_senders:
+        return "", set()
+
+    capabilities: set[str] = set()
+    blocks: list[str] = []
+
+    trash_patterns: list[str] = []
+    discard_patterns: list[str] = []
+
+    for b in blocked_senders:
+        p = b.pattern.strip().lower().lstrip("@")
+        if not p:
+            continue
+        if b.action == "discard":
+            discard_patterns.append(p)
+        else:
+            trash_patterns.append(p)
+
+    if trash_patterns:
+        capabilities.add("fileinto")
+        escaped_list = ", ".join(f'"{escape_sieve_string(p)}"' for p in trash_patterns)
+        blocks.append(
+            "# rule:[Blocked senders (Trash)]\n"
+            f'if header :comparator "i;ascii-casemap" :contains ["From"] [{escaped_list}] {{\n'
+            '    fileinto "Trash";\n'
+            "    stop;\n"
+            "}\n"
+        )
+
+    if discard_patterns:
+        escaped_list = ", ".join(f'"{escape_sieve_string(p)}"' for p in discard_patterns)
+        blocks.append(
+            "# rule:[Blocked senders (Discard)]\n"
+            f'if header :comparator "i;ascii-casemap" :contains ["From"] [{escaped_list}] {{\n'
+            "    discard;\n"
+            "    stop;\n"
+            "}\n"
+        )
+
+    return "\n".join(blocks), capabilities
+
+
 def rules_to_sieve_script(
     rules: Sequence[FilterRule],
     *,
     script_name: str = "djwebmail",
     vacation: VacationRule | None = None,
+    blocked_senders: Sequence[BlockedSenderRule] | None = None,
 ) -> str:
-    """Compile structured FilterRules and VacationRule into a complete RFC 5228 Sieve script.
+    """Compile structured FilterRules, VacationRule and BlockedSenders to Sieve RFC 5228.
 
     Embeds JSON metadata as a comment line to ensure lossless round-trip reconstruction
     in the webmail settings editor.
     """
     rule_blocks: list[str] = []
     all_capabilities: set[str] = set()
+
+    blocked_block = ""
+    if blocked_senders:
+        b_block, b_caps = compile_blocked_senders_to_sieve(blocked_senders)
+        if b_block:
+            blocked_block = b_block
+        all_capabilities.update(b_caps)
 
     vacation_block = ""
     if vacation is not None:
@@ -320,6 +392,8 @@ def rules_to_sieve_script(
     meta_payload: dict[str, Any] = {"name": script_name, "rules": rules_dict}
     if vacation is not None:
         meta_payload["vacation"] = vacation.to_dict()
+    if blocked_senders is not None:
+        meta_payload["blocked_senders"] = [b.to_dict() for b in blocked_senders]
 
     metadata_json = json.dumps(meta_payload, ensure_ascii=False)
     metadata_comment = f"{SIEVE_METADATA_PREFIX}{metadata_json}\n"
@@ -334,6 +408,9 @@ def rules_to_sieve_script(
         sorted_caps = sorted(all_capabilities)
         req_str = ", ".join(f'"{c}"' for c in sorted_caps)
         lines.append(f"require [{req_str}];\n")
+
+    if blocked_block:
+        lines.append(blocked_block)
 
     if vacation_block:
         lines.append(vacation_block)
@@ -521,3 +598,25 @@ def sieve_script_to_vacation(script_source: str) -> VacationRule | None:
         start_date=start_date,
         end_date=end_date,
     )
+
+
+def sieve_script_to_blocked_senders(script_source: str) -> list[BlockedSenderRule]:
+    """Extract BlockedSenderRules from Sieve script metadata or inspect fallback comments."""
+    if not script_source:
+        return []
+
+    for line in script_source.splitlines():
+        line = line.strip()
+        if line.startswith(SIEVE_METADATA_PREFIX):
+            json_part = line[len(SIEVE_METADATA_PREFIX) :].strip()
+            try:
+                payload = json.loads(json_part)
+                raw_blocked = payload.get("blocked_senders")
+                if isinstance(raw_blocked, list):
+                    return [
+                        BlockedSenderRule.from_dict(b) for b in raw_blocked if isinstance(b, dict)
+                    ]
+            except Exception:
+                pass
+
+    return []

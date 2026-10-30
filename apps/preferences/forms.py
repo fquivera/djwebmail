@@ -19,7 +19,12 @@ from apps.preferences.constants import (
     PAGE_SIZE_MIN,
     RemoteImages,
 )
-from apps.preferences.models import AccountSignature, MailPreference
+from apps.preferences.models import (
+    AccountSignature,
+    BlockedSender,
+    MailPreference,
+    TrustedSender,
+)
 from apps.preferences.services import sanitize_signature_html
 
 
@@ -252,3 +257,69 @@ class AccountSignatureForm(forms.ModelForm):
         content = self.cleaned_data.get("content_html")
         text = str(content or "").strip()
         return sanitize_signature_html(text)
+
+
+class TrustedSenderForm(forms.ModelForm):
+    """Form to add a trusted sender or domain."""
+
+    class Meta:
+        model = TrustedSender
+        fields = ("pattern", "description")
+        labels = {
+            "pattern": _("Email or domain"),
+            "description": _("Notes (optional)"),
+        }
+        widgets = {
+            "pattern": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "newsletter@company.com / company.com",
+                }
+            ),
+            "description": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Monthly statements",
+                }
+            ),
+        }
+
+    def clean_pattern(self) -> str:
+        pattern = str(self.cleaned_data.get("pattern") or "").strip().lower().lstrip("@")
+        if not pattern:
+            raise ValidationError(_("Sender email or domain cannot be empty."))
+        return pattern
+
+
+class BlockedSenderForm(forms.ModelForm):
+    """Form to add a blocked sender or domain."""
+
+    class Meta:
+        model = BlockedSender
+        fields = ("pattern", "action", "description")
+        labels = {
+            "pattern": _("Email or domain"),
+            "action": _("Action"),
+            "description": _("Notes (optional)"),
+        }
+        widgets = {
+            "pattern": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "spam@domain.com / spamdomain.com",
+                }
+            ),
+            "action": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "description": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Unsolicited marketing",
+                }
+            ),
+        }
+
+    def clean_pattern(self) -> str:
+        pattern = str(self.cleaned_data.get("pattern") or "").strip().lower().lstrip("@")
+        if not pattern:
+            raise ValidationError(_("Sender email or domain cannot be empty."))
+        return pattern

@@ -13,6 +13,15 @@
     if (!(event.target instanceof Element)) {
       return;
     }
+    var closeTrigger = event.target.closest("[data-confirm-close]");
+    if (closeTrigger) {
+      var d = closeTrigger.closest("dialog");
+      if (d && typeof d.close === "function") {
+        event.preventDefault();
+        d.close();
+      }
+      return;
+    }
     var trigger = event.target.closest("[data-confirm-open]");
     if (!trigger) {
       return;
