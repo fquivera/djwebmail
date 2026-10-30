@@ -136,6 +136,24 @@
     }
   });
 
+  document.addEventListener("click", function (event) {
+    if (event.target.closest("[data-signature-modal-close]")) {
+      var modal = document.getElementById("signature-modal");
+      if (modal) {
+        modal.remove();
+      }
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      var modal = document.getElementById("signature-modal");
+      if (modal) {
+        modal.remove();
+      }
+    }
+  });
+
   function applySection(val) {
     var select = document.getElementById("settings-section-selector");
 

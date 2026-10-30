@@ -144,14 +144,19 @@ def get_account_signatures(
     return signatures
 
 
-def get_active_signatures(account_key: str) -> list[AccountSignature]:
+def get_active_signatures(
+    account_key: str,
+    *,
+    email: str = "",
+    seed_from_pref: str = "",
+) -> list[AccountSignature]:
     """Return only active signatures for the compose picker."""
-    return list(
-        cast(Any, AccountSignature).objects.filter(
-            account_key=account_key,
-            is_active=True,
-        )
+    all_sigs = get_account_signatures(
+        account_key,
+        email=email,
+        seed_from_pref=seed_from_pref,
     )
+    return [s for s in all_sigs if s.is_active]
 
 
 def get_default_signature(account_key: str) -> AccountSignature | None:
