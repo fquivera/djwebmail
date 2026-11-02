@@ -180,8 +180,9 @@ repository. Keep `platforms: linux/amd64` unless ARM images are actually needed
 ## Repository Configuration
 
 - **CODEOWNERS**: `* @fquivera` — every PR requests review.
-- **Dependabot**: ecosystems `uv` and `github-actions`, weekly, grouped so one
-  PR carries routine bumps; commits must still pass `commit-messages`.
+- **Dependabot**: ecosystems `uv` and `github-actions`, weekly, targeted to `develop`
+  (`target-branch: "develop"`), grouped so one PR carries routine bumps; commits
+  must still pass `commit-messages`.
 - **Hardcoding guard**: `scripts/check_hardcoding.py` scans `apps/`, `common/`,
   `config/`, and `templates/`; suppress a justified line with
   `# hardcode-ok: <reason>`. The `hardcode-scan` job is required.
